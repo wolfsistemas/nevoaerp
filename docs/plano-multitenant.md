@@ -4,7 +4,8 @@ Objetivo: transformar o RV PORTAL (hoje single-tenant, um projeto Supabase por c
 em multi-tenant (uma base atendendo N empresas com isolamento por RLS), reaproveitando as
 mesmas 12 tabelas.
 
-Base de partida: projeto de teste vazio restaurado a partir de `db/dump.sql`.
+Base de partida: projeto de teste **basedetestes**, recriado do zero apenas com a estrutura
+(`db/schema.sql`), sem dados.
 
 ---
 
@@ -23,9 +24,9 @@ produtos, rvp_funcionarios, usuarios, vales`.
 
 ## Fase 0 - Preparacao do banco de teste
 
-1. Restaurar `db/dump.sql` (schema + dados).
-2. Conferir que as policies legadas de acesso publico nao existem (o dump ja nao as cria).
-3. Fazer backup logico antes da migration (o dump ja e o backup).
+1. Aplicar `db/schema.sql` (somente estrutura; sem dados).
+2. Conferir que as policies legadas de acesso publico nao existem (o schema ja nao as cria).
+3. Base zerada: nao ha backup de dados a fazer.
 
 ## Fase 1 - Tabela de empresas e coluna discriminadora
 
@@ -49,11 +50,11 @@ limit 1;
 Por ser SECURITY DEFINER, ela ignora a RLS (evita recursao ao ser usada em policy de
 `usuarios`). E o equivalente multi-tenant do `buscar_email_por_usuario` (sql/09).
 
-## Fase 3 - Dados existentes viram a empresa piloto
+## Fase 3 - Empresa piloto (opcional na base zerada)
 
-Como o banco de teste ja vem com os dados da RV, atribuimos tudo a uma empresa
-"RV Portal Madeiras" e depois tornamos `empresa_id` NOT NULL. Bloco no fim do arquivo
-`12_multitenant.sql` (comentado, com o UUID da empresa piloto).
+Como a base de teste esta **sem dados**, esta fase e um no-op (nenhuma linha para
+atribuir). O bloco fica no fim de `12_multitenant.sql` para quando houver dados a migrar:
+cria a empresa "RV Portal Madeiras" e aponta as linhas sem `empresa_id` para ela.
 
 ## Fase 4 - RLS por empresa
 
@@ -122,10 +123,10 @@ e opcionalmente remover as colunas `empresa_id` e a tabela `empresas`.
 ## Ordem de execucao na base de teste
 
 ```sql
--- 1) restaurar o clone
-\i db/dump.sql
+-- 1) criar a estrutura (sem dados)
+\i db/schema.sql
 
--- 2) aplicar multi-tenant (schema + RLS + triggers + backfill piloto)
+-- 2) aplicar multi-tenant (schema + RLS + triggers; backfill so se houver dados)
 \i db/migrations/12_multitenant.sql
 ```
 
