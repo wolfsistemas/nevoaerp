@@ -149,6 +149,12 @@ placeholders em `config.js`, injetados no deploy.
 - `anon` continua bloqueado (chave publishable nao le tabela nenhuma).
 - Fluxos de login, folha, parcelamento e estorno intactos.
 
+**Verificado em 2026-09-11** na base `basedetestes` (simulando o JWT via SQL com
+`set local role authenticated; set local request.jwt.claims`): a empresa A enxergou apenas
+os proprios clientes, a B apenas os seus, e o insert cruzado (B gravando linha da empresa A)
+foi bloqueado com `42501 new row violates row-level security policy`. Teste rodado em
+transacao com rollback (a base seguiu com 0 clientes e apenas a empresa piloto).
+
 ## Fase 2 / futuro (fora do escopo atual)
 
 - **Login por empresa**: permitir o mesmo `login`/e-mail em empresas diferentes
