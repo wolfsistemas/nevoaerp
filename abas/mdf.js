@@ -11,7 +11,7 @@ const SUPABASE_KEY = window.SUPABASE_ANON_KEY;
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ==================== GERAÇÃO DE PDF COM PDFMAKE ====================
-const LOGO_RV_PORTAL = 'https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png';
+const LOGO_APP = 'logo.png';
 const _cacheImagensPDF = new Map();
 let _pdfMakePromise = null;
 
@@ -845,7 +845,7 @@ class ProjetosMDF {
     const html = `
       <div style="font-family: Helvetica; padding: 20px; max-width: 800px; margin: auto; background: white;">
         <div style="text-align: center; margin-bottom: 20px;">
-          <h2>RV PORTAL MADEIRAS</h2>
+          <h2>NÉVOA</h2>
           <h3>Detalhamento do Projeto</h3>
         </div>
         <table style="width:100%; border-collapse: collapse; font-size: 12px;">
@@ -1707,7 +1707,7 @@ class OrcamentosMDF {
     const total = Math.max(0, subtotal - descontoTotal);
 
     const [logoBase64, ...fotosBase64] = await Promise.all([
-      imagemParaBase64PDF(LOGO_RV_PORTAL, { max: 220 }),
+      imagemParaBase64PDF(LOGO_APP, { max: 220 }),
       ...itensNormalizados.map(i => imagemParaBase64PDF(i.foto_url, { quadrada: true }))
     ]);
 
@@ -1753,8 +1753,8 @@ class OrcamentosMDF {
     const content = [];
     if (logoBase64) content.push({ image: 'logo', width: 58, alignment: 'center', margin: [0, 0, 0, 4] });
     content.push(
-      { text: 'RV PORTAL MADEIRAS', fontSize: 20, bold: true, color: '#b8a94e', alignment: 'center', margin: [0, 2, 0, 2] },
-      { text: 'CNPJ: 30.942.123/0001-02 | Rua Mineiros, 532 - Jataí/GO', fontSize: 9, color: '#475569', alignment: 'center', margin: [0, 0, 0, 12] },
+      { text: 'NÉVOA', fontSize: 20, bold: true, color: '#b8a94e', alignment: 'center', margin: [0, 2, 0, 2] },
+      { text: 'CNPJ: 00.000.000/0000-00 | Endereço da empresa - Cidade/UF', fontSize: 9, color: '#475569', alignment: 'center', margin: [0, 0, 0, 12] },
       { text: orcId ? `ORÇAMENTO #${orcId}` : 'ORÇAMENTO', fontSize: 14, bold: true, alignment: 'center', margin: [0, 0, 0, 14] },
       { text: [{ text: 'Cliente: ', bold: true }, clienteNome], fontSize: 10, margin: [0, 0, 0, 3] },
       { text: [{ text: 'Data: ', bold: true }, data], fontSize: 10, margin: [0, 0, 0, 3] }
@@ -1784,11 +1784,11 @@ class OrcamentosMDF {
         margin: [0, 8, 0, 0]
       },
       { text: [{ text: 'Total Geral: ', bold: true }, formatarMoedaPDF(total)], fontSize: 15, bold: true, alignment: 'right', margin: [0, 14, 0, 0] },
-      { text: 'RV Portal Madeiras - Obrigado pela preferência!', fontSize: 10, color: '#64748b', alignment: 'center', margin: [0, 30, 0, 0] }
+      { text: 'Névoa - Obrigado pela preferência!', fontSize: 10, color: '#64748b', alignment: 'center', margin: [0, 30, 0, 0] }
     );
 
     const docDefinition = {
-      info: { title: filename, author: 'RV Portal Madeiras' },
+      info: { title: filename, author: 'Névoa' },
       pageSize: 'A4',
       pageMargins: [40, 40, 40, 60],
       defaultStyle: { fontSize: 10, font: 'Roboto' },

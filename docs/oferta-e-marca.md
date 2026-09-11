@@ -10,9 +10,12 @@ Mensagem central: "Toda a gestao do seu negocio num so lugar, sem complicacao."
 
 ## Nomes sugeridos
 
-Checagem de DNS apenas como indicio (confirmar no registro.br):
-`orbeerp` e `zeraerp` nao responderam em `.com.br`/`.com`; `nexoerp`, `verta`, `meuerp`,
-`fluxoerp` ja estao ocupados.
+**Nome escolhido: Névoa.** Dominio `nevoa.com.br` sem DNS (indicio de disponibilidade);
+`nevoa.com` esta ocupado. Tagline: "Toda a gestao do seu negocio, leve como uma nuvem."
+
+Historico da avaliacao (checagem de DNS apenas como indicio; confirmar no registro.br):
+`orbeerp` e `zeraerp` tambem nao responderam; `nexoerp`, `verta`, `meuerp`, `fluxoerp`
+ja estao ocupados.
 
 | Nome | Tagline | Racional | DNS |
 |------|---------|----------|-----|
@@ -49,6 +52,7 @@ A marca do produto aparece so na interface/login.
 
 ## Proximo passo
 
-1. Escolher o nome.
-2. Executar `docs/checklist-desvincular-rv.md`.
-3. Construir o cadastro self-service (empresa + admin).
+1. Nome escolhido: **Névoa**.
+2. Desvinculo da RV: primeira passada concluida (marca, dados fixos e integracoes).
+3. Ainda pendente: documentos com dados da empresa contratante (white-label) e cadastro
+   self-service (empresa + admin).

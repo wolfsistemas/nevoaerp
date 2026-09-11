@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <base target="_top">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERP - RV PORTAL</title>
+    <title>ERP - NÉVOA</title>
 
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -35,8 +35,8 @@
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="RV Portal Madeiras">
-    <meta name="apple-mobile-web-app-title" content="RV Portal Madeiras">
+    <meta name="application-name" content="Névoa">
+    <meta name="apple-mobile-web-app-title" content="Névoa">
     <meta name="theme-color" content="#0f172a"> 
     <link rel="manifest" href="manifest.json">
 
@@ -95,7 +95,7 @@
             transform: translate(-50%, -50%);
             width: 450px; 
             height: 450px;
-            background-image: url('https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png');
+            background-image: url('logo.png');
             background-size: contain;
             background-position: center;
             background-repeat: no-repeat;
@@ -303,9 +303,9 @@
             <i data-lucide="refresh-cw" class="w-4 h-4"></i>           
         </button>
         <div class="w-20 h-20 rounded-full border-4 border-emerald-600 mb-3 shadow-lg bg-white overflow-hidden p-1 bg-white">
-            <img src="https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png" class="w-full h-full object-contain" />
+            <img src="logo.png" class="w-full h-full object-contain" />
         </div>
-        <h1 class="text-lg font-bold tracking-wider text-emerald-500">RV PORTAL</h1>
+        <h1 class="text-lg font-bold tracking-wider text-emerald-500">NÉVOA</h1>
       </div>
       <nav class="flex-1 mt-4 px-3 space-y-1 overflow-y-auto">
         <!--<button onclick="navigate('dash')" id="nav-dash" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="layout-dashboard"></i> <span class="font-medium text-sm">Visão Geral</span></button>
@@ -334,7 +334,7 @@
     <main class="flex-1 md:ml-64 p-4 md:p-6 overflow-y-auto h-screen no-print bg-slate-100">
       
       <div class="md:hidden mb-6 flex justify-between items-center">
-        <span class="font-bold text-emerald-600 text-xl">RV PORTAL</span>
+        <span class="font-bold text-emerald-600 text-xl">NÉVOA</span>
         <button onclick="navigate('pos')" class="p-2 bg-green-100 rounded text-green-700"><i data-lucide="shopping-cart"></i></button>
       </div>
 
@@ -2447,9 +2447,9 @@ function printStockCountSheet() {
   }
 
   const company = {
-    name: "RV PORTAL MADEIRAS",
-    cnpj: "30.942.123/0001-02",
-    logoUrl: "https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png"
+    name: "NÉVOA",
+    cnpj: "00.000.000/0000-00",
+    logoUrl: "logo.png"
   };
 
   const now = new Date().toLocaleString('pt-BR');
@@ -4165,7 +4165,7 @@ function printStockCountSheet() {
                     let num = cli.phone.replace(/\D/g, '');
                     if (num.length >= 10) {
                         if (!num.startsWith('55')) num = '55' + num;
-                        const msg = encodeURIComponent(`Olá *${cli.name}*, aqui é da RV Portal. Sobre o orçamento *#${q.id}* no valor de *${formatMoney(valorLiquido)}*. Podemos fechar?`);
+                        const msg = encodeURIComponent(`Olá *${cli.name}*, aqui é da Névoa. Sobre o orçamento *#${q.id}* no valor de *${formatMoney(valorLiquido)}*. Podemos fechar?`);
                         zapLink = `https://wa.me/${num}?text=${msg}`;
                         btnZapClass = "text-green-500 hover:text-green-700 bg-white border-green-200 hover:bg-green-50";
                     }
@@ -4806,7 +4806,7 @@ function loadQuoteToCart(id) {
                                 const dataVencimento = formatDate(r.dueDate);
                                 const msg = encodeURIComponent(
                                     `Olá *${client.name}*.\n\n` +
-                                    `Aqui é da RV Portal Madeiras. Temos um lembrete.\nVocê possui um pagamento pendente referente à *${r.desc}*.\n\n` +
+                                    `Aqui é da Névoa. Temos um lembrete.\nVocê possui um pagamento pendente referente à *${r.desc}*.\n\n` +
                                     `Vencimento: *${dataVencimento}*\n` +
                                     `Valor: *${valorFormatado}*\n\n` +                              
                                     `Caso já tenha realizado o pagamento, desconsidere esta mensagem.\n\n` +
@@ -5146,11 +5146,11 @@ function loadQuoteToCart(id) {
             el.innerHTML = `
             <div class="invoice-full">
                 <div class="header-section">
-                    <div class="logo-area"><img src="https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png" style="max-height: 80px;" /></div>
+                    <div class="logo-area"><img src="logo.png" style="max-height: 80px;" /></div>
                     <div class="company-details">
-                        <h2 class="company-title">RV PORTAL MADEIRAS</h2>
-                        <div class="company-info">CNPJ: 30.942.123/0001-02 </div>
-                        <div class="company-info">Rua Mineiros, 532 | Jataí - GO | (64) 3636-4861 </div>
+                        <h2 class="company-title">NÉVOA</h2>
+                        <div class="company-info">CNPJ: 00.000.000/0000-00 </div>
+                        <div class="company-info">Endereço da empresa | Cidade - UF </div>
                     </div>
                     <div class="doc-meta">
                         <div class="doc-title">${title}</div>
@@ -5165,7 +5165,7 @@ function loadQuoteToCart(id) {
                     </div>
                     <div class="info-col">
                         <div class="col-header">Pagamento</div>
-                        <div class="col-content"><strong>Forma:</strong> ${sale.paymentMethod || 'A Combinar'}<br><strong>Vendedor:</strong> RV PORTAL</div>
+                        <div class="col-content"><strong>Forma:</strong> ${sale.paymentMethod || 'A Combinar'}<br><strong>Vendedor:</strong> NÉVOA</div>
                     </div>
                 </div>
                 <table class="full-table">
@@ -5190,11 +5190,11 @@ function loadQuoteToCart(id) {
     const cli = STATE.clients.find(c => c.name === items[0].clientName) || { name: items[0].clientName, doc: '-', phone: '-', address: '-' };
 
     const company = {
-        name: "RV PORTAL MADEIRAS",
-        cnpj: "30.942.123/0001-02",
-        phone: "(64) 3636-4861",
-        address: "Jataí - GO",
-        logoUrl: "https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png" 
+        name: "NÉVOA",
+        cnpj: "00.000.000/0000-00",
+        phone: "(00) 0000-0000",
+        address: "",
+        logoUrl: "logo.png" 
     };
     
     const addressToShow = items[0].deliveryAddress 
@@ -5354,11 +5354,11 @@ function loadQuoteToCart(id) {
             if (histLogs.length === 0) return showToast("Nenhum dado para imprimir", true);
 
             const company = {
-                name: "RV PORTAL MADEIRAS",
-                cnpj: "30.942.123/0001-02",
-                phone: "(64) 3636-4861",
-                address: "Jataí - GO",
-                logoUrl: "https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png" 
+                name: "NÉVOA",
+                cnpj: "00.000.000/0000-00",
+                phone: "(00) 0000-0000",
+                address: "",
+                logoUrl: "logo.png" 
             };
 
             let totalItems = 0;
@@ -5494,9 +5494,9 @@ function loadQuoteToCart(id) {
             let subheader = filterText.length > 0 ? filterText.join(' | ') : 'Todos os registros';
 
             const company = {
-                name: "RV PORTAL MADEIRAS",
-                cnpj: "30.942.123/0001-02",
-                logoUrl: "https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png" 
+                name: "NÉVOA",
+                cnpj: "00.000.000/0000-00",
+                logoUrl: "logo.png" 
             };
 
             const el = document.getElementById('print-area');
@@ -5589,9 +5589,9 @@ function loadQuoteToCart(id) {
             let subheader = filterText.length > 0 ? filterText.join(' | ') : 'Todos os registros';
 
             const company = {
-                name: "RV PORTAL MADEIRAS",
-                cnpj: "30.942.123/0001-02",
-                logoUrl: "https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png" 
+                name: "NÉVOA",
+                cnpj: "00.000.000/0000-00",
+                logoUrl: "logo.png" 
             };
 
             const el = document.getElementById('print-area');
@@ -5728,9 +5728,9 @@ function loadQuoteToCart(id) {
         
             // Dados da empresa para o cabeçalho
             const company = {
-                name: "RV PORTAL MADEIRAS",
-                cnpj: "30.942.123/0001-02",
-                logoUrl: "https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png"
+                name: "NÉVOA",
+                cnpj: "00.000.000/0000-00",
+                logoUrl: "logo.png"
             };
         
             // Insere o HTML no elemento de impressão
@@ -6030,7 +6030,7 @@ function loadQuoteToCart(id) {
         obsText = fullObs || 'Válido por 7 dias. Verifique os produtos no ato da entrega.';
     }
 
-    const logoBase64 = await getLogoBase64RV("https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png");
+    const logoBase64 = await getLogoBase64("logo.png");
 
     const totalRows = [
         [ { text: 'Subtotal:', border: [false,false,false,true] }, { text: formatMoney(subtotal), alignment: 'right', border: [false,false,false,true] } ]
@@ -6063,9 +6063,9 @@ function loadQuoteToCart(id) {
                         logoBase64 ? { image: logoBase64, width: 80, alignment: 'center', margin: [0, 0, 10, 0] } : '',
                         {
                             text: [
-                                { text: 'RV PORTAL MADEIRAS\n', fontSize: 16, bold: true, color: '#059669' },
-                                { text: 'CNPJ: 30.942.123/0001-02\n', fontSize: 9, color: '#475569', lineHeight: 1.3 },
-                                { text: 'Rua Mineiros, 532 | Jataí - GO | (64) 3636-4861', fontSize: 9, color: '#475569', lineHeight: 1.3 }
+                                { text: 'NÉVOA\n', fontSize: 16, bold: true, color: '#059669' },
+                                { text: 'CNPJ: 00.000.000/0000-00\n', fontSize: 9, color: '#475569', lineHeight: 1.3 },
+                                { text: 'Endereço da empresa | Cidade - UF', fontSize: 9, color: '#475569', lineHeight: 1.3 }
                             ],
                             margin: [0, 10, 0, 0]
                         },
@@ -6102,7 +6102,7 @@ function loadQuoteToCart(id) {
                             widths: ['*'],
                             body: [
                                 [{ text: 'PAGAMENTO', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
-                                [{ text: `Forma: ${q.paymentMethod || 'A Combinar'}\nVendedor: RV PORTAL`, fontSize: 9, margin: [6, 8, 6, 8] }]
+                                [{ text: `Forma: ${q.paymentMethod || 'A Combinar'}\nVendedor: NÉVOA`, fontSize: 9, margin: [6, 8, 6, 8] }]
                             ]
                         },
                         layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
@@ -6145,7 +6145,7 @@ function loadQuoteToCart(id) {
         styles: { tableHeader: { bold: true, fontSize: 10, color: 'white', fillColor: '#0f172a', margin: [4, 6, 4, 6] } }
     };
 
-    pdfMake.createPdf(docDefinition).download(`RV PORTAL - ${clientName} - #${q.id}.pdf`);
+    pdfMake.createPdf(docDefinition).download(`NÉVOA - ${clientName} - #${q.id}.pdf`);
     showLoading(false);
     showToast("PDF Baixado com Sucesso!");
 }
@@ -6223,9 +6223,9 @@ function loadQuoteToCart(id) {
     `).join('');
 
     const company = {
-        name: "RV PORTAL MADEIRAS",
-        cnpj: "30.942.123/0001-02",
-        logoUrl: "https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png"
+        name: "NÉVOA",
+        cnpj: "00.000.000/0000-00",
+        logoUrl: "logo.png"
     };
 
     const filtroTexto = `Período: Vendas de Hoje (${formatDate(hojeLocalStr)})`;
@@ -6282,7 +6282,7 @@ function loadQuoteToCart(id) {
                             <td style="padding: 5px 0; text-align: right; font-weight: bold;">${vendasHoje.length}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 5px 0;">Vendas RV Portal:</td>
+                            <td style="padding: 5px 0;">Vendas Névoa:</td>
                             <td style="padding: 5px 0; text-align: right; font-weight: bold; color: #059669;">${formatMoney(totalRVPotal)}</td>
                         </tr>
                         <tr>
@@ -6409,9 +6409,9 @@ function loadQuoteToCart(id) {
     `).join('');
 
     const company = {
-        name: "RV PORTAL MADEIRAS",
-        cnpj: "30.942.123/0001-02",
-        logoUrl: "https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png"
+        name: "NÉVOA",
+        cnpj: "00.000.000/0000-00",
+        logoUrl: "logo.png"
     };
 
     const filtroTexto = `Período: ${start ? formatDate(start) : 'Início'} até ${end ? formatDate(end) : 'Hoje'} | Pgto: ${payment} ${client ? ' | Cliente: ' + client : ''}`;
@@ -6468,7 +6468,7 @@ function loadQuoteToCart(id) {
                             <td style="padding: 5px 0; text-align: right; font-weight: bold;">${filteredSales.length}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 5px 0;">Vendas RV Portal:</td>
+                            <td style="padding: 5px 0;">Vendas Névoa:</td>
                             <td style="padding: 5px 0; text-align: right; font-weight: bold; color: #059669;">${formatMoney(totalRVPotal)}</td>
                         </tr>
                         <tr>
@@ -6775,7 +6775,7 @@ async function downloadSalePDF(id) {
     }
 
     const paymentMethod = items[0].paymentMethod || 'Não informado';
-    const logoBase64 = await getLogoBase64RV("https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png");
+    const logoBase64 = await getLogoBase64("logo.png");
 
     const totalRows = [
         [ { text: 'Subtotal:', border: [false,false,false,true] }, { text: formatMoney(subtotal), alignment: 'right', border: [false,false,false,true] } ]
@@ -6808,9 +6808,9 @@ async function downloadSalePDF(id) {
                         logoBase64 ? { image: logoBase64, width: 80, alignment: 'center', margin: [0, 0, 10, 0] } : '',
                         {
                             text: [
-                                { text: 'RV PORTAL MADEIRAS\n', fontSize: 16, bold: true, color: '#059669' },
-                                { text: 'CNPJ: 30.942.123/0001-02\n', fontSize: 9, color: '#475569', lineHeight: 1.3 },
-                                { text: 'Rua Mineiros, 532 | Jataí - GO | (64) 3636-4861', fontSize: 9, color: '#475569', lineHeight: 1.3 }
+                                { text: 'NÉVOA\n', fontSize: 16, bold: true, color: '#059669' },
+                                { text: 'CNPJ: 00.000.000/0000-00\n', fontSize: 9, color: '#475569', lineHeight: 1.3 },
+                                { text: 'Endereço da empresa | Cidade - UF', fontSize: 9, color: '#475569', lineHeight: 1.3 }
                             ],
                             margin: [0, 10, 0, 0]
                         },
@@ -6847,7 +6847,7 @@ async function downloadSalePDF(id) {
                             widths: ['*'],
                             body: [
                                 [{ text: 'PAGAMENTO', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
-                                [{ text: `Forma: ${paymentMethod}\nVendedor: RV PORTAL`, fontSize: 9, margin: [6, 8, 6, 8] }]
+                                [{ text: `Forma: ${paymentMethod}\nVendedor: NÉVOA`, fontSize: 9, margin: [6, 8, 6, 8] }]
                             ]
                         },
                         layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
@@ -6890,7 +6890,7 @@ async function downloadSalePDF(id) {
         styles: { tableHeader: { bold: true, fontSize: 10, color: 'white', fillColor: '#0f172a', margin: [4, 6, 4, 6] } }
     };
 
-    pdfMake.createPdf(docDefinition).download(`RV PORTAL - ${clientName} - #${id}.pdf`);
+    pdfMake.createPdf(docDefinition).download(`NÉVOA - ${clientName} - #${id}.pdf`);
     showLoading(false);
     showToast("PDF Baixado com Sucesso!");
 }
@@ -6949,8 +6949,8 @@ function printPartnerReport() {
         var html = `
         <div style="font-family:Helvetica; padding:20px; max-width:900px; margin:auto;">
             <div style="text-align:center; margin-bottom:20px;">
-                <img src="https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png" style="height:60px; display:block; margin:0 auto;">
-                <h2 style="color:#059669; margin:5px 0 0 0;">RV PORTAL MADEIRAS</h2>
+                <img src="logo.png" style="height:60px; display:block; margin:0 auto;">
+                <h2 style="color:#059669; margin:5px 0 0 0;">NÉVOA</h2>
                 <p style="font-size:14px;">Relatório de Vendas de Parceiro (Metros)</p>
                 <p style="font-size:12px; color:#555;">${formatDate(start)} a ${formatDate(end)}</p>
             </div>
@@ -7007,8 +7007,8 @@ function printPartnerReport() {
         var html = `
         <div style="font-family:Helvetica; padding:20px; max-width:900px; margin:auto;">
             <div style="text-align:center; margin-bottom:20px;">
-                <img src="https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png" style="height:60px; display:block; margin:0 auto;">
-                <h2 style="color:#059669; margin:5px 0 0 0;">RV PORTAL MADEIRAS</h2>
+                <img src="logo.png" style="height:60px; display:block; margin:0 auto;">
+                <h2 style="color:#059669; margin:5px 0 0 0;">NÉVOA</h2>
                 <p style="font-size:14px;">Relatório de Acerto – Parceiro</p>
                 <p style="font-size:12px; color:#555;">${formatDate(start)} a ${formatDate(end)}</p>
             </div>
@@ -7265,11 +7265,11 @@ function printReceipt() {
   const dataFormatada = formatDate(date + 'T00:00:00');
 
   const company = {
-    name: "RV PORTAL MADEIRAS",
-    cnpj: "30.942.123/0001-02",
-    phone: "(64) 3636-4861",
-    address: "Rua Mineiros, 532 - Jataí - GO",
-    logoUrl: "https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png"
+    name: "NÉVOA",
+    cnpj: "00.000.000/0000-00",
+    phone: "(00) 0000-0000",
+    address: "Endereço da empresa - Cidade - UF",
+    logoUrl: "logo.png"
   };
 
   const receiptHTML = `
@@ -7319,7 +7319,7 @@ function printReceipt() {
     
     <!-- Rodapé -->
     <div style="margin-top: 20px; font-size: 10px; color: #94a3b8; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
-      Documento emitido por sistema RV PORTAL - Válido como recibo de pagamento.
+      Documento emitido por sistema NÉVOA - Válido como recibo de pagamento.
     </div>
   </div>
 </div>
@@ -7329,7 +7329,7 @@ function printReceipt() {
   printWindow.document.write(`
     <html>
       <head>
-        <title>Recibo - RV PORTAL</title>
+        <title>Recibo - NÉVOA</title>
         <style>
           body { margin: 0; padding: 0; background: #f1f5f9; }
           @media print {
@@ -7424,7 +7424,7 @@ function updateCardValues() {
     document.getElementById('fin-balance').innerText = formatCardValue(lastBalance);
 }
 
-  async function getLogoBase64RV(url) {
+  async function getLogoBase64(url) {
     return new Promise((resolve) => {
         const img = new Image();
         img.crossOrigin = 'Anonymous';

@@ -1,13 +1,13 @@
 {
-  "name": "RV Portal",
-  "short_name": "RV Portal",
-  "start_url": "/rvportal/index.html",
+  "name": "Névoa",
+  "short_name": "Névoa",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "icons": [
     {
-      "src": "logo.png",
+      "src": "logo-192.png",
       "sizes": "192x192",
       "type": "image/png"
     }

@@ -1,6 +1,6 @@
-# RV Portal
+# Névoa
 
-Sistema de gestao para madeireira/marcenaria (RV Portal Madeiras Ltda).
+ERP de gestao para pequenas e medias empresas (PME).
 Frontend estatico (HTML + JS vanilla + Tailwind + Supabase + three.js/pdfmake/Tesseract).
 
 ## Contexto deste repositorio (importante)

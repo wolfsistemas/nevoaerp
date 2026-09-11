@@ -169,9 +169,9 @@ function printExpenseReport() {
 
     const printWindow = window.open('', '_blank', 'width=800,height=600');
     const company = {
-        name: "RV PORTAL MADEIRAS",
-        cnpj: "30.942.123/0001-02",
-        logoUrl: "https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png"
+        name: "NÉVOA",
+        cnpj: "00.000.000/0000-00",
+        logoUrl: "logo.png"
     };
 
     const start = document.getElementById('exp-report-start').value;
@@ -191,7 +191,7 @@ function printExpenseReport() {
     printWindow.document.write(`
         <html>
             <head>
-                <title>Relatório de Despesas - RV PORTAL</title>
+                <title>Relatório de Despesas - NÉVOA</title>
                 <style>
                     body { font-family: 'Helvetica', Arial, sans-serif; padding: 30px; background: white; color: #1e293b; }
                     .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #059669; padding-bottom: 15px; margin-bottom: 20px; }
@@ -232,7 +232,7 @@ function printExpenseReport() {
                 </div>
                 ${content.innerHTML}
                 <div class="footer">
-                    Documento emitido por sistema RV PORTAL - Relatório de despesas.
+                    Documento emitido por sistema NÉVOA - Relatório de despesas.
                 </div>
                 <div class="no-print" style="text-align: center; margin-top: 20px;">
                     <button onclick="window.print()" style="padding: 10px 30px; background: #059669; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">🖨️ Imprimir / Salvar PDF</button>
@@ -295,9 +295,9 @@ function printFilteredExpenses() {
 
     // Monta o HTML para impressão
     const company = {
-        name: "RV PORTAL MADEIRAS",
-        cnpj: "30.942.123/0001-02",
-        logoUrl: "https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png"
+        name: "NÉVOA",
+        cnpj: "00.000.000/0000-00",
+        logoUrl: "logo.png"
     };
 
     let totalGeral = 0;

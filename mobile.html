@@ -3,7 +3,7 @@
   <head>
     <base target="_top">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ERP Mobile - RV PORTAL</title>
+    <title>ERP Mobile - NÉVOA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -18,8 +18,8 @@
     
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="RV Portal Madeiras">
-    <meta name="apple-mobile-web-app-title" content="RV Portal Madeiras">
+    <meta name="application-name" content="Névoa">
+    <meta name="apple-mobile-web-app-title" content="Névoa">
     <meta name="theme-color" content="#0f172a"> 
     <link rel="manifest" href="manifest.json"> 
    
@@ -43,7 +43,7 @@
 
       /* Estilos para o PDF oculto na tela */
       .invoice-full { border: 1px solid #000; min-height: 27.5cm; background-color: transparent !important; position: relative; z-index: 1; font-family: 'Helvetica', 'Arial', sans-serif; color: #1e293b; padding: 15px; background: white;}
-      .invoice-full::before { content: ""; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 450px; height: 450px; background-image: url('https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png'); background-size: contain; background-position: center; background-repeat: no-repeat; opacity: 0.1; z-index: -1; }
+      .invoice-full::before { content: ""; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 450px; height: 450px; background-image: url('logo.png'); background-size: contain; background-position: center; background-repeat: no-repeat; opacity: 0.1; z-index: -1; }
       .header-section { display: flex; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
       .logo-area { width: 120px; display: flex; align-items: center; justify-content: center; border-right: 1px solid #e2e8f0; padding-right: 15px; margin-right: 15px; }
       .company-details { flex: 1; }
@@ -73,9 +73,9 @@
     <header class="bg-slate-900 text-white p-4 flex justify-between items-center shadow-md sticky top-0 z-40">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-full border-2 border-emerald-500 bg-white overflow-hidden p-0.5 flex items-center justify-center">
-                <img src="https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png" class="w-full h-full object-contain" />
+                <img src="logo.png" class="w-full h-full object-contain" />
             </div>
-            <h1 class="text-lg font-black tracking-wider text-emerald-400">RV PORTAL</h1>
+            <h1 class="text-lg font-black tracking-wider text-emerald-400">NÉVOA</h1>
         </div>
         <button onclick="fazerLogout()" class="text-red-400 hover:text-red-300 p-2"><i data-lucide="log-out"></i></button>
     </header>
@@ -2557,18 +2557,18 @@
         <div style="font-family: 'Helvetica', 'Arial', sans-serif; color: #1e293b; padding: 15px; background-color: #ffffff; width: 100%; box-sizing: border-box; border: 1px solid #000; min-height: 27.5cm; position: relative; z-index: 1;">
             
             <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 450px; height: 450px; opacity: 0.1; z-index: -1;">
-                <img src="https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png" crossorigin="anonymous" style="width: 100%; height: 100%; object-fit: contain;" />
+                <img src="logo.png" crossorigin="anonymous" style="width: 100%; height: 100%; object-fit: contain;" />
             </div>
 
             <table width="100%" style="border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
                 <tr>
                     <td width="130" valign="middle" style="border-right: 1px solid #e2e8f0; padding-right: 15px;">
-                        <img src="https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png" crossorigin="anonymous" style="max-height: 80px; max-width: 120px; display: block; margin: 0 auto;" />
+                        <img src="logo.png" crossorigin="anonymous" style="max-height: 80px; max-width: 120px; display: block; margin: 0 auto;" />
                     </td>
                     <td valign="middle" style="padding-left: 15px;">
-                        <h2 style="margin: 0; color: #059669; font-size: 20px; font-weight: 800;">RV PORTAL MADEIRAS</h2>
-                        <div style="font-size: 11px; color: #475569; margin-top: 5px; line-height: 1.4;">CNPJ: 30.942.123/0001-02</div>
-                        <div style="font-size: 11px; color: #475569; line-height: 1.4;">Rua Mineiros, 532 | Jataí - GO | (64) 3636-4861</div>
+                        <h2 style="margin: 0; color: #059669; font-size: 20px; font-weight: 800;">NÉVOA</h2>
+                        <div style="font-size: 11px; color: #475569; margin-top: 5px; line-height: 1.4;">CNPJ: 00.000.000/0000-00</div>
+                        <div style="font-size: 11px; color: #475569; line-height: 1.4;">Endereço da empresa | Cidade - UF</div>
                     </td>
                     <td align="right" valign="top">
                         <h2 style="margin: 0 0 5px 0; font-size: 16px; font-weight: 900; color: #0f172a;">${tituloDoc}</h2>
@@ -2590,7 +2590,7 @@
                     <td width="48%" valign="top" style="border: 1px solid #000; border-radius: 6px; padding: 0; overflow: hidden;">
                         <div style="background-color: #f1f5f9; padding: 5px 10px; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #64748b; border-bottom: 1px solid #000;">Pagamento</div>
                         <div style="padding: 10px; font-size: 11px; line-height: 1.5;">
-                            <strong>Forma:</strong> ${q.paymentMethod || 'A Combinar'}<br><strong>Vendedor:</strong> RV PORTAL
+                            <strong>Forma:</strong> ${q.paymentMethod || 'A Combinar'}<br><strong>Vendedor:</strong> NÉVOA
                         </div>
                     </td>
                 </tr>
@@ -2732,7 +2732,7 @@
     const tituloDoc = isVenda ? "PEDIDO DE VENDA" : "ORÇAMENTO";
 
     // Carregar logo em base64
-    const logoBase64 = await getLogoBase64RV("https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png");
+    const logoBase64 = await getLogoBase64("logo.png");
 
     // ---------- Construção do docDefinition (pdfmake) ----------
     const bodyTabela = [
@@ -2785,9 +2785,9 @@
                         logoBase64 ? { image: logoBase64, width: 80, alignment: 'center', margin: [0, 0, 10, 0] } : '',
                         {
                             text: [
-                                { text: 'RV PORTAL MADEIRAS\n', fontSize: 16, bold: true, color: '#059669' },
-                                { text: 'CNPJ: 30.942.123/0001-02\n', fontSize: 9, color: '#475569', lineHeight: 1.3 },
-                                { text: 'Rua Mineiros, 532 | Jataí - GO | (64) 3636-4861', fontSize: 9, color: '#475569', lineHeight: 1.3 }
+                                { text: 'NÉVOA\n', fontSize: 16, bold: true, color: '#059669' },
+                                { text: 'CNPJ: 00.000.000/0000-00\n', fontSize: 9, color: '#475569', lineHeight: 1.3 },
+                                { text: 'Endereço da empresa | Cidade - UF', fontSize: 9, color: '#475569', lineHeight: 1.3 }
                             ],
                             margin: [0, 10, 0, 0]
                         },
@@ -2824,7 +2824,7 @@
                             widths: ['*'],
                             body: [
                                 [{ text: 'PAGAMENTO', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
-                                [{ text: `Forma: ${q.paymentMethod || 'A Combinar'}\nVendedor: RV PORTAL`, fontSize: 9, margin: [6, 8, 6, 8] }]
+                                [{ text: `Forma: ${q.paymentMethod || 'A Combinar'}\nVendedor: NÉVOA`, fontSize: 9, margin: [6, 8, 6, 8] }]
                             ]
                         },
                         layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
@@ -2878,8 +2878,8 @@
             });
         });
 
-        //const filename = `RV PORTAL - ${q.id}_${clientName.replace(/\s+/g, '_')}.pdf`;
-        const filename = `RV PORTAL - ${clientName} - #${q.id}.pdf`;
+        //const filename = `NÉVOA - ${q.id}_${clientName.replace(/\s+/g, '_')}.pdf`;
+        const filename = `NÉVOA - ${clientName} - #${q.id}.pdf`;
         const file = new File([pdfBlob], filename, { type: 'application/pdf' });
 
         // Tenta compartilhar via API nativa
@@ -3209,7 +3209,7 @@ function downloadPDF(blob, filename) {
           const valorFormatado = formatMoney(valorLiquido);
       
           // Mensagem personalizada com as variáveis
-          const mensagem = `Olá *${clientName}*, aqui é da RV Portal. Sobre o Orçamento *#${quoteId}* no valor de *${valorFormatado}*. Podemos fechar?`;
+          const mensagem = `Olá *${clientName}*, aqui é da Névoa. Sobre o Orçamento *#${quoteId}* no valor de *${valorFormatado}*. Podemos fechar?`;
       
           const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
       
@@ -4015,7 +4015,7 @@ function showFilteredExpenses() {
     lucide.createIcons();
 }
 
-      async function getLogoBase64RV(url) {
+      async function getLogoBase64(url) {
     return new Promise((resolve) => {
         const img = new Image();
         img.crossOrigin = 'Anonymous';
