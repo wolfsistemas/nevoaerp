@@ -1,0 +1,942 @@
+[
+  {
+    "id": 1,
+    "orcamento_id": 1,
+    "nome": "TEste",
+    "descricao": "150",
+    "preco": 1500,
+    "desconto": 1,
+    "foto_url": "https://i.ibb.co/wNQWS3br/Gemini-Generated-Image-mo6l3amo6l3amo6l.png",
+    "created_at": "2026-05-11T20:27:55.032567+00:00"
+  },
+  {
+    "id": 2,
+    "orcamento_id": 2,
+    "nome": "Armário 190x80x60cm, 3 porta(s) + 4 gaveta(s), Branco",
+    "descricao": "Projeto gerado automaticamente.",
+    "preco": 0,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/pgxJG2f/captura.png",
+    "created_at": "2026-05-12T16:15:20.162+00:00"
+  },
+  {
+    "id": 33,
+    "orcamento_id": 10,
+    "nome": "6 Un. Banco de Madeira",
+    "descricao": "(62cm x 65cm) Medidas Personalizada",
+    "preco": 5880,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/XZd1PRH7/shopping.webp",
+    "created_at": "2026-07-01T12:42:25.139455+00:00"
+  },
+  {
+    "id": 15,
+    "orcamento_id": 6,
+    "nome": "4 Un. - Mesa Atendimento Individual",
+    "descricao": "120cm x 60cm | 75cm (Altura)",
+    "preco": 4200,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/KcKHV6BF/Captura-de-tela-2026-06-05-150442.png",
+    "created_at": "2026-06-05T17:53:19.775976+00:00"
+  },
+  {
+    "id": 16,
+    "orcamento_id": 6,
+    "nome": "",
+    "descricao": "4 Un. - Poltrona de Madeira Personalizado",
+    "preco": 1920,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/qYVwkfG6/POLTRONA.png",
+    "created_at": "2026-06-05T17:54:39.741281+00:00"
+  },
+  {
+    "id": 17,
+    "orcamento_id": 6,
+    "nome": "",
+    "descricao": "1 Un. - Mesa de Centro de Madeira",
+    "preco": 200,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/cK3ZzTDr/MESA-DE-CENTRO.png",
+    "created_at": "2026-06-05T17:54:40.063989+00:00"
+  },
+  {
+    "id": 3,
+    "orcamento_id": 3,
+    "nome": "Mesa Embutida na parede Madeira",
+    "descricao": "2,90 x 0,70",
+    "preco": 3700,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/Qvt7CPQn/Chat-GPT-Image-11-de-mai-de-2026-09-27-26.png",
+    "created_at": "2026-05-12T16:38:14.753613+00:00"
+  },
+  {
+    "id": 4,
+    "orcamento_id": 3,
+    "nome": "Balcão madeira",
+    "descricao": "1,20 x 0,45",
+    "preco": 1600,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/nMJ91q95/Gemini-Generated-Image-ayhyw5ayhyw5ayhy.png",
+    "created_at": "2026-05-12T16:38:14.753613+00:00"
+  },
+  {
+    "id": 7,
+    "orcamento_id": 3,
+    "nome": "BANQUETA MADEIRA",
+    "descricao": "6 UNIDADES",
+    "preco": 1800,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/Df3kZVRk/BANQUETA-1.png",
+    "created_at": "2026-05-27T16:49:44.504682+00:00"
+  },
+  {
+    "id": 8,
+    "orcamento_id": 5,
+    "nome": "SERVIÇO MDF",
+    "descricao": "REFORMA/REINSTALAÇÃO",
+    "preco": 3800,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/Fkqd6MFR/logomdfplanejadospng.png",
+    "created_at": "2026-05-27T17:09:40.102174+00:00"
+  },
+  {
+    "id": 9,
+    "orcamento_id": 5,
+    "nome": "SERVIÇOS",
+    "descricao": "",
+    "preco": 500,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/Fkqd6MFR/logomdfplanejadospng.png",
+    "created_at": "2026-05-27T17:09:40.102174+00:00"
+  },
+  {
+    "id": 10,
+    "orcamento_id": 5,
+    "nome": "BANCADA MFD",
+    "descricao": "1,45 X 0,65",
+    "preco": 1000,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/99Hd8trd/Gemini-Generated-Image-lqhepplqhepplqhe.png",
+    "created_at": "2026-05-27T17:09:40.102174+00:00"
+  },
+  {
+    "id": 11,
+    "orcamento_id": 6,
+    "nome": "1 Un. - Mesa de Escritório em \"L\" ",
+    "descricao": "150 + 180 x 75 | 60cm (Altura)",
+    "preco": 2050,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/S4PS7tms/Captura-de-tela-2026-06-05-150720.png",
+    "created_at": "2026-06-05T17:41:24.794577+00:00"
+  },
+  {
+    "id": 12,
+    "orcamento_id": 6,
+    "nome": "1 Un. - Mesa de Reunião",
+    "descricao": "275cm x 100cm | 80cm (Altura)",
+    "preco": 3160,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/TzSDp0n/Captura-de-tela-2026-06-05-150654.png",
+    "created_at": "2026-06-05T17:49:56.554114+00:00"
+  },
+  {
+    "id": 13,
+    "orcamento_id": 6,
+    "nome": "1 Un. - Aparador Personalizado",
+    "descricao": "120cm x 40cm | 100cm (Altura)",
+    "preco": 1550,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/20ZkFdKR/Captura-de-tela-2026-06-05-150549.png",
+    "created_at": "2026-06-05T17:49:56.709389+00:00"
+  },
+  {
+    "id": 14,
+    "orcamento_id": 6,
+    "nome": "1 Un. - Mesa Estação de Trabalho",
+    "descricao": " 270cm x 90cm | 75cm (Altura)",
+    "preco": 2000,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/hJzDX5zL/image-7.jpg",
+    "created_at": "2026-06-05T17:52:07.742841+00:00"
+  },
+  {
+    "id": 18,
+    "orcamento_id": 7,
+    "nome": "PARTILHEIRA",
+    "descricao": "30CM X 1,50MT",
+    "preco": 55,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/DDCkCJTw/MDF-30-X150.png",
+    "created_at": "2026-06-11T19:25:43.300831+00:00"
+  },
+  {
+    "id": 19,
+    "orcamento_id": 7,
+    "nome": "PARTILHEIRA",
+    "descricao": "30CM X 1,50MT",
+    "preco": 55,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/DDCkCJTw/MDF-30-X150.png",
+    "created_at": "2026-06-11T19:27:51.287126+00:00"
+  },
+  {
+    "id": 20,
+    "orcamento_id": 8,
+    "nome": "",
+    "descricao": "",
+    "preco": 0,
+    "desconto": 0,
+    "foto_url": "",
+    "created_at": "2026-07-01T11:08:46.967973+00:00"
+  },
+  {
+    "id": 26,
+    "orcamento_id": 9,
+    "nome": "1 Un. - Aparador Personalizado",
+    "descricao": "120cm x 40cm | 100cm (Altura)",
+    "preco": 1550,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/20ZkFdKR/Captura-de-tela-2026-06-05-150549.png",
+    "created_at": "2026-07-01T11:09:03.777018+00:00"
+  },
+  {
+    "id": 32,
+    "orcamento_id": 9,
+    "nome": "1 Un. - Balcão/Armário",
+    "descricao": "90cm x 45cm | 75cm (Altura)",
+    "preco": 700,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/pBsHYLGD/blob.png",
+    "created_at": "2026-07-01T12:38:09.303217+00:00"
+  },
+  {
+    "id": 34,
+    "orcamento_id": 9,
+    "nome": "4 un. - Poltrona Madeira Personalizado",
+    "descricao": "",
+    "preco": 1920,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/sfv2jXt/POLTRONA.png",
+    "created_at": "2026-07-02T18:15:43.346897+00:00"
+  },
+  {
+    "id": 35,
+    "orcamento_id": 9,
+    "nome": "1 Un. Mesa de Centro de Madeira",
+    "descricao": "",
+    "preco": 200,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/d4kpDPK2/MESA-DE-CENTRO.png",
+    "created_at": "2026-07-02T18:15:43.443499+00:00"
+  },
+  {
+    "id": 21,
+    "orcamento_id": 9,
+    "nome": "4 Un. - Mesa Atendimento Individual",
+    "descricao": "120cm x 60cm | 75cm (Altura)",
+    "preco": 4200,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/KcKHV6BF/Captura-de-tela-2026-06-05-150442.png",
+    "created_at": "2026-07-01T11:09:03.777018+00:00"
+  },
+  {
+    "id": 28,
+    "orcamento_id": 9,
+    "nome": "1 Un. - Mesa de Faturamento em \"L\" ",
+    "descricao": "150 + 150 x 60 | 75cm (Altura)",
+    "preco": 1800,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/zhgfTjRk/Captura-de-tela-2026-06-05-150720.png",
+    "created_at": "2026-07-01T11:20:16.919232+00:00"
+  },
+  {
+    "id": 30,
+    "orcamento_id": 9,
+    "nome": "1 Un. - Mesa Madeira Recepção",
+    "descricao": "300cm x 70cm | (Altura)",
+    "preco": 3800,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/whC3J514/Chat-GPT-Image-11-de-mai-de-2026-09-27-26.png",
+    "created_at": "2026-07-01T11:24:10.042373+00:00"
+  },
+  {
+    "id": 24,
+    "orcamento_id": 9,
+    "nome": "1 Un. - Mesa de Diretoria em \"L\" ",
+    "descricao": "160 + 160 x 60 | 75cm (Altura)",
+    "preco": 1800,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/S4PS7tms/Captura-de-tela-2026-06-05-150720.png",
+    "created_at": "2026-07-01T11:09:03.777018+00:00"
+  },
+  {
+    "id": 25,
+    "orcamento_id": 9,
+    "nome": "1 Un. - Mesa de Reunião",
+    "descricao": "275cm x 100cm | 80cm (Altura)",
+    "preco": 2700,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/TzSDp0n/Captura-de-tela-2026-06-05-150654.png",
+    "created_at": "2026-07-01T11:09:03.777018+00:00"
+  },
+  {
+    "id": 31,
+    "orcamento_id": 9,
+    "nome": "1 Un. - Painel de MDF",
+    "descricao": "150cm x 100cm ",
+    "preco": 1000,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/twJ7rsWx/painel-de-tv-para-sala-de-reuniao-195cm-x-120cm-nogal-f5-office-4233-variacao-7559-4-d5ab3f16afc5f06.webp",
+    "created_at": "2026-07-01T11:26:22.540649+00:00"
+  },
+  {
+    "id": 38,
+    "orcamento_id": 11,
+    "nome": "4 un. - Poltrona Madeira Personalizado",
+    "descricao": "",
+    "preco": 1920,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/sfv2jXt/POLTRONA.png",
+    "created_at": "2026-07-03T16:58:39.805548+00:00"
+  },
+  {
+    "id": 39,
+    "orcamento_id": 11,
+    "nome": "1 Un. Mesa de Centro de Madeira",
+    "descricao": "",
+    "preco": 200,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/d4kpDPK2/MESA-DE-CENTRO.png",
+    "created_at": "2026-07-03T16:58:39.805548+00:00"
+  },
+  {
+    "id": 44,
+    "orcamento_id": 11,
+    "nome": "1 Un. - Mesa de Reunião",
+    "descricao": "275cm x 100cm | 80cm (Altura)",
+    "preco": 2700,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/TzSDp0n/Captura-de-tela-2026-06-05-150654.png",
+    "created_at": "2026-07-03T16:58:39.805548+00:00"
+  },
+  {
+    "id": 45,
+    "orcamento_id": 11,
+    "nome": "1 Un. - Painel de MDF",
+    "descricao": "150cm x 100cm ",
+    "preco": 1000,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/twJ7rsWx/painel-de-tv-para-sala-de-reuniao-195cm-x-120cm-nogal-f5-office-4233-variacao-7559-4-d5ab3f16afc5f06.webp",
+    "created_at": "2026-07-03T16:58:39.805548+00:00"
+  },
+  {
+    "id": 46,
+    "orcamento_id": 12,
+    "nome": "4 un. - Poltrona Madeira Personalizado",
+    "descricao": "",
+    "preco": 1920,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/sfv2jXt/POLTRONA.png",
+    "created_at": "2026-07-03T17:04:10.311235+00:00"
+  },
+  {
+    "id": 47,
+    "orcamento_id": 12,
+    "nome": "1 Un. Mesa de Centro de Madeira",
+    "descricao": "",
+    "preco": 200,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/d4kpDPK2/MESA-DE-CENTRO.png",
+    "created_at": "2026-07-03T17:04:10.311235+00:00"
+  },
+  {
+    "id": 36,
+    "orcamento_id": 11,
+    "nome": "1 Un. - Aparador Personalizado",
+    "descricao": "120cm x 40cm | 100cm (Altura)",
+    "preco": 1550,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/20ZkFdKR/Captura-de-tela-2026-06-05-150549.png",
+    "created_at": "2026-07-03T16:58:39.805548+00:00"
+  },
+  {
+    "id": 37,
+    "orcamento_id": 11,
+    "nome": "1 Un. - Balcão/Armário",
+    "descricao": "90cm x 45cm | 75cm (Altura)",
+    "preco": 700,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/pBsHYLGD/blob.png",
+    "created_at": "2026-07-03T16:58:39.805548+00:00"
+  },
+  {
+    "id": 42,
+    "orcamento_id": 11,
+    "nome": "1 Un. - Mesa Madeira Recepção",
+    "descricao": "300cm x 70cm | (Altura)",
+    "preco": 3800,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/whC3J514/Chat-GPT-Image-11-de-mai-de-2026-09-27-26.png",
+    "created_at": "2026-07-03T16:58:39.805548+00:00"
+  },
+  {
+    "id": 40,
+    "orcamento_id": 11,
+    "nome": "4 Un. - Mesa Atendimento Individual",
+    "descricao": "120cm x 60cm | 75cm (Altura)",
+    "preco": 4200,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/KcKHV6BF/Captura-de-tela-2026-06-05-150442.png",
+    "created_at": "2026-07-03T16:58:39.805548+00:00"
+  },
+  {
+    "id": 41,
+    "orcamento_id": 11,
+    "nome": "1 Un. - Mesa de Faturamento em \"L\" ",
+    "descricao": "150 + 150 x 60 | 75cm (Altura)",
+    "preco": 1800,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/zhgfTjRk/Captura-de-tela-2026-06-05-150720.png",
+    "created_at": "2026-07-03T16:58:39.805548+00:00"
+  },
+  {
+    "id": 43,
+    "orcamento_id": 11,
+    "nome": "1 Un. - Mesa de Diretoria em \"L\" ",
+    "descricao": "160 + 160 x 60 | 75cm (Altura)",
+    "preco": 1800,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/S4PS7tms/Captura-de-tela-2026-06-05-150720.png",
+    "created_at": "2026-07-03T16:58:39.805548+00:00"
+  },
+  {
+    "id": 48,
+    "orcamento_id": 12,
+    "nome": "1 Un. - Mesa de Reunião",
+    "descricao": "275cm x 100cm | 80cm (Altura)",
+    "preco": 2700,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/TzSDp0n/Captura-de-tela-2026-06-05-150654.png",
+    "created_at": "2026-07-03T17:04:10.311235+00:00"
+  },
+  {
+    "id": 49,
+    "orcamento_id": 12,
+    "nome": "1 Un. - Painel de MDF",
+    "descricao": "150cm x 100cm ",
+    "preco": 1000,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/twJ7rsWx/painel-de-tv-para-sala-de-reuniao-195cm-x-120cm-nogal-f5-office-4233-variacao-7559-4-d5ab3f16afc5f06.webp",
+    "created_at": "2026-07-03T17:04:10.311235+00:00"
+  },
+  {
+    "id": 50,
+    "orcamento_id": 12,
+    "nome": "1 Un. - Aparador Personalizado",
+    "descricao": "120cm x 40cm | 100cm (Altura)",
+    "preco": 1550,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/20ZkFdKR/Captura-de-tela-2026-06-05-150549.png",
+    "created_at": "2026-07-03T17:04:10.311235+00:00"
+  },
+  {
+    "id": 51,
+    "orcamento_id": 12,
+    "nome": "1 Un. - Balcão/Armário",
+    "descricao": "90cm x 45cm | 75cm (Altura)",
+    "preco": 700,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/pBsHYLGD/blob.png",
+    "created_at": "2026-07-03T17:04:10.311235+00:00"
+  },
+  {
+    "id": 52,
+    "orcamento_id": 12,
+    "nome": "1 Un. - Mesa Madeira Recepção",
+    "descricao": "300cm x 70cm | (Altura)",
+    "preco": 3800,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/whC3J514/Chat-GPT-Image-11-de-mai-de-2026-09-27-26.png",
+    "created_at": "2026-07-03T17:04:10.311235+00:00"
+  },
+  {
+    "id": 53,
+    "orcamento_id": 12,
+    "nome": "4 Un. - Mesa Atendimento Individual",
+    "descricao": "120cm x 60cm | 75cm (Altura)",
+    "preco": 4200,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/KcKHV6BF/Captura-de-tela-2026-06-05-150442.png",
+    "created_at": "2026-07-03T17:04:10.311235+00:00"
+  },
+  {
+    "id": 54,
+    "orcamento_id": 12,
+    "nome": "1 Un. - Mesa de Faturamento em \"L\" ",
+    "descricao": "150 + 150 x 60 | 75cm (Altura)",
+    "preco": 1800,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/zhgfTjRk/Captura-de-tela-2026-06-05-150720.png",
+    "created_at": "2026-07-03T17:04:10.311235+00:00"
+  },
+  {
+    "id": 55,
+    "orcamento_id": 12,
+    "nome": "1 Un. - Mesa de Diretoria em \"L\" ",
+    "descricao": "160 + 160 x 60 | 75cm (Altura)",
+    "preco": 1800,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/S4PS7tms/Captura-de-tela-2026-06-05-150720.png",
+    "created_at": "2026-07-03T17:04:10.311235+00:00"
+  },
+  {
+    "id": 77,
+    "orcamento_id": 15,
+    "nome": "Trocar fechadura",
+    "descricao": "",
+    "preco": 60,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/RT0gkDrq/Whats-App-Image-2026-08-13-at-15-05-28.jpg",
+    "created_at": "2026-08-13T19:35:46.802007+00:00"
+  },
+  {
+    "id": 85,
+    "orcamento_id": 16,
+    "nome": "8 - BANQUETAS DE  MADEIRA PERSONALIZADA  (SUSTAIN AGRO)",
+    "descricao": "",
+    "preco": 2400,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/67p3SVQG/Captura-de-tela-2026-08-18-11125722222.png",
+    "created_at": "2026-08-18T14:01:54.730233+00:00"
+  },
+  {
+    "id": 56,
+    "orcamento_id": 13,
+    "nome": "4 un. - Poltrona Madeira Personalizado",
+    "descricao": "",
+    "preco": 1920,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/sfv2jXt/POLTRONA.png",
+    "created_at": "2026-07-03T17:09:04.916809+00:00"
+  },
+  {
+    "id": 57,
+    "orcamento_id": 13,
+    "nome": "1 Un. Mesa de Centro de Madeira",
+    "descricao": "",
+    "preco": 200,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/d4kpDPK2/MESA-DE-CENTRO.png",
+    "created_at": "2026-07-03T17:09:04.916809+00:00"
+  },
+  {
+    "id": 58,
+    "orcamento_id": 13,
+    "nome": "1 Un. - Mesa de Reunião",
+    "descricao": "275cm x 100cm | 80cm (Altura)",
+    "preco": 2700,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/TzSDp0n/Captura-de-tela-2026-06-05-150654.png",
+    "created_at": "2026-07-03T17:09:04.916809+00:00"
+  },
+  {
+    "id": 59,
+    "orcamento_id": 13,
+    "nome": "1 Un. - Painel de MDF",
+    "descricao": "150cm x 100cm ",
+    "preco": 1000,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/twJ7rsWx/painel-de-tv-para-sala-de-reuniao-195cm-x-120cm-nogal-f5-office-4233-variacao-7559-4-d5ab3f16afc5f06.webp",
+    "created_at": "2026-07-03T17:09:04.916809+00:00"
+  },
+  {
+    "id": 60,
+    "orcamento_id": 13,
+    "nome": "1 Un. - Aparador Personalizado",
+    "descricao": "120cm x 40cm | 100cm (Altura)",
+    "preco": 1550,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/20ZkFdKR/Captura-de-tela-2026-06-05-150549.png",
+    "created_at": "2026-07-03T17:09:04.916809+00:00"
+  },
+  {
+    "id": 61,
+    "orcamento_id": 13,
+    "nome": "1 Un. - Balcão/Armário",
+    "descricao": "90cm x 45cm | 75cm (Altura)",
+    "preco": 700,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/pBsHYLGD/blob.png",
+    "created_at": "2026-07-03T17:09:04.916809+00:00"
+  },
+  {
+    "id": 62,
+    "orcamento_id": 13,
+    "nome": "1 Un. - Mesa Madeira Recepção",
+    "descricao": "300cm x 70cm | (Altura)",
+    "preco": 3800,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/whC3J514/Chat-GPT-Image-11-de-mai-de-2026-09-27-26.png",
+    "created_at": "2026-07-03T17:09:04.916809+00:00"
+  },
+  {
+    "id": 63,
+    "orcamento_id": 13,
+    "nome": "4 Un. - Mesa Atendimento Individual",
+    "descricao": "120cm x 60cm | 75cm (Altura)",
+    "preco": 4200,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/KcKHV6BF/Captura-de-tela-2026-06-05-150442.png",
+    "created_at": "2026-07-03T17:09:04.916809+00:00"
+  },
+  {
+    "id": 64,
+    "orcamento_id": 13,
+    "nome": "1 Un. - Mesa de Faturamento em \"L\" ",
+    "descricao": "150 + 150 x 60 | 75cm (Altura)",
+    "preco": 1800,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/zhgfTjRk/Captura-de-tela-2026-06-05-150720.png",
+    "created_at": "2026-07-03T17:09:04.916809+00:00"
+  },
+  {
+    "id": 65,
+    "orcamento_id": 13,
+    "nome": "1 Un. - Mesa de Diretoria em \"L\" ",
+    "descricao": "160 + 160 x 60 | 75cm (Altura)",
+    "preco": 1800,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/S4PS7tms/Captura-de-tela-2026-06-05-150720.png",
+    "created_at": "2026-07-03T17:09:04.916809+00:00"
+  },
+  {
+    "id": 96,
+    "orcamento_id": 18,
+    "nome": "1 Un. - Mesa Madeira Recepção",
+    "descricao": "300cm x 70cm | (Altura)",
+    "preco": 3800,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/whC3J514/Chat-GPT-Image-11-de-mai-de-2026-09-27-26.png",
+    "created_at": "2026-09-03T21:00:08.535882+00:00"
+  },
+  {
+    "id": 99,
+    "orcamento_id": 18,
+    "nome": "4 un. - Poltrona Madeira Personalizado",
+    "descricao": "",
+    "preco": 1920,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/sfv2jXt/POLTRONA.png",
+    "created_at": "2026-09-03T21:00:08.535882+00:00"
+  },
+  {
+    "id": 78,
+    "orcamento_id": 15,
+    "nome": "Trocar fita de borda e pequenos defeitos no tampo.",
+    "descricao": "",
+    "preco": 240,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/1fvQRLPS/Whats-App-Image-2026-08-13-at-15-07-52.jpg",
+    "created_at": "2026-08-13T19:35:46.916807+00:00"
+  },
+  {
+    "id": 79,
+    "orcamento_id": 15,
+    "nome": "Refazer a mesa e trocar duas fechaduras",
+    "descricao": "",
+    "preco": 550,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/TBvD9gWG/Whats-App-Image-2026-08-13-at-15-09-24.jpg",
+    "created_at": "2026-08-13T19:37:09.841272+00:00"
+  },
+  {
+    "id": 80,
+    "orcamento_id": 15,
+    "nome": "Confeccionar 4 mesas com materiais disponíveis",
+    "descricao": "",
+    "preco": 2100,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/cchnGSN8/Whats-App-Image-2026-08-13-at-15-11-29.jpg",
+    "created_at": "2026-08-13T19:37:09.994253+00:00"
+  },
+  {
+    "id": 81,
+    "orcamento_id": 15,
+    "nome": "Recolocar complemento lateral do nicho",
+    "descricao": "",
+    "preco": 60,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/1JtksmVz/Whats-App-Image-2026-08-13-at-15-13-52.jpg",
+    "created_at": "2026-08-13T19:38:35.484377+00:00"
+  },
+  {
+    "id": 82,
+    "orcamento_id": 15,
+    "nome": "Colocar quatro rodinhas na base",
+    "descricao": "",
+    "preco": 60,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/5WDrp07y/Whats-App-Image-2026-08-13-at-15-15-27.jpg",
+    "created_at": "2026-08-13T19:38:35.585557+00:00"
+  },
+  {
+    "id": 71,
+    "orcamento_id": 14,
+    "nome": "1 Un. - Balcão/Armário",
+    "descricao": "90cm x 45cm | 75cm (Altura)",
+    "preco": 700,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/pBsHYLGD/blob.png",
+    "created_at": "2026-08-12T16:36:41.583996+00:00"
+  },
+  {
+    "id": 72,
+    "orcamento_id": 14,
+    "nome": "1 Un. - Mesa Madeira Recepção",
+    "descricao": "300cm x 70cm | (Altura)",
+    "preco": 3800,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/whC3J514/Chat-GPT-Image-11-de-mai-de-2026-09-27-26.png",
+    "created_at": "2026-08-12T16:36:41.583996+00:00"
+  },
+  {
+    "id": 73,
+    "orcamento_id": 14,
+    "nome": "4 Un. - Mesa Atendimento Individual",
+    "descricao": "120cm x 60cm | 75cm (Altura)",
+    "preco": 4200,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/KcKHV6BF/Captura-de-tela-2026-06-05-150442.png",
+    "created_at": "2026-08-12T16:36:41.583996+00:00"
+  },
+  {
+    "id": 74,
+    "orcamento_id": 14,
+    "nome": "1 Un. - Mesa de Diretoria em \"L\"",
+    "descricao": "160 + 160 x 60 | 75cm (Altura)",
+    "preco": 1800,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/zhgfTjRk/Captura-de-tela-2026-06-05-150720.png",
+    "created_at": "2026-08-12T16:36:41.583996+00:00"
+  },
+  {
+    "id": 83,
+    "orcamento_id": 15,
+    "nome": "Trocar fechaduras em 4 gavetas e 1 puxador",
+    "descricao": "",
+    "preco": 120,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/jZGBRBsx/Whats-App-Image-2026-08-17-at-17-23-38.jpg",
+    "created_at": "2026-08-13T19:38:35.683092+00:00"
+  },
+  {
+    "id": 84,
+    "orcamento_id": 15,
+    "nome": "Colocar 4 sapatas na base",
+    "descricao": "",
+    "preco": 60,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/HshT7zS/Whats-App-Image-2026-08-13-at-15-20-07.jpg",
+    "created_at": "2026-08-13T19:38:35.783409+00:00"
+  },
+  {
+    "id": 76,
+    "orcamento_id": 15,
+    "nome": "Trocar fita de borda e fechadura",
+    "descricao": "",
+    "preco": 120,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/xK4dgbzf/Whats-App-Image-2026-08-13-at-15-04-26.jpg",
+    "created_at": "2026-08-13T19:33:00.477327+00:00"
+  },
+  {
+    "id": 66,
+    "orcamento_id": 14,
+    "nome": "4 un. - Poltrona Madeira Personalizado",
+    "descricao": "",
+    "preco": 1920,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/sfv2jXt/POLTRONA.png",
+    "created_at": "2026-08-12T16:36:41.583996+00:00"
+  },
+  {
+    "id": 67,
+    "orcamento_id": 14,
+    "nome": "1 Un. Mesa de Centro de Madeira",
+    "descricao": "",
+    "preco": 200,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/d4kpDPK2/MESA-DE-CENTRO.png",
+    "created_at": "2026-08-12T16:36:41.583996+00:00"
+  },
+  {
+    "id": 68,
+    "orcamento_id": 14,
+    "nome": "1 Un. - Mesa de Reunião",
+    "descricao": "275cm x 100cm | 80cm (Altura)",
+    "preco": 2700,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/TzSDp0n/Captura-de-tela-2026-06-05-150654.png",
+    "created_at": "2026-08-12T16:36:41.583996+00:00"
+  },
+  {
+    "id": 70,
+    "orcamento_id": 14,
+    "nome": "1 Un. - Aparador Personalizado",
+    "descricao": "120cm x 40cm | 100cm (Altura)",
+    "preco": 1550,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/20ZkFdKR/Captura-de-tela-2026-06-05-150549.png",
+    "created_at": "2026-08-12T16:36:41.583996+00:00"
+  },
+  {
+    "id": 100,
+    "orcamento_id": 18,
+    "nome": "1 Un. Mesa de Centro de Madeira",
+    "descricao": "",
+    "preco": 200,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/d4kpDPK2/MESA-DE-CENTRO.png",
+    "created_at": "2026-09-03T21:00:08.535882+00:00"
+  },
+  {
+    "id": 95,
+    "orcamento_id": 18,
+    "nome": "1 Un. - Balcão/Armário",
+    "descricao": "90cm x 45cm | 75cm (Altura)",
+    "preco": 700,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/pBsHYLGD/blob.png",
+    "created_at": "2026-09-03T21:00:08.535882+00:00"
+  },
+  {
+    "id": 101,
+    "orcamento_id": 18,
+    "nome": "1 Un. - Mesa de Reunião",
+    "descricao": "275cm x 100cm | 80cm (Altura)",
+    "preco": 2700,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/TzSDp0n/Captura-de-tela-2026-06-05-150654.png",
+    "created_at": "2026-09-03T21:00:08.535882+00:00"
+  },
+  {
+    "id": 102,
+    "orcamento_id": 18,
+    "nome": "1 Un. - Aparador Personalizado",
+    "descricao": "120cm x 40cm | 100cm (Altura)",
+    "preco": 1550,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/20ZkFdKR/Captura-de-tela-2026-06-05-150549.png",
+    "created_at": "2026-09-03T21:00:08.535882+00:00"
+  },
+  {
+    "id": 103,
+    "orcamento_id": 18,
+    "nome": "8 Un. - Banqueta Personalizada",
+    "descricao": "70cm (Altura)",
+    "preco": 2400,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/1fzFY1Sg/Whats-App-Image-2026-08-18-at-11-10-21-removebg-preview.png",
+    "created_at": "2026-09-03T21:01:36.108006+00:00"
+  },
+  {
+    "id": 116,
+    "orcamento_id": 21,
+    "nome": "4 Un. - Mesa Atendimento Individual",
+    "descricao": "120cm x 60cm | 75cm (Altura)",
+    "preco": 4200,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/KcKHV6BF/Captura-de-tela-2026-06-05-150442.png",
+    "created_at": "2026-09-10T18:12:37.690777+00:00"
+  },
+  {
+    "id": 121,
+    "orcamento_id": 21,
+    "nome": "1 Un. - Aparador Personalizado",
+    "descricao": "120cm x 40cm | 100cm (Altura)",
+    "preco": 1550,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/20ZkFdKR/Captura-de-tela-2026-06-05-150549.png",
+    "created_at": "2026-09-10T18:12:37.690777+00:00"
+  },
+  {
+    "id": 112,
+    "orcamento_id": 20,
+    "nome": "8 - BANQUETAS DE  MADEIRA PERSONALIZADA  (SUSTAIN AGRO)",
+    "descricao": "",
+    "preco": 2400,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/67p3SVQG/Captura-de-tela-2026-08-18-11125722222.png",
+    "created_at": "2026-09-08T20:50:44.474863+00:00"
+  },
+  {
+    "id": 108,
+    "orcamento_id": 19,
+    "nome": "4 un. - Poltrona Madeira Personalizado",
+    "descricao": "",
+    "preco": 1920,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/sfv2jXt/POLTRONA.png",
+    "created_at": "2026-09-08T20:49:29.848654+00:00"
+  },
+  {
+    "id": 109,
+    "orcamento_id": 19,
+    "nome": "1 Un. Mesa de Centro de Madeira",
+    "descricao": "",
+    "preco": 200,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/d4kpDPK2/MESA-DE-CENTRO.png",
+    "created_at": "2026-09-08T20:49:29.848654+00:00"
+  },
+  {
+    "id": 110,
+    "orcamento_id": 19,
+    "nome": "1 Un. - Mesa de Reunião",
+    "descricao": "275cm x 100cm | 80cm (Altura)",
+    "preco": 2700,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/TzSDp0n/Captura-de-tela-2026-06-05-150654.png",
+    "created_at": "2026-09-08T20:49:29.848654+00:00"
+  },
+  {
+    "id": 111,
+    "orcamento_id": 19,
+    "nome": "1 Un. - Aparador Personalizado",
+    "descricao": "120cm x 40cm | 100cm (Altura)",
+    "preco": 1550,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/20ZkFdKR/Captura-de-tela-2026-06-05-150549.png",
+    "created_at": "2026-09-08T20:49:29.848654+00:00"
+  },
+  {
+    "id": 104,
+    "orcamento_id": 19,
+    "nome": "1 Un. - Balcão/Armário",
+    "descricao": "90cm x 45cm | 75cm (Altura)",
+    "preco": 700,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/pBsHYLGD/blob.png",
+    "created_at": "2026-09-08T20:49:29.848654+00:00"
+  },
+  {
+    "id": 105,
+    "orcamento_id": 19,
+    "nome": "1 Un. - Mesa Madeira Recepção",
+    "descricao": "300cm x 70cm | (Altura)",
+    "preco": 3800,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/whC3J514/Chat-GPT-Image-11-de-mai-de-2026-09-27-26.png",
+    "created_at": "2026-09-08T20:49:29.848654+00:00"
+  },
+  {
+    "id": 113,
+    "orcamento_id": 19,
+    "nome": "8 - Un. Banqueta Personalizada",
+    "descricao": "70cm",
+    "preco": 2400,
+    "desconto": 0,
+    "foto_url": "https://i.ibb.co/ymDCYfwg/Captura-de-tela-2026-08-18-11125722222.png",
+    "created_at": "2026-09-08T21:25:16.090199+00:00"
+  }
+]

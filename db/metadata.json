@@ -1,0 +1,4280 @@
+{
+  "tables": [
+    "clientes",
+    "despesas",
+    "equipe",
+    "folhas",
+    "logs",
+    "mdf_agenda",
+    "mdf_itens",
+    "mdf_orcamentos",
+    "produtos",
+    "rvp_funcionarios",
+    "usuarios",
+    "vales"
+  ],
+  "row_counts": {
+    "clientes": 2202,
+    "despesas": 649,
+    "equipe": 6,
+    "folhas": 15,
+    "logs": 2466,
+    "mdf_agenda": 1,
+    "mdf_itens": 94,
+    "mdf_orcamentos": 19,
+    "produtos": 186,
+    "rvp_funcionarios": 5,
+    "usuarios": 4,
+    "vales": 10
+  },
+  "columns": [
+    {
+      "table_name": "clientes",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "clientes",
+      "ordinal_position": 2,
+      "column_name": "nome",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "clientes",
+      "ordinal_position": 3,
+      "column_name": "telefone",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "clientes",
+      "ordinal_position": 4,
+      "column_name": "documento",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "clientes",
+      "ordinal_position": 5,
+      "column_name": "endereco",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "clientes",
+      "ordinal_position": 6,
+      "column_name": "tipo",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": "'CLIENTE'::character varying",
+      "character_maximum_length": 20,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "clientes",
+      "ordinal_position": 7,
+      "column_name": "ie",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 20,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "clientes",
+      "ordinal_position": 8,
+      "column_name": "cep",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 10,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "clientes",
+      "ordinal_position": 9,
+      "column_name": "contato",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 100,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "clientes",
+      "ordinal_position": 10,
+      "column_name": "ativo",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "clientes",
+      "ordinal_position": 11,
+      "column_name": "fornecedor_desde",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "clientes",
+      "ordinal_position": 12,
+      "column_name": "logradouro",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "clientes",
+      "ordinal_position": 13,
+      "column_name": "numero",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "clientes",
+      "ordinal_position": 14,
+      "column_name": "complemento",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "clientes",
+      "ordinal_position": 15,
+      "column_name": "bairro",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "clientes",
+      "ordinal_position": 16,
+      "column_name": "cidade",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "clientes",
+      "ordinal_position": 17,
+      "column_name": "uf",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "clientes",
+      "ordinal_position": 18,
+      "column_name": "bkp_endereco",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "despesas",
+      "ordinal_position": 1,
+      "column_name": "uid",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "uuid_generate_v4()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "despesas",
+      "ordinal_position": 2,
+      "column_name": "id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "despesas",
+      "ordinal_position": 3,
+      "column_name": "item",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "despesas",
+      "ordinal_position": 4,
+      "column_name": "quantidade",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "despesas",
+      "ordinal_position": 5,
+      "column_name": "unidade",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "despesas",
+      "ordinal_position": 6,
+      "column_name": "custo",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "NO",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "despesas",
+      "ordinal_position": 7,
+      "column_name": "data",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "despesas",
+      "ordinal_position": 8,
+      "column_name": "observacao",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "despesas",
+      "ordinal_position": 9,
+      "column_name": "status",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "despesas",
+      "ordinal_position": 10,
+      "column_name": "funcionario_id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "despesas",
+      "ordinal_position": 11,
+      "column_name": "tipo_despesa",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": "'SERVICO'::character varying",
+      "character_maximum_length": 20,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "despesas",
+      "ordinal_position": 12,
+      "column_name": "fornecedor",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "despesas",
+      "ordinal_position": 13,
+      "column_name": "observacao_backup",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "despesas",
+      "ordinal_position": 14,
+      "column_name": "equipe_id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "despesas",
+      "ordinal_position": 15,
+      "column_name": "valor_pago",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "NO",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 12,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "despesas",
+      "ordinal_position": 16,
+      "column_name": "desconto_total",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "NO",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 12,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "despesas",
+      "ordinal_position": 17,
+      "column_name": "acrescimo_total",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "NO",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 12,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "equipe",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "NO",
+      "column_default": "nextval('equipe_id_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "equipe",
+      "ordinal_position": 2,
+      "column_name": "nome",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "equipe",
+      "ordinal_position": 3,
+      "column_name": "tipo",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "equipe",
+      "ordinal_position": 4,
+      "column_name": "valor_mensal",
+      "data_type": "double precision",
+      "udt_name": "float8",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 53,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "equipe",
+      "ordinal_position": 5,
+      "column_name": "valor_diaria",
+      "data_type": "double precision",
+      "udt_name": "float8",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 53,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "equipe",
+      "ordinal_position": 6,
+      "column_name": "chave_pix",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "equipe",
+      "ordinal_position": 7,
+      "column_name": "ativo",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "folhas",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "NO",
+      "column_default": "nextval('folhas_id_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "folhas",
+      "ordinal_position": 2,
+      "column_name": "equipe_id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "folhas",
+      "ordinal_position": 3,
+      "column_name": "mes_referencia",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "folhas",
+      "ordinal_position": 4,
+      "column_name": "tipo",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "folhas",
+      "ordinal_position": 5,
+      "column_name": "salario_base",
+      "data_type": "double precision",
+      "udt_name": "float8",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 53,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "folhas",
+      "ordinal_position": 6,
+      "column_name": "vales_total",
+      "data_type": "double precision",
+      "udt_name": "float8",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 53,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "folhas",
+      "ordinal_position": 7,
+      "column_name": "valor_pago",
+      "data_type": "double precision",
+      "udt_name": "float8",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 53,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "folhas",
+      "ordinal_position": 8,
+      "column_name": "status",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": "'PENDENTE'::text",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "folhas",
+      "ordinal_position": 9,
+      "column_name": "dias_trabalhados",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "folhas",
+      "ordinal_position": 10,
+      "column_name": "chave_pix",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "folhas",
+      "ordinal_position": 11,
+      "column_name": "data_criacao",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "folhas",
+      "ordinal_position": 12,
+      "column_name": "despesa_id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "jsp_equipe",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_equipe",
+      "ordinal_position": 2,
+      "column_name": "nome",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_equipe",
+      "ordinal_position": 3,
+      "column_name": "cpf",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_equipe",
+      "ordinal_position": 4,
+      "column_name": "telefone",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_equipe",
+      "ordinal_position": 5,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "timezone('utc'::text, now())",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_equipe",
+      "ordinal_position": 6,
+      "column_name": "categoria",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_equipe",
+      "ordinal_position": 9,
+      "column_name": "obra_atual_id",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_equipe",
+      "ordinal_position": 10,
+      "column_name": "valor_diaria",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_equipe",
+      "ordinal_position": 11,
+      "column_name": "ativo",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_equipe",
+      "ordinal_position": 12,
+      "column_name": "rg",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_equipe",
+      "ordinal_position": 13,
+      "column_name": "endereco",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_equipe",
+      "ordinal_position": 14,
+      "column_name": "contrato_assinado",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "false",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_equipe",
+      "ordinal_position": 15,
+      "column_name": "matricula",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "jsp_equipe",
+      "ordinal_position": 16,
+      "column_name": "chave_pix",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_equipe",
+      "ordinal_position": 17,
+      "column_name": "data_contrato",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_fase",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_fase",
+      "ordinal_position": 2,
+      "column_name": "nome",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_fase",
+      "ordinal_position": 3,
+      "column_name": "ordem",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "jsp_fornecedores",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('jsp_fornecedores_id_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "jsp_fornecedores",
+      "ordinal_position": 2,
+      "column_name": "nome",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_fornecedores",
+      "ordinal_position": 3,
+      "column_name": "telefone",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_fornecedores",
+      "ordinal_position": 4,
+      "column_name": "documento",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_fornecedores",
+      "ordinal_position": 5,
+      "column_name": "endereco",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_fornecedores",
+      "ordinal_position": 6,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "timezone('utc'::text, now())",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_historico_precos",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "jsp_historico_precos",
+      "ordinal_position": 2,
+      "column_name": "produto_id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "jsp_historico_precos",
+      "ordinal_position": 3,
+      "column_name": "data_preco",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_historico_precos",
+      "ordinal_position": 4,
+      "column_name": "preco_unitario",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 12,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "jsp_historico_precos",
+      "ordinal_position": 5,
+      "column_name": "fornecedor_id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "jsp_historico_precos",
+      "ordinal_position": 6,
+      "column_name": "origem",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_historico_precos",
+      "ordinal_position": 7,
+      "column_name": "observacao",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_historico_precos",
+      "ordinal_position": 8,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_logs",
+      "ordinal_position": 1,
+      "column_name": "uid",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_logs",
+      "ordinal_position": 2,
+      "column_name": "id",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_logs",
+      "ordinal_position": 3,
+      "column_name": "obra_id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "jsp_logs",
+      "ordinal_position": 4,
+      "column_name": "fornecedor_id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "jsp_logs",
+      "ordinal_position": 5,
+      "column_name": "tipo",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_logs",
+      "ordinal_position": 6,
+      "column_name": "produto_nome",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_logs",
+      "ordinal_position": 7,
+      "column_name": "quantidade",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "jsp_logs",
+      "ordinal_position": 8,
+      "column_name": "valor_total",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0.00",
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "jsp_logs",
+      "ordinal_position": 9,
+      "column_name": "data",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_logs",
+      "ordinal_position": 10,
+      "column_name": "vencimento",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_logs",
+      "ordinal_position": 11,
+      "column_name": "status_financeiro",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_logs",
+      "ordinal_position": 12,
+      "column_name": "forma_pagamento",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_logs",
+      "ordinal_position": 13,
+      "column_name": "valor_pago",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0.00",
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "jsp_logs",
+      "ordinal_position": 14,
+      "column_name": "categoria",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_logs",
+      "ordinal_position": 15,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "timezone('utc'::text, now())",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_logs",
+      "ordinal_position": 16,
+      "column_name": "observacao",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_logs",
+      "ordinal_position": 17,
+      "column_name": "fase_obra",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_obras",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('jsp_obras_id_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "jsp_obras",
+      "ordinal_position": 2,
+      "column_name": "nome",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_obras",
+      "ordinal_position": 3,
+      "column_name": "endereco",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_obras",
+      "ordinal_position": 4,
+      "column_name": "solicitante",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_obras",
+      "ordinal_position": 5,
+      "column_name": "status",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": "'EM ANDAMENTO'::text",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_obras",
+      "ordinal_position": 6,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "timezone('utc'::text, now())",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_obras",
+      "ordinal_position": 7,
+      "column_name": "valor_contrato",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_obras",
+      "ordinal_position": 8,
+      "column_name": "lat",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_obras",
+      "ordinal_position": 9,
+      "column_name": "lng",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_obras",
+      "ordinal_position": 10,
+      "column_name": "token_diario",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_obras",
+      "ordinal_position": 11,
+      "column_name": "data_token",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_obras",
+      "ordinal_position": 12,
+      "column_name": "data_termino",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto",
+      "ordinal_position": 2,
+      "column_name": "equipe_id",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto",
+      "ordinal_position": 3,
+      "column_name": "obra_id",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto",
+      "ordinal_position": 4,
+      "column_name": "mes",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": 2,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto",
+      "ordinal_position": 5,
+      "column_name": "ano",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": 4,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto",
+      "ordinal_position": 6,
+      "column_name": "dias_marcados",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": "'[]'::jsonb",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto",
+      "ordinal_position": 7,
+      "column_name": "total_dias",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto",
+      "ordinal_position": 8,
+      "column_name": "valor_diaria",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto",
+      "ordinal_position": 9,
+      "column_name": "valor_total",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto",
+      "ordinal_position": 10,
+      "column_name": "status",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": "'PENDENTE'::character varying",
+      "character_maximum_length": 20,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto",
+      "ordinal_position": 11,
+      "column_name": "data_pagamento",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto",
+      "ordinal_position": 12,
+      "column_name": "pagamentos",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": "'[]'::jsonb",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto_diario",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('jsp_ponto_diario_id_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "jsp_ponto_diario",
+      "ordinal_position": 2,
+      "column_name": "funcionario_id",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto_diario",
+      "ordinal_position": 3,
+      "column_name": "obra_id",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto_diario",
+      "ordinal_position": 4,
+      "column_name": "data_registro",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_DATE",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto_diario",
+      "ordinal_position": 6,
+      "column_name": "tipo",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto_diario",
+      "ordinal_position": 7,
+      "column_name": "lat_registro",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 50,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto_diario",
+      "ordinal_position": 8,
+      "column_name": "lng_registro",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 50,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto_diario",
+      "ordinal_position": 9,
+      "column_name": "criado_em",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto_diario",
+      "ordinal_position": 10,
+      "column_name": "status",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto_diario",
+      "ordinal_position": 11,
+      "column_name": "hora_registro",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto_diario",
+      "ordinal_position": 12,
+      "column_name": "fracao_diaria",
+      "data_type": "double precision",
+      "udt_name": "float8",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 53,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto_diario",
+      "ordinal_position": 13,
+      "column_name": "pago_em_fechamento",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "false",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto_diario",
+      "ordinal_position": 14,
+      "column_name": "observacao",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto_diario",
+      "ordinal_position": 15,
+      "column_name": "despesa_id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "jsp_ponto_mensal",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('jsp_ponto_mensal_id_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "jsp_ponto_mensal",
+      "ordinal_position": 2,
+      "column_name": "funcionario_id",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto_mensal",
+      "ordinal_position": 3,
+      "column_name": "mes_ano",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 10,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto_mensal",
+      "ordinal_position": 4,
+      "column_name": "total_dias",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "jsp_ponto_mensal",
+      "ordinal_position": 5,
+      "column_name": "valor_total",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0.00",
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "jsp_ponto_mensal",
+      "ordinal_position": 6,
+      "column_name": "status_pagamento",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": "'PENDENTE'::character varying",
+      "character_maximum_length": 20,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto_mensal",
+      "ordinal_position": 7,
+      "column_name": "obra_id",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_ponto_mensal",
+      "ordinal_position": 8,
+      "column_name": "criado_em",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_producao_terc",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_producao_terc",
+      "ordinal_position": 2,
+      "column_name": "terceirizado_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_producao_terc",
+      "ordinal_position": 3,
+      "column_name": "obra_id",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_producao_terc",
+      "ordinal_position": 4,
+      "column_name": "data_registro",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "NO",
+      "column_default": "CURRENT_DATE",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_producao_terc",
+      "ordinal_position": 5,
+      "column_name": "metros",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "NO",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "jsp_producao_terc",
+      "ordinal_position": 6,
+      "column_name": "status",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": "'PENDENTE'::text",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_producao_terc",
+      "ordinal_position": 7,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_producao_terc",
+      "ordinal_position": 8,
+      "column_name": "observacao",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_produtos",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('jsp_produtos_id_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "jsp_produtos",
+      "ordinal_position": 2,
+      "column_name": "nome",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_produtos",
+      "ordinal_position": 3,
+      "column_name": "categoria",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_produtos",
+      "ordinal_position": 4,
+      "column_name": "preco",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0.00",
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "jsp_produtos",
+      "ordinal_position": 5,
+      "column_name": "custo",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0.00",
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "jsp_produtos",
+      "ordinal_position": 6,
+      "column_name": "estoque_fisico",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0.00",
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "jsp_produtos",
+      "ordinal_position": 7,
+      "column_name": "estoque_comprometido",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0.00",
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "jsp_produtos",
+      "ordinal_position": 8,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "timezone('utc'::text, now())",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_terceirizados",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_terceirizados",
+      "ordinal_position": 2,
+      "column_name": "nome",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_terceirizados",
+      "ordinal_position": 3,
+      "column_name": "cpf_cnpj",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_terceirizados",
+      "ordinal_position": 4,
+      "column_name": "rg",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_terceirizados",
+      "ordinal_position": 5,
+      "column_name": "endereco",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_terceirizados",
+      "ordinal_position": 6,
+      "column_name": "telefone",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_terceirizados",
+      "ordinal_position": 7,
+      "column_name": "chave_pix",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_terceirizados",
+      "ordinal_position": 8,
+      "column_name": "obra_atual_id",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_terceirizados",
+      "ordinal_position": 9,
+      "column_name": "ativo",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_terceirizados",
+      "ordinal_position": 10,
+      "column_name": "valor_metro",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "jsp_terceirizados",
+      "ordinal_position": 11,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_terceirizados",
+      "ordinal_position": 12,
+      "column_name": "contrato_assinado",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "false",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_terceirizados",
+      "ordinal_position": 13,
+      "column_name": "data_contrato",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_terceirizados",
+      "ordinal_position": 14,
+      "column_name": "matricula",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_usuarios",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('jsp_usuarios_id_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "jsp_usuarios",
+      "ordinal_position": 2,
+      "column_name": "nome",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_usuarios",
+      "ordinal_position": 3,
+      "column_name": "login",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_usuarios",
+      "ordinal_position": 4,
+      "column_name": "senha",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_usuarios",
+      "ordinal_position": 5,
+      "column_name": "nivel_acesso",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": "'vendedor'::text",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_usuarios",
+      "ordinal_position": 6,
+      "column_name": "ativo",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "jsp_usuarios",
+      "ordinal_position": 7,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "timezone('utc'::text, now())",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 1,
+      "column_name": "uid",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "uuid_generate_v4()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 2,
+      "column_name": "id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 3,
+      "column_name": "tipo",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 4,
+      "column_name": "produto_nome",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 5,
+      "column_name": "quantidade",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "NO",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 6,
+      "column_name": "data",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 7,
+      "column_name": "observacao",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 8,
+      "column_name": "valor_total",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 9,
+      "column_name": "cliente_nome",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 10,
+      "column_name": "forma_pagamento",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 11,
+      "column_name": "status",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 12,
+      "column_name": "status_entrega",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 13,
+      "column_name": "qtd_entregue",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 14,
+      "column_name": "desconto",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 15,
+      "column_name": "status_financeiro",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 16,
+      "column_name": "vencimento",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 17,
+      "column_name": "valor_pago",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 18,
+      "column_name": "endereco_entrega",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 19,
+      "column_name": "produto_id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 20,
+      "column_name": "cliente_id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 21,
+      "column_name": "pgto_anotacao",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "logs",
+      "ordinal_position": 22,
+      "column_name": "acrescimo",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "NO",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 12,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "mdf_agenda",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "NO",
+      "column_default": "nextval('mdf_agenda_id_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "mdf_agenda",
+      "ordinal_position": 2,
+      "column_name": "orcamento_id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "mdf_agenda",
+      "ordinal_position": 3,
+      "column_name": "data_agendada",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_agenda",
+      "ordinal_position": 4,
+      "column_name": "horario",
+      "data_type": "time without time zone",
+      "udt_name": "time",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_agenda",
+      "ordinal_position": 5,
+      "column_name": "status",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": "'AGENDADO'::character varying",
+      "character_maximum_length": 20,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_agenda",
+      "ordinal_position": 6,
+      "column_name": "instalador_nome",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 100,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_agenda",
+      "ordinal_position": 7,
+      "column_name": "instalador_telefone",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 20,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_agenda",
+      "ordinal_position": 8,
+      "column_name": "observacoes",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_agenda",
+      "ordinal_position": 9,
+      "column_name": "foto_instalacao_url",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_agenda",
+      "ordinal_position": 10,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_agenda",
+      "ordinal_position": 11,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_itens",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('mdf_itens_id_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "mdf_itens",
+      "ordinal_position": 2,
+      "column_name": "orcamento_id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "mdf_itens",
+      "ordinal_position": 3,
+      "column_name": "nome",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_itens",
+      "ordinal_position": 4,
+      "column_name": "descricao",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_itens",
+      "ordinal_position": 5,
+      "column_name": "preco",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "NO",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "mdf_itens",
+      "ordinal_position": 6,
+      "column_name": "desconto",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "mdf_itens",
+      "ordinal_position": 7,
+      "column_name": "foto_url",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_itens",
+      "ordinal_position": 8,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_orcamentos",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('mdf_orcamentos_id_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "mdf_orcamentos",
+      "ordinal_position": 2,
+      "column_name": "cliente_nome",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_orcamentos",
+      "ordinal_position": 3,
+      "column_name": "cliente_telefone",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_orcamentos",
+      "ordinal_position": 4,
+      "column_name": "cliente_email",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_orcamentos",
+      "ordinal_position": 5,
+      "column_name": "observacoes",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_orcamentos",
+      "ordinal_position": 6,
+      "column_name": "status",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": "'ABERTO'::text",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_orcamentos",
+      "ordinal_position": 7,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_orcamentos",
+      "ordinal_position": 8,
+      "column_name": "desconto",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "mdf_orcamentos",
+      "ordinal_position": 9,
+      "column_name": "tipo_desconto",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": "'$'::character varying",
+      "character_maximum_length": 1,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_orcamentos",
+      "ordinal_position": 10,
+      "column_name": "faturado",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "false",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "mdf_orcamentos",
+      "ordinal_position": 11,
+      "column_name": "cliente_id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "produtos",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "produtos",
+      "ordinal_position": 2,
+      "column_name": "nome",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "produtos",
+      "ordinal_position": 3,
+      "column_name": "categoria",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "produtos",
+      "ordinal_position": 4,
+      "column_name": "preco",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "NO",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "produtos",
+      "ordinal_position": 5,
+      "column_name": "estoque_fisico",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "NO",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "produtos",
+      "ordinal_position": 6,
+      "column_name": "estoque_comprometido",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "NO",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "produtos",
+      "ordinal_position": 7,
+      "column_name": "custo",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "produtos",
+      "ordinal_position": 8,
+      "column_name": "produto_parceiro",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "false",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "produtos",
+      "ordinal_position": 9,
+      "column_name": "fornecedor_parceiro",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": "''::text",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "produtos",
+      "ordinal_position": 10,
+      "column_name": "unidade_medida",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": "'un'::text",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "produtos",
+      "ordinal_position": 11,
+      "column_name": "venda_por_metro",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "false",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "rvp_funcionarios",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "rvp_funcionarios",
+      "ordinal_position": 2,
+      "column_name": "nome",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "rvp_funcionarios",
+      "ordinal_position": 3,
+      "column_name": "telefone",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "rvp_funcionarios",
+      "ordinal_position": 4,
+      "column_name": "documento",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "rvp_funcionarios",
+      "ordinal_position": 5,
+      "column_name": "endereco",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "rvp_funcionarios",
+      "ordinal_position": 6,
+      "column_name": "data_admissao",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "rvp_funcionarios",
+      "ordinal_position": 7,
+      "column_name": "tipo_remuneracao",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "rvp_funcionarios",
+      "ordinal_position": 8,
+      "column_name": "valor_mensal",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "rvp_funcionarios",
+      "ordinal_position": 9,
+      "column_name": "valor_diaria",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "rvp_funcionarios",
+      "ordinal_position": 10,
+      "column_name": "valor_producao",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2
+    },
+    {
+      "table_name": "rvp_funcionarios",
+      "ordinal_position": 11,
+      "column_name": "ativo",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "rvp_funcionarios",
+      "ordinal_position": 12,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "rvp_funcionarios",
+      "ordinal_position": 13,
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "rvp_funcionarios",
+      "ordinal_position": 14,
+      "column_name": "chave_pix",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "usuarios",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "usuarios",
+      "ordinal_position": 2,
+      "column_name": "nome",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "usuarios",
+      "ordinal_position": 3,
+      "column_name": "login",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "usuarios",
+      "ordinal_position": 5,
+      "column_name": "nivel_acesso",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": "'vendedor'::text",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "usuarios",
+      "ordinal_position": 6,
+      "column_name": "ativo",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "usuarios",
+      "ordinal_position": 7,
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "timezone('utc'::text, now())",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "usuarios",
+      "ordinal_position": 8,
+      "column_name": "email",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "vales",
+      "ordinal_position": 1,
+      "column_name": "id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "NO",
+      "column_default": "nextval('vales_id_seq'::regclass)",
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "vales",
+      "ordinal_position": 2,
+      "column_name": "equipe_id",
+      "data_type": "bigint",
+      "udt_name": "int8",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 64,
+      "numeric_scale": 0
+    },
+    {
+      "table_name": "vales",
+      "ordinal_position": 3,
+      "column_name": "valor",
+      "data_type": "double precision",
+      "udt_name": "float8",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 53,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "vales",
+      "ordinal_position": 4,
+      "column_name": "data",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    },
+    {
+      "table_name": "vales",
+      "ordinal_position": 5,
+      "column_name": "mes_referencia",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null
+    }
+  ],
+  "constraints": [
+    {
+      "tbl": "clientes",
+      "conname": "clientes_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "despesas",
+      "conname": "fk_despesas_equipe",
+      "contype": "f",
+      "def": "FOREIGN KEY (equipe_id) REFERENCES equipe(id) ON DELETE SET NULL"
+    },
+    {
+      "tbl": "despesas",
+      "conname": "despesas_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (uid)"
+    },
+    {
+      "tbl": "equipe",
+      "conname": "equipe_tipo_check",
+      "contype": "c",
+      "def": "CHECK ((tipo = ANY (ARRAY['Mensal'::text, 'Diarista'::text])))"
+    },
+    {
+      "tbl": "equipe",
+      "conname": "equipe_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "folhas",
+      "conname": "folhas_status_check",
+      "contype": "c",
+      "def": "CHECK ((status = ANY (ARRAY['PENDENTE'::text, 'PAGO'::text])))"
+    },
+    {
+      "tbl": "folhas",
+      "conname": "folhas_tipo_check",
+      "contype": "c",
+      "def": "CHECK ((tipo = ANY (ARRAY['Mensal'::text, 'Diarista'::text])))"
+    },
+    {
+      "tbl": "folhas",
+      "conname": "folhas_equipe_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (equipe_id) REFERENCES equipe(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "folhas",
+      "conname": "folhas_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "jsp_equipe",
+      "conname": "jsp_equipe_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "jsp_fase",
+      "conname": "jsp_fase_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "jsp_fornecedores",
+      "conname": "jsp_fornecedores_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "jsp_historico_precos",
+      "conname": "jsp_historico_precos_v2_origem_check",
+      "contype": "c",
+      "def": "CHECK ((origem = ANY (ARRAY['manual'::text, 'automatico'::text])))"
+    },
+    {
+      "tbl": "jsp_historico_precos",
+      "conname": "jsp_historico_precos_v2_fornecedor_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (fornecedor_id) REFERENCES jsp_fornecedores(id) ON DELETE SET NULL"
+    },
+    {
+      "tbl": "jsp_historico_precos",
+      "conname": "jsp_historico_precos_v2_produto_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (produto_id) REFERENCES jsp_produtos(id) ON DELETE SET NULL"
+    },
+    {
+      "tbl": "jsp_historico_precos",
+      "conname": "jsp_historico_precos_v2_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "jsp_logs",
+      "conname": "jsp_logs_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (uid)"
+    },
+    {
+      "tbl": "jsp_obras",
+      "conname": "jsp_obras_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "jsp_ponto",
+      "conname": "jsp_ponto_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "jsp_ponto_diario",
+      "conname": "jsp_ponto_diario_funcionario_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (funcionario_id) REFERENCES jsp_equipe(id)"
+    },
+    {
+      "tbl": "jsp_ponto_diario",
+      "conname": "jsp_ponto_diario_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "jsp_ponto_mensal",
+      "conname": "jsp_ponto_mensal_funcionario_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (funcionario_id) REFERENCES jsp_equipe(id)"
+    },
+    {
+      "tbl": "jsp_ponto_mensal",
+      "conname": "jsp_ponto_mensal_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "jsp_producao_terc",
+      "conname": "jsp_producao_terc_terceirizado_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (terceirizado_id) REFERENCES jsp_terceirizados(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "jsp_producao_terc",
+      "conname": "jsp_producao_terc_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "jsp_produtos",
+      "conname": "jsp_produtos_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "jsp_terceirizados",
+      "conname": "jsp_terceirizados_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "jsp_usuarios",
+      "conname": "jsp_usuarios_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "jsp_usuarios",
+      "conname": "jsp_usuarios_login_key",
+      "contype": "u",
+      "def": "UNIQUE (login)"
+    },
+    {
+      "tbl": "logs",
+      "conname": "fk_logs_cliente",
+      "contype": "f",
+      "def": "FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE SET NULL"
+    },
+    {
+      "tbl": "logs",
+      "conname": "fk_logs_produto",
+      "contype": "f",
+      "def": "FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE SET NULL"
+    },
+    {
+      "tbl": "logs",
+      "conname": "logs_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (uid)"
+    },
+    {
+      "tbl": "mdf_agenda",
+      "conname": "mdf_agenda_orcamento_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (orcamento_id) REFERENCES mdf_orcamentos(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "mdf_agenda",
+      "conname": "mdf_agenda_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "mdf_itens",
+      "conname": "mdf_itens_orcamento_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (orcamento_id) REFERENCES mdf_orcamentos(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "mdf_itens",
+      "conname": "mdf_itens_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "mdf_orcamentos",
+      "conname": "fk_mdf_orcamentos_cliente",
+      "contype": "f",
+      "def": "FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE SET NULL"
+    },
+    {
+      "tbl": "mdf_orcamentos",
+      "conname": "mdf_orcamentos_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "produtos",
+      "conname": "produtos_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "rvp_funcionarios",
+      "conname": "rvp_funcionarios_tipo_remuneracao_check",
+      "contype": "c",
+      "def": "CHECK ((tipo_remuneracao = ANY (ARRAY['mensal'::text, 'diaria'::text, 'producao'::text])))"
+    },
+    {
+      "tbl": "rvp_funcionarios",
+      "conname": "rvp_funcionarios_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "usuarios",
+      "conname": "usuarios_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "usuarios",
+      "conname": "usuarios_login_key",
+      "contype": "u",
+      "def": "UNIQUE (login)"
+    },
+    {
+      "tbl": "vales",
+      "conname": "vales_equipe_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (equipe_id) REFERENCES equipe(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "vales",
+      "conname": "vales_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    }
+  ],
+  "indexes": [
+    {
+      "tablename": "clientes",
+      "indexname": "clientes_pkey",
+      "indexdef": "CREATE UNIQUE INDEX clientes_pkey ON public.clientes USING btree (id)"
+    },
+    {
+      "tablename": "clientes",
+      "indexname": "idx_clientes_tipo",
+      "indexdef": "CREATE INDEX idx_clientes_tipo ON public.clientes USING btree (tipo)"
+    },
+    {
+      "tablename": "despesas",
+      "indexname": "despesas_pkey",
+      "indexdef": "CREATE UNIQUE INDEX despesas_pkey ON public.despesas USING btree (uid)"
+    },
+    {
+      "tablename": "despesas",
+      "indexname": "idx_despesas_equipe_id",
+      "indexdef": "CREATE INDEX idx_despesas_equipe_id ON public.despesas USING btree (equipe_id)"
+    },
+    {
+      "tablename": "equipe",
+      "indexname": "equipe_pkey",
+      "indexdef": "CREATE UNIQUE INDEX equipe_pkey ON public.equipe USING btree (id)"
+    },
+    {
+      "tablename": "folhas",
+      "indexname": "folhas_pkey",
+      "indexdef": "CREATE UNIQUE INDEX folhas_pkey ON public.folhas USING btree (id)"
+    },
+    {
+      "tablename": "folhas",
+      "indexname": "idx_folhas_equipe",
+      "indexdef": "CREATE INDEX idx_folhas_equipe ON public.folhas USING btree (equipe_id)"
+    },
+    {
+      "tablename": "folhas",
+      "indexname": "idx_folhas_mes",
+      "indexdef": "CREATE INDEX idx_folhas_mes ON public.folhas USING btree (mes_referencia)"
+    },
+    {
+      "tablename": "jsp_equipe",
+      "indexname": "jsp_equipe_pkey",
+      "indexdef": "CREATE UNIQUE INDEX jsp_equipe_pkey ON public.jsp_equipe USING btree (id)"
+    },
+    {
+      "tablename": "jsp_fase",
+      "indexname": "jsp_fase_pkey",
+      "indexdef": "CREATE UNIQUE INDEX jsp_fase_pkey ON public.jsp_fase USING btree (id)"
+    },
+    {
+      "tablename": "jsp_fornecedores",
+      "indexname": "jsp_fornecedores_pkey",
+      "indexdef": "CREATE UNIQUE INDEX jsp_fornecedores_pkey ON public.jsp_fornecedores USING btree (id)"
+    },
+    {
+      "tablename": "jsp_historico_precos",
+      "indexname": "idx_hist_preco_data",
+      "indexdef": "CREATE INDEX idx_hist_preco_data ON public.jsp_historico_precos USING btree (data_preco)"
+    },
+    {
+      "tablename": "jsp_historico_precos",
+      "indexname": "idx_hist_preco_origem",
+      "indexdef": "CREATE INDEX idx_hist_preco_origem ON public.jsp_historico_precos USING btree (origem)"
+    },
+    {
+      "tablename": "jsp_historico_precos",
+      "indexname": "idx_hist_preco_produto",
+      "indexdef": "CREATE INDEX idx_hist_preco_produto ON public.jsp_historico_precos USING btree (produto_id)"
+    },
+    {
+      "tablename": "jsp_historico_precos",
+      "indexname": "jsp_historico_precos_v2_pkey",
+      "indexdef": "CREATE UNIQUE INDEX jsp_historico_precos_v2_pkey ON public.jsp_historico_precos USING btree (id)"
+    },
+    {
+      "tablename": "jsp_logs",
+      "indexname": "jsp_logs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX jsp_logs_pkey ON public.jsp_logs USING btree (uid)"
+    },
+    {
+      "tablename": "jsp_obras",
+      "indexname": "jsp_obras_pkey",
+      "indexdef": "CREATE UNIQUE INDEX jsp_obras_pkey ON public.jsp_obras USING btree (id)"
+    },
+    {
+      "tablename": "jsp_ponto",
+      "indexname": "jsp_ponto_pkey",
+      "indexdef": "CREATE UNIQUE INDEX jsp_ponto_pkey ON public.jsp_ponto USING btree (id)"
+    },
+    {
+      "tablename": "jsp_ponto_diario",
+      "indexname": "jsp_ponto_diario_pkey",
+      "indexdef": "CREATE UNIQUE INDEX jsp_ponto_diario_pkey ON public.jsp_ponto_diario USING btree (id)"
+    },
+    {
+      "tablename": "jsp_ponto_mensal",
+      "indexname": "jsp_ponto_mensal_pkey",
+      "indexdef": "CREATE UNIQUE INDEX jsp_ponto_mensal_pkey ON public.jsp_ponto_mensal USING btree (id)"
+    },
+    {
+      "tablename": "jsp_producao_terc",
+      "indexname": "jsp_producao_terc_pkey",
+      "indexdef": "CREATE UNIQUE INDEX jsp_producao_terc_pkey ON public.jsp_producao_terc USING btree (id)"
+    },
+    {
+      "tablename": "jsp_produtos",
+      "indexname": "jsp_produtos_pkey",
+      "indexdef": "CREATE UNIQUE INDEX jsp_produtos_pkey ON public.jsp_produtos USING btree (id)"
+    },
+    {
+      "tablename": "jsp_terceirizados",
+      "indexname": "jsp_terceirizados_pkey",
+      "indexdef": "CREATE UNIQUE INDEX jsp_terceirizados_pkey ON public.jsp_terceirizados USING btree (id)"
+    },
+    {
+      "tablename": "jsp_usuarios",
+      "indexname": "jsp_usuarios_login_key",
+      "indexdef": "CREATE UNIQUE INDEX jsp_usuarios_login_key ON public.jsp_usuarios USING btree (login)"
+    },
+    {
+      "tablename": "jsp_usuarios",
+      "indexname": "jsp_usuarios_pkey",
+      "indexdef": "CREATE UNIQUE INDEX jsp_usuarios_pkey ON public.jsp_usuarios USING btree (id)"
+    },
+    {
+      "tablename": "logs",
+      "indexname": "idx_logs_cliente_id",
+      "indexdef": "CREATE INDEX idx_logs_cliente_id ON public.logs USING btree (cliente_id)"
+    },
+    {
+      "tablename": "logs",
+      "indexname": "idx_logs_produto_id",
+      "indexdef": "CREATE INDEX idx_logs_produto_id ON public.logs USING btree (produto_id)"
+    },
+    {
+      "tablename": "logs",
+      "indexname": "logs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX logs_pkey ON public.logs USING btree (uid)"
+    },
+    {
+      "tablename": "mdf_agenda",
+      "indexname": "idx_mdf_agenda_data",
+      "indexdef": "CREATE INDEX idx_mdf_agenda_data ON public.mdf_agenda USING btree (data_agendada)"
+    },
+    {
+      "tablename": "mdf_agenda",
+      "indexname": "idx_mdf_agenda_orcamento",
+      "indexdef": "CREATE INDEX idx_mdf_agenda_orcamento ON public.mdf_agenda USING btree (orcamento_id)"
+    },
+    {
+      "tablename": "mdf_agenda",
+      "indexname": "mdf_agenda_pkey",
+      "indexdef": "CREATE UNIQUE INDEX mdf_agenda_pkey ON public.mdf_agenda USING btree (id)"
+    },
+    {
+      "tablename": "mdf_itens",
+      "indexname": "mdf_itens_pkey",
+      "indexdef": "CREATE UNIQUE INDEX mdf_itens_pkey ON public.mdf_itens USING btree (id)"
+    },
+    {
+      "tablename": "mdf_orcamentos",
+      "indexname": "idx_mdf_orcamentos_cliente_id",
+      "indexdef": "CREATE INDEX idx_mdf_orcamentos_cliente_id ON public.mdf_orcamentos USING btree (cliente_id)"
+    },
+    {
+      "tablename": "mdf_orcamentos",
+      "indexname": "mdf_orcamentos_pkey",
+      "indexdef": "CREATE UNIQUE INDEX mdf_orcamentos_pkey ON public.mdf_orcamentos USING btree (id)"
+    },
+    {
+      "tablename": "produtos",
+      "indexname": "produtos_pkey",
+      "indexdef": "CREATE UNIQUE INDEX produtos_pkey ON public.produtos USING btree (id)"
+    },
+    {
+      "tablename": "rvp_funcionarios",
+      "indexname": "rvp_funcionarios_pkey",
+      "indexdef": "CREATE UNIQUE INDEX rvp_funcionarios_pkey ON public.rvp_funcionarios USING btree (id)"
+    },
+    {
+      "tablename": "usuarios",
+      "indexname": "uq_usuarios_email",
+      "indexdef": "CREATE UNIQUE INDEX uq_usuarios_email ON public.usuarios USING btree (lower(email)) WHERE ((email IS NOT NULL) AND (TRIM(BOTH FROM email) <> ''::text))"
+    },
+    {
+      "tablename": "usuarios",
+      "indexname": "usuarios_login_key",
+      "indexdef": "CREATE UNIQUE INDEX usuarios_login_key ON public.usuarios USING btree (login)"
+    },
+    {
+      "tablename": "usuarios",
+      "indexname": "usuarios_pkey",
+      "indexdef": "CREATE UNIQUE INDEX usuarios_pkey ON public.usuarios USING btree (id)"
+    },
+    {
+      "tablename": "vales",
+      "indexname": "idx_vales_equipe_mes",
+      "indexdef": "CREATE INDEX idx_vales_equipe_mes ON public.vales USING btree (equipe_id, mes_referencia)"
+    },
+    {
+      "tablename": "vales",
+      "indexname": "vales_pkey",
+      "indexdef": "CREATE UNIQUE INDEX vales_pkey ON public.vales USING btree (id)"
+    }
+  ],
+  "sequences": [
+    {
+      "sequence_name": "equipe_id_seq",
+      "data_type": "bigint",
+      "start_value": "1",
+      "minimum_value": "1",
+      "maximum_value": "9223372036854775807",
+      "increment": "1",
+      "cycle_option": "NO",
+      "last_value": 7
+    },
+    {
+      "sequence_name": "equipe_matricula_seq",
+      "data_type": "bigint",
+      "start_value": "100",
+      "minimum_value": "1",
+      "maximum_value": "9223372036854775807",
+      "increment": "1",
+      "cycle_option": "NO",
+      "last_value": 337
+    },
+    {
+      "sequence_name": "folhas_id_seq",
+      "data_type": "bigint",
+      "start_value": "1",
+      "minimum_value": "1",
+      "maximum_value": "9223372036854775807",
+      "increment": "1",
+      "cycle_option": "NO",
+      "last_value": 47
+    },
+    {
+      "sequence_name": "global_matricula_seq",
+      "data_type": "bigint",
+      "start_value": "1",
+      "minimum_value": "1",
+      "maximum_value": "9223372036854775807",
+      "increment": "1",
+      "cycle_option": "NO",
+      "last_value": 252
+    },
+    {
+      "sequence_name": "mdf_agenda_id_seq",
+      "data_type": "bigint",
+      "start_value": "1",
+      "minimum_value": "1",
+      "maximum_value": "9223372036854775807",
+      "increment": "1",
+      "cycle_option": "NO",
+      "last_value": 2
+    },
+    {
+      "sequence_name": "mdf_itens_id_seq",
+      "data_type": "integer",
+      "start_value": "1",
+      "minimum_value": "1",
+      "maximum_value": "2147483647",
+      "increment": "1",
+      "cycle_option": "NO",
+      "last_value": 121
+    },
+    {
+      "sequence_name": "mdf_orcamentos_id_seq",
+      "data_type": "integer",
+      "start_value": "1",
+      "minimum_value": "1",
+      "maximum_value": "2147483647",
+      "increment": "1",
+      "cycle_option": "NO",
+      "last_value": 21
+    },
+    {
+      "sequence_name": "vales_id_seq",
+      "data_type": "bigint",
+      "start_value": "1",
+      "minimum_value": "1",
+      "maximum_value": "9223372036854775807",
+      "increment": "1",
+      "cycle_option": "NO",
+      "last_value": 16
+    }
+  ],
+  "functions": [
+    "buscar_email_por_usuario",
+    "fn_upper_produtos",
+    "gerar_matricula_global",
+    "rls_auto_enable",
+    "set_fornecedor_upper_despesas",
+    "update_updated_at_column",
+    "uppercase_nome_produto",
+    "uppercase_text_fields",
+    "valida_cnpj",
+    "valida_cpf"
+  ],
+  "triggers": [
+    {
+      "tbl": "clientes",
+      "tgname": "trigger_uppercase_clientes",
+      "def": "CREATE TRIGGER trigger_uppercase_clientes BEFORE INSERT OR UPDATE ON public.clientes FOR EACH ROW EXECUTE FUNCTION uppercase_text_fields()"
+    },
+    {
+      "tbl": "despesas",
+      "tgname": "trg_fornecedor_upper_despesas",
+      "def": "CREATE TRIGGER trg_fornecedor_upper_despesas BEFORE INSERT OR UPDATE OF fornecedor ON public.despesas FOR EACH ROW EXECUTE FUNCTION set_fornecedor_upper_despesas()"
+    },
+    {
+      "tbl": "despesas",
+      "tgname": "trigger_uppercase_despesas",
+      "def": "CREATE TRIGGER trigger_uppercase_despesas BEFORE INSERT OR UPDATE ON public.despesas FOR EACH ROW EXECUTE FUNCTION uppercase_text_fields()"
+    },
+    {
+      "tbl": "mdf_agenda",
+      "tgname": "trigger_mdf_agenda_updated_at",
+      "def": "CREATE TRIGGER trigger_mdf_agenda_updated_at BEFORE UPDATE ON public.mdf_agenda FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()"
+    },
+    {
+      "tbl": "produtos",
+      "tgname": "trigger_uppercase_produtos",
+      "def": "CREATE TRIGGER trigger_uppercase_produtos BEFORE INSERT OR UPDATE ON public.produtos FOR EACH ROW EXECUTE FUNCTION uppercase_text_fields()"
+    }
+  ],
+  "policies": [
+    {
+      "tablename": "clientes",
+      "policyname": "LiberaClientes",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "clientes",
+      "policyname": "rls_authenticated_all",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "despesas",
+      "policyname": "LiberaDespesas",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "despesas",
+      "policyname": "rls_authenticated_all",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "equipe",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "equipe",
+      "policyname": "rls_authenticated_all",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "folhas",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "folhas",
+      "policyname": "rls_authenticated_all",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "jsp_equipe",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "jsp_fase",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "jsp_fornecedores",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "jsp_historico_precos",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "jsp_logs",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "jsp_obras",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "jsp_ponto",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "jsp_ponto_diario",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "jsp_ponto_mensal",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "jsp_producao_terc",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "jsp_produtos",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "jsp_terceirizados",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "jsp_usuarios",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "logs",
+      "policyname": "LiberaLogs",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "logs",
+      "policyname": "rls_authenticated_all",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "mdf_agenda",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "mdf_agenda",
+      "policyname": "rls_authenticated_all",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "mdf_itens",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "mdf_itens",
+      "policyname": "rls_authenticated_all",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "mdf_orcamentos",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "mdf_orcamentos",
+      "policyname": "rls_authenticated_all",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "produtos",
+      "policyname": "LiberaProdutos",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "produtos",
+      "policyname": "rls_authenticated_all",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "rvp_funcionarios",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "rvp_funcionarios",
+      "policyname": "rls_authenticated_all",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "usuarios",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "usuarios",
+      "policyname": "rls_authenticated_all",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "true",
+      "with_check": "true"
+    },
+    {
+      "tablename": "vales",
+      "policyname": "Enable read access for all users",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tablename": "vales",
+      "policyname": "rls_authenticated_all",
+      "cmd": "ALL",
+      "roles": "{authenticated}",
+      "qual": "true",
+      "with_check": "true"
+    }
+  ],
+  "rls": [
+    {
+      "tbl": "clientes",
+      "relrowsecurity": true
+    },
+    {
+      "tbl": "despesas",
+      "relrowsecurity": true
+    },
+    {
+      "tbl": "equipe",
+      "relrowsecurity": true
+    },
+    {
+      "tbl": "folhas",
+      "relrowsecurity": true
+    },
+    {
+      "tbl": "logs",
+      "relrowsecurity": true
+    },
+    {
+      "tbl": "mdf_agenda",
+      "relrowsecurity": true
+    },
+    {
+      "tbl": "mdf_itens",
+      "relrowsecurity": true
+    },
+    {
+      "tbl": "mdf_orcamentos",
+      "relrowsecurity": true
+    },
+    {
+      "tbl": "produtos",
+      "relrowsecurity": true
+    },
+    {
+      "tbl": "rvp_funcionarios",
+      "relrowsecurity": true
+    },
+    {
+      "tbl": "usuarios",
+      "relrowsecurity": true
+    },
+    {
+      "tbl": "vales",
+      "relrowsecurity": true
+    }
+  ]
+}

@@ -174,3 +174,6 @@
 *.lz
 *.lzma
 *.iso
+
+# Local clone do sistema em analise (RV Portal)
+/rvportal/
