@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - RV Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="shortcut icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="application-name" content="RV Portal Madeiras">
+    <meta name="apple-mobile-web-app-title" content="RV Portal Madeiras">
+    <meta name="theme-color" content="#0f172a"> <link rel="manifest" href="manifest.json">
+
+
+    <!-- ///////////////////////////////////////////////////////////////////////////// -->
+    
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; }
+        .loader { border: 3px solid #e2e8f0; border-top: 3px solid #059669; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-100 h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+        <div class="bg-slate-900 p-8 flex flex-col items-center">
+            <div class="w-24 h-24 rounded-full border-4 border-emerald-600 mb-4 shadow-lg bg-white overflow-hidden p-2">
+                <img src="https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png" class="w-full h-full object-contain" alt="Logo RV" />
+            </div>
+            <h1 class="text-2xl font-bold tracking-wider text-white">RV PORTAL</h1>
+            <p class="text-emerald-500 text-sm font-medium mt-1">Acesso ao Sistema</p>
+        </div>
+
+        <div class="p-8">
+            <form id="loginForm" onsubmit="fazerLogin(event)" class="space-y-5">
+                
+                <div id="msg-erro" class="hidden bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center font-bold border border-red-200">
+                    Usuário ou senha incorretos.
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Usuário ou E-mail</label>
+                    <div class="relative">
+                        <i data-lucide="user" class="absolute left-3 top-3 text-slate-400 w-5 h-5"></i>
+                        <input type="text" id="login_user" required placeholder="Seu nome de usuário ou e-mail" class="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-600 outline-none bg-slate-50">
+                    </div>
+                </div>
+
+                    <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Senha</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="absolute left-3 top-3 text-slate-400 w-5 h-5"></i>
+                        <input type="password" 
+                               id="senha" 
+                               placeholder="Sua senha" 
+                               autocomplete="current-password"
+                               class="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-600 outline-none bg-slate-50">
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-login" class="w-full py-3 bg-indigo-700 hover:bg-indigo-800 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-4">
+                    <span>Entrar no Sistema</span>
+                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                </button>
+                
+                <div id="loading" class="hidden justify-center items-center gap-2 py-3 mt-4">
+                    <div class="loader"></div>
+                    <span class="text-slate-500 font-bold text-sm">Validando...</span>
+                </div>
+                
+            </form>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Valores vindos de config.js (injetados no deploy via GitHub Actions)
+        const supabaseUrl = window.SUPABASE_URL;
+        const supabaseKey = window.SUPABASE_ANON_KEY;
+        const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Se chegou aqui por sessao expirada/sem login valido, limpa e avisa.
+        (function motivoSessao() {
+            const motivo = new URLSearchParams(window.location.search).get('motivo');
+            if (motivo === 'sessao') {
+                localStorage.removeItem('rv_user');
+                const msg = document.getElementById('msg-erro');
+                if (msg) {
+                    msg.textContent = "Sessão expirada. Faça login novamente.";
+                    msg.classList.remove('hidden');
+                }
+            }
+        })();
+
+        async function fazerLogin(e) {
+            e.preventDefault();
+            
+            const entrada = document.getElementById('login_user').value.trim().toLowerCase();
+            const senha = document.getElementById('senha').value;
+            const btn = document.getElementById('btn-login');
+            const load = document.getElementById('loading');
+            const msgErro = document.getElementById('msg-erro');
+
+            // Troca o botão pelo loading
+            btn.classList.add('hidden');
+            load.classList.remove('hidden');
+            load.classList.add('flex');
+            msgErro.classList.add('hidden');
+
+            try {
+                if (!entrada || !senha) throw new Error("Preencha usuário/e-mail e senha.");
+
+                // Descobre o e-mail: se não digitou e-mail, resolve pelo login (usuário curto)
+                let emailParaLogin = entrada;
+                if (!entrada.includes('@')) {
+                    const { data: emailEncontrado, error: rpcError } = await sb
+                        .rpc('buscar_email_por_usuario', { usuario_busca: entrada });
+
+                    if (rpcError || !emailEncontrado) {
+                        throw new Error("Usuário não encontrado.");
+                    }
+                    emailParaLogin = emailEncontrado;
+                }
+
+                // Autentica no Supabase Auth
+                const { data: loginData, error: loginError } = await sb.auth.signInWithPassword({
+                    email: emailParaLogin,
+                    password: senha
+                });
+                if (loginError) throw loginError;
+
+                // Busca o perfil (nome/nível) pelo e-mail autenticado
+                const { data: perfil, error: perfilError } = await sb
+                    .from('usuarios')
+                    .select('id, nome, nivel_acesso, ativo')
+                    .eq('email', emailParaLogin)
+                    .maybeSingle();
+                if (perfilError || !perfil) {
+                    await sb.auth.signOut();
+                    throw new Error("Registro não encontrado na base de dados.");
+                }
+                if (!perfil.ativo) {
+                    await sb.auth.signOut();
+                    throw new Error("Usuário bloqueado. Fale com o administrador.");
+                }
+
+                // Salva na sessão
+                localStorage.setItem('rv_user', JSON.stringify({
+                    id: perfil.id,
+                    nome: perfil.nome,
+                    nivel: perfil.nivel_acesso
+                }));
+
+                // Redireciona
+                window.location.href = "sistema.html?t=" + Date.now();
+
+            } catch (err) {
+                // Volta o botão e mostra erro
+                btn.classList.remove('hidden');
+                load.classList.add('hidden');
+                load.classList.remove('flex');
+                msgErro.textContent = err.message || "Usuário ou senha incorretos.";
+                msgErro.classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>

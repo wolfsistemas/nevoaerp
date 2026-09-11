@@ -1,0 +1,125 @@
+name: Deploy to GitHub Pages
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      OCR_API_KEY: ${{ secrets.OCR_API_KEY }}
+      GAS_WEB_APP_URL: ${{ secrets.GAS_WEB_APP_URL }}
+    outputs:
+      upload_path: ${{ steps.set-path.outputs.upload_path }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install dependencies (if package.json exists)
+        run: |
+          if [ -f package.json ]; then
+            npm ci || npm install
+          fi
+
+      - name: Build project (if build script exists)
+        run: |
+          if [ -f package.json ] && grep -q '"build"' package.json; then
+            npm run build
+          fi
+
+      # Injeta as chaves do Supabase no config.js usando os secrets do repositorio
+      - name: Inject Supabase keys (build-time)
+        run: |
+          set -e
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Secret nao configurado. Crie em Settings > Secrets and variables > Actions"
+            exit 1
+          fi
+          if [ ! -f config.js ]; then
+            echo "::error::config.js nao encontrado na raiz do projeto"
+            exit 1
+          fi
+          node -e '
+            const fs = require("fs");
+            const p = "config.js";
+            let s = fs.readFileSync(p, "utf8");
+            function setVar(name, raw) {
+              let val = String(raw || "").trim();
+              val = val.replace(/^["\u0027]/, "").replace(/["\u0027];?\s*$/, "");
+              if (!val) {
+                console.error("Secret vazio para window." + name);
+                process.exit(1);
+              }
+              const re = new RegExp("window\\." + name + "\\s*=\\s*.*?;");
+              if (!re.test(s)) {
+                console.error("Linha window." + name + " nao encontrada no config.js");
+                process.exit(1);
+              }
+              s = s.replace(re, "window." + name + " = " + JSON.stringify(val) + ";");
+            }
+            setVar("SUPABASE_URL", process.env.SUPABASE_URL);
+            setVar("SUPABASE_ANON_KEY", process.env.SUPABASE_ANON_KEY);
+            function setVarOptional(name, raw) {
+              let val = String(raw || "").trim();
+              val = val.replace(/^["\u0027]/, "").replace(/["\u0027];?\s*$/, "");
+              const re = new RegExp("window\\." + name + "\\s*=\\s*.*?;");
+              if (re.test(s)) {
+                s = s.replace(re, "window." + name + " = " + JSON.stringify(val) + ";");
+              }
+            }
+            setVarOptional("OCR_API_KEY", process.env.OCR_API_KEY);
+            setVarOptional("GAS_WEB_APP_URL", process.env.GAS_WEB_APP_URL);
+            fs.writeFileSync(p, s);
+            console.log("config.js atualizado.");
+          '
+          node -e 'new Function(require("fs").readFileSync("config.js","utf8")); console.log("Sintaxe do config.js OK.");'
+          if grep -q -E "__SUPABASE|__OCR|__GAS" config.js; then
+            echo "::error::Sobrou placeholder no config.js"
+            exit 1
+          fi
+
+      - name: Determine upload path
+        id: set-path
+        run: |
+          if [ -d "dist" ]; then
+            echo "upload_path=dist" >> $GITHUB_OUTPUT
+          elif [ -d "build" ]; then
+            echo "upload_path=build" >> $GITHUB_OUTPUT
+          else
+            echo "upload_path=." >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ steps.set-path.outputs.upload_path }}
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+        env:
+          NODE_OPTIONS: '--no-deprecation'

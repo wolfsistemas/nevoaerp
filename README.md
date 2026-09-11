@@ -1,21 +1,41 @@
-# rvportalpreparo
+# RV Portal
 
-Ambiente de preparacao do RV Portal para multi-tenant. **Contexto (importante):**
+Sistema de gestao para madeireira/marcenaria (RV Portal Madeiras Ltda).
+Frontend estatico (HTML + JS vanilla + Tailwind + Supabase + three.js/pdfmake/Tesseract).
 
-- A partir de agora **nao acessamos mais a base de producao da RV** (`lyieiqhkspbowsrlngvn`).
-- Base de teste: **basedetestes** (`jcgkgvqrluvvglenxumb`), zerada e recriada somente com a
-  **estrutura** das tabelas.
-- **Nenhum dado real e copiado**: trabalhamos apenas com o schema (DDL).
-- Base nova, repo novo, apenas para testes.
+## Contexto deste repositorio (importante)
+
+- **Base de teste**: `basedetestes` (`jcgkgvqrluvvglenxumb`), recriada do zero apenas com a
+  **estrutura** das 12 tabelas (0 registros).
+- **Nao acessamos mais a base de producao da RV** (`lyieiqhkspbowsrlngvn`).
+- **Nenhum dado real** e copiado ou mantido aqui: apenas schema (DDL).
+- Base nova, repositorio novo, apenas para testes e preparacao do multi-tenant.
 
 ## Estrutura
 
-- `db/schema.sql` — estrutura completa das 12 tabelas (0 registros).
-- `db/metadata.json` — metadados da estrutura.
-- `db/migrations/12_multitenant.sql` — ativacao do multi-tenant.
-- `docs/plano-multitenant.md` — plano de ativacao.
+- `index.html` — login (RPC `buscar_email_por_usuario` + Supabase Auth).
+- `sistema.html` — aplicacao desktop.
+- `mobile.html` — aplicacao mobile.
+- `nova-senha.html` — redefinicao de senha.
+- `config.js` — placeholders publicos injetados no deploy (GitHub Actions secrets).
+- `abas/` — modulos (mdf, equipe, gerencial, agenda).
+- `js/` — relatorios/calculadoras.
+- `sql/` — migrations do sistema original (01..06, 08..11). O `07` foi removido por
+  conter ~1032 enderecos reais de clientes (PII).
+- `db/` — schema limpo (sem dados) + `migrations/12_multitenant.sql`.
+- `docs/` — planos (multi-tenant, financeiro).
 
-## Base de teste
+## Segredos / configuracao
 
-12 tabelas, 0 registros, 10 funcoes, 5 triggers, 8 sequences, RLS habilitada nas 12 tabelas.
-Estrutura validada como identica a da base original (somente colunas/objetos).
+`config.js` tem apenas placeholders (`__SUPABASE_URL__`, `__SUPABASE_ANON_KEY__`,
+`__OCR_API_KEY__`, `__GAS_WEB_APP_URL__`). O workflow do GitHub Pages injeta os valores
+a partir de **repository secrets**:
+
+- `SUPABASE_URL` e `SUPABASE_ANON_KEY` (obrigatorios)
+- `OCR_API_KEY` e `GAS_WEB_APP_URL` (opcionais)
+
+Nenhuma chave real fica no codigo.
+
+## Multi-tenant
+
+Ver `docs/plano-multitenant.md`.

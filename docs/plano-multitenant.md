@@ -22,6 +22,39 @@ produtos, rvp_funcionarios, usuarios, vales`.
 
 ---
 
+## Arquitetura escolhida
+
+| Opcao | Isolamento | Custo/operacao | Decisao |
+|-------|-----------|----------------|---------|
+| Base por cliente (atual) | Total | 1 projeto Supabase por cliente; deploy e migracao repetidos | nao escala como SaaS |
+| Schema por cliente | Alto | migrations repetidas por schema; poucos clientes por projeto | complexo agora |
+| **Schema compartilhado + `empresa_id` + RLS** | Por linha (RLS) | 1 projeto, 1 conjunto de migrations | **escolhida** |
+
+Motivos: reaproveita as 12 tabelas atuais, o frontend quase nao muda (a RLS filtra),
+uma unica base/token para todos, custo marginal por cliente proximo de zero e migracoes
+centralizadas. O isolamento passa a ser responsabilidade da RLS — por isso os testes da
+Fase 8 sao obrigatorios.
+
+## Modelo de identidade
+
+- Supabase Auth guarda a credencial (e-mail + senha). Um projeto Auth unico para todos.
+- `public.usuarios` guarda o perfil operacional e passa a guardar o `empresa_id`.
+- Login atual: "login curto" -> RPC `buscar_email_por_usuario` -> e-mail -> Auth.
+- `empresa_do_usuario()` traduz o JWT (e-mail) para `empresa_id`, usado pela RLS.
+
+## Onboarding de uma empresa (cliente do SaaS)
+
+1. Criar a empresa em `empresas` (nome, slug, plano, ativo).
+2. Criar o usuario admin no Supabase Auth (e-mail + senha).
+3. Inserir a linha em `usuarios` com `empresa_id` e `nivel_acesso='admin'`.
+4. A empresa entra zerada; opcionalmente aplicar um "kit" de dados iniciais.
+5. Login: o admin ja cai isolado nas linhas da propria empresa.
+
+Observacao: `usuarios.login` e `usuarios.email` sao unicos globais hoje; para o SaaS
+avaliar `empresa + login` (ver Fase 6 e "Fase 2 / futuro").
+
+---
+
 ## Fase 0 - Preparacao do banco de teste
 
 1. Aplicar `db/schema.sql` (somente estrutura; sem dados).
@@ -32,7 +65,14 @@ produtos, rvp_funcionarios, usuarios, vales`.
 
 Arquivo: `db/migrations/12_multitenant.sql`.
 
-- Cria `public.empresas (id uuid pk, nome, slug, plano, ativo, criado_em)`.
+- Cria `public.empresas`:
+  - `id uuid pk default gen_random_uuid()`
+  - `nome text not null`
+  - `slug text unique` (identificador/subdominio)
+  - `plano text` (`basico | profissional | enterprise`)
+  - `ativo boolean not null default true`
+  - `limite_usuarios int`
+  - `criado_em timestamptz not null default now()`
 - Adiciona `empresa_id uuid` em cada uma das 12 tabelas (nullable nesta etapa).
 - Cria indice em `empresa_id` de cada tabela.
 
@@ -88,13 +128,19 @@ usando `empresa_do_usuario()`. Assim o frontend nao precisa mudar os `insert` ex
 
 ## Fase 7 - Frontend
 
-1. Login: apos autenticar, carregar `usuarios.empresa_id` e guardar na sessao.
-2. Nenhuma consulta precisa mudar: a RLS filtra por empresa.
-3. Inserts podem omitir `empresa_id` (trigger preenche).
-4. Nova tela "Empresas" (super-admin) para criar/gerenciar clientes do SaaS.
-5. `config.js`/secrets: cada deploy com a URL/chave do projeto compartilhado.
-6. Remover hardcodes: `abas/mdf.js:9` (URL/chave), `sistema.html:7048` (OCR key),
-   `sistema.html:7467` (GAS/Pix).
+Arquivos e pontos de mudanca:
+
+| Arquivo | O que fazer |
+|---------|-------------|
+| `index.html` (login) | apos `signInWithPassword`, incluir `empresa_id` no `select` do perfil e gravar em `rv_user`; opcional checar `empresas.ativo` |
+| `sistema.html:1625` | `rv_user` passa a conter `empresaId` |
+| `sistema.html` (`getNextId` de despesas/logs) | calcular `max(id)+1` **dentro da empresa** |
+| `abas/*`, `js/relatoriodespesas.js` | nenhuma query precisa de filtro manual (a RLS filtra) |
+| novo `abas/empresas.js` | tela super-admin: CRUD de `empresas`, criar admin, plano/ativo |
+| `config.js` + workflow | ja parametrizado por secrets (URL/chave do projeto compartilhado) |
+
+Segredos: ja removidos do codigo (`abas/mdf.js`, `sistema.html`). Restam apenas
+placeholders em `config.js`, injetados no deploy.
 
 ## Fase 8 - Testes obrigatorios
 
@@ -102,6 +148,17 @@ usando `empresa_do_usuario()`. Assim o frontend nao precisa mudar os `insert` ex
 - Criar empresa B, usuario B, e repetir fluxos basicos (PDV, financeiro, equipe).
 - `anon` continua bloqueado (chave publishable nao le tabela nenhuma).
 - Fluxos de login, folha, parcelamento e estorno intactos.
+
+## Fase 2 / futuro (fora do escopo atual)
+
+- **Login por empresa**: permitir o mesmo `login`/e-mail em empresas diferentes
+  (chave `empresa_id + login`). Hoje ambos sao unicos globais.
+- **Super-admin real**: separar o papel de operador do sistema (dono do SaaS) dos admins
+  de empresa, idealmente em outra role/claim.
+- **Planos e cobranca**: `empresas.plano` + `limite_usuarios` para limites; integracao de
+  pagamento/assinatura.
+- **Auditoria e LGPD**: trilha de auditoria por empresa, exportacao e exclusao de dados.
+- **Subdominio por empresa** (`slug`): roteamento no frontend para branding white-label.
 
 ## Rollback
 

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redefinir Senha • RV Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="shortcut icon" type="image/png" href="logo.png">
+
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; }
+        .loader { border: 3px solid #e2e8f0; border-top: 3px solid #059669; border-radius: 50%; width: 22px; height: 22px; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+        <div class="bg-slate-900 p-8 flex flex-col items-center">
+            <div class="w-20 h-20 rounded-full border-4 border-emerald-600 mb-4 shadow-lg bg-white overflow-hidden p-1">
+                <img src="https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png" class="w-full h-full object-contain" alt="Logo RV" />
+            </div>
+            <h1 class="text-xl font-bold tracking-wider text-white">RV PORTAL</h1>
+            <p class="text-emerald-500 text-sm font-medium mt-1">Criar Nova Senha</p>
+        </div>
+
+        <div class="p-8">
+            <p id="msg-instrucao" class="text-sm text-slate-500 text-center font-medium mb-5">Validando seu link de recuperação...</p>
+
+            <div id="form-senha" class="hidden">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Nova Senha</label>
+                        <input type="password" id="nova-senha" placeholder="Digite a nova senha" autocomplete="new-password" class="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-600 outline-none bg-slate-50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Confirme a Nova Senha</label>
+                        <input type="password" id="confirma-senha" placeholder="Repita a nova senha" autocomplete="new-password" class="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-600 outline-none bg-slate-50">
+                    </div>
+                </div>
+                <button id="btn-salvar" onclick="salvarNovaSenha()" class="mt-6 w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                    <span>Salvar Nova Senha</span>
+                </button>
+            </div>
+
+            <div id="msg-erro" class="hidden mt-4 bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center font-bold border border-red-200"></div>
+            <div id="msg-sucesso" class="hidden mt-4 bg-green-50 text-green-700 p-3 rounded-lg text-sm text-center font-bold border border-green-200"></div>
+        </div>
+    </div>
+
+    <script>
+        // Valores vindos de config.js (injetados no deploy via GitHub Actions)
+        const supabaseUrl = window.SUPABASE_URL;
+        const supabaseKey = window.SUPABASE_ANON_KEY;
+        const sb = window.supabase.createClient(supabaseUrl, supabaseKey, {
+            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+        });
+
+        const novaSenhaEl = document.getElementById('nova-senha');
+        const confirmaEl = document.getElementById('confirma-senha');
+        const btnSalvar = document.getElementById('btn-salvar');
+        const formSenha = document.getElementById('form-senha');
+        const msgInstrucao = document.getElementById('msg-instrucao');
+        const msgErro = document.getElementById('msg-erro');
+        const msgSucesso = document.getElementById('msg-sucesso');
+
+        function mostrarErro(texto) {
+            msgErro.textContent = texto;
+            msgErro.classList.remove('hidden');
+        }
+        function ocultarErro() { msgErro.classList.add('hidden'); }
+        function habilitarFormulario() {
+            formSenha.classList.remove('hidden');
+            msgInstrucao.innerText = 'Digite sua nova senha abaixo.';
+            ocultarErro();
+        }
+        function bloquearLink() {
+            novaSenhaEl.disabled = true;
+            confirmaEl.disabled = true;
+            btnSalvar.disabled = true;
+            formSenha.classList.add('hidden');
+            msgInstrucao.innerHTML = '<span class="text-red-600 font-bold">Link inválido</span>';
+        }
+
+        (async function init() {
+            // 1. Link já usado nesta sessão?
+            if (sessionStorage.getItem('recovery_used') === 'true') {
+                mostrarErro('Este link de recuperação já foi utilizado. Solicite um novo link.');
+                bloquearLink();
+                limparUrl();
+                return;
+            }
+
+            // 2. Busca token_hash na query string (fluxo novo / PKCE)
+            const queryParams = new URLSearchParams(window.location.search);
+            const tokenHash = queryParams.get('token_hash');
+            const type = queryParams.get('type') || 'recovery';
+
+            if (tokenHash) {
+                try {
+                    const { data, error } = await sb.auth.verifyOtp({ token_hash: tokenHash, type: type });
+                    if (error) throw error;
+                    sessionStorage.setItem('recovery_used', 'true');
+                    limparUrl();
+                    habilitarFormulario();
+                } catch (err) {
+                    mostrarErro('Token inválido ou expirado. Solicite um novo link.');
+                    bloquearLink();
+                    limparUrl();
+                }
+                return;
+            }
+
+            // 3. Fallback: tokens na hash da URL (fluxo antigo / implicit)
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            const accessToken = hashParams.get('access_token');
+            const refreshToken = hashParams.get('refresh_token');
+
+            if (accessToken && refreshToken) {
+                try {
+                    const { data, error } = await sb.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken
+                    });
+                    if (error) throw error;
+                    limparUrl();
+                    habilitarFormulario();
+                } catch (err) {
+                    mostrarErro('Erro ao restaurar sessão. Solicite um novo link.');
+                    bloquearLink();
+                    limparUrl();
+                }
+                return;
+            }
+
+            // 4. Sem token algum
+            mostrarErro('Link de recuperação inválido. Token não encontrado.');
+            bloquearLink();
+            limparUrl();
+        })();
+
+        function limparUrl() {
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
+        async function salvarNovaSenha() {
+            const senha1 = novaSenhaEl.value;
+            const senha2 = confirmaEl.value;
+            ocultarErro();
+            msgSucesso.classList.add('hidden');
+
+            if (!senha1 || !senha2) {
+                mostrarErro('Preencha os dois campos!');
+                return;
+            }
+            if (senha1 !== senha2) {
+                mostrarErro('As senhas não são iguais!');
+                return;
+            }
+            if (senha1.length < 6) {
+                mostrarErro('A senha deve ter pelo menos 6 caracteres.');
+                return;
+            }
+
+            btnSalvar.disabled = true;
+            btnSalvar.innerHTML = '<span class="loader"></span> Salvando...';
+
+            try {
+                const { data, error } = await sb.auth.updateUser({ password: senha1 });
+                if (error) throw error;
+
+                msgSucesso.innerText = 'Senha redefinida com sucesso! Redirecionando para o login...';
+                msgSucesso.classList.remove('hidden');
+                novaSenhaEl.value = '';
+                confirmaEl.value = '';
+                formSenha.classList.add('hidden');
+
+                setTimeout(() => {
+                    window.location.href = "index.html?t=" + Date.now();
+                }, 2500);
+            } catch (err) {
+                mostrarErro('Erro ao redefinir: ' + (err.message || ''));
+                btnSalvar.disabled = false;
+                btnSalvar.innerHTML = 'Salvar Nova Senha';
+            }
+        }
+    </script>
+</body>
+</html>
