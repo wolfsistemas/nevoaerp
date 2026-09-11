@@ -5,11 +5,18 @@ Frontend estatico (HTML + JS vanilla + Tailwind + Supabase + three.js/pdfmake/Te
 
 ## Contexto deste repositorio (importante)
 
-- **Base de teste**: `basedetestes` (`jcgkgvqrluvvglenxumb`), recriada do zero apenas com a
-  **estrutura** das 12 tabelas (0 registros).
+- **Base de teste**: `basedetestes` (`jcgkgvqrluvvglenxumb`).
 - **Nao acessamos mais a base de producao da RV** (`lyieiqhkspbowsrlngvn`).
 - **Nenhum dado real** e copiado ou mantido aqui: apenas schema (DDL).
 - Base nova, repositorio novo, apenas para testes e preparacao do multi-tenant.
+
+## Estado da base de teste
+
+- 12 tabelas de negocio + `empresas` (0 registros).
+- **Multi-tenant ativo**: `empresa_id` (NOT NULL) nas 12 tabelas, RLS com policy
+  `tenant_isolation`, trigger `trg_set_empresa` e funcao `empresa_do_usuario()`.
+- Empresa piloto: RV Portal Madeiras (`a0000000-0000-4000-8000-000000000001`).
+- Estrutura original validada como identica (colunas/objetos) antes da migration.
 
 ## Estrutura
 

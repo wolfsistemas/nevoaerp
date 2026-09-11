@@ -1,7 +1,7 @@
 -- ============================================================
 -- 12_multitenant.sql
 -- Ativa multi-tenant (empresa_id + RLS por empresa) reaproveitando
--- as tabelas existentes. Rodar DEPOIS de restaurar db/dump.sql.
+-- as tabelas existentes. Rodar DEPOIS de aplicar db/schema.sql.
 -- Idempotente na maior parte; revisar a Fase 3 (backfill).
 -- ============================================================
 
