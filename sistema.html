@@ -304,9 +304,9 @@
             <i data-lucide="refresh-cw" class="w-4 h-4"></i>           
         </button>
         <div class="w-20 h-20 rounded-full border-4 border-emerald-600 mb-3 shadow-lg bg-white overflow-hidden p-1 bg-white">
-            <img src="logo.png" class="w-full h-full object-contain" />
+            <img id="brand-logo" src="logo.png" class="w-full h-full object-contain" />
         </div>
-        <h1 class="text-lg font-bold tracking-wider text-emerald-500">NÉVOA</h1>
+        <h1 id="brand-name" class="text-lg font-bold tracking-wider text-emerald-500">NÉVOA</h1>
       </div>
       <nav class="flex-1 mt-4 px-3 space-y-1 overflow-y-auto">
         <!--<button onclick="navigate('dash')" id="nav-dash" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="layout-dashboard"></i> <span class="font-medium text-sm">Visão Geral</span></button>
@@ -328,6 +328,7 @@
        
         <div class="border-t border-slate-700 my-2 pt-2"></div>
         <button onclick="navigate('users')" id="nav-users" class="nav-btn w-full hidden flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="shield"></i> <span class="font-medium text-sm">Usuários (Admin)</span></button>
+        <button onclick="navigate('config')" id="nav-config" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="building-2"></i> <span class="font-medium text-sm">Minha Empresa</span></button>
        </nav>
       <div class="p-3 border-t border-slate-800"> <button onclick="fazerLogout()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-900/30 transition-all"><i data-lucide="log-out"></i> <span class="font-medium text-sm">Sair</span></button> </div>
     </div>
@@ -922,6 +923,7 @@
     <div id="view-equipe" class="hidden-section"></div>
     <div id="view-gerencial" class="hidden-section"></div>
     <div id="view-mdf" class="hidden-section"></div>
+    <div id="view-config" class="hidden-section"></div>
       
     </main>
     
@@ -7558,6 +7560,7 @@ async function executarPixGAS() {
     <script src="abas/gerencial.js"></script>
     <script src="abas/agenda.js"></script>
     <script src="js/relatoriodespesas.js"></script>
+    <script src="abas/configuracoes.js"></script>
     
     
    
