@@ -17,33 +17,6 @@
 </head>
 <body class="bg-slate-100 min-h-screen">
 
-    <!-- LOGIN -->
-    <div id="tela-login" class="hidden min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-            <div class="bg-slate-900 p-6 flex flex-col items-center">
-                <div class="w-16 h-16 rounded-full border-4 border-emerald-600 mb-3 bg-white overflow-hidden p-1">
-                    <img src="logo.png" class="w-full h-full object-contain" alt="Névoa">
-                </div>
-                <h1 class="text-xl font-bold tracking-wider text-white">NÉVOA</h1>
-                <p class="text-emerald-500 text-xs font-medium mt-1">Painel Super Admin</p>
-            </div>
-            <form onsubmit="fazerLogin(event)" class="p-6 space-y-4">
-                <div id="login-erro" class="hidden bg-red-50 text-red-600 p-3 rounded-lg text-sm font-bold border border-red-200"></div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">E-mail</label>
-                    <input id="login-email" type="email" required class="w-full p-3 border rounded-xl outline-none focus:border-emerald-600 bg-slate-50">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Senha</label>
-                    <input id="login-senha" type="password" required class="w-full p-3 border rounded-xl outline-none focus:border-emerald-600 bg-slate-50">
-                </div>
-                <button id="login-btn" type="submit" class="w-full p-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2">
-                    <i data-lucide="log-in" class="w-4 h-4"></i> Entrar
-                </button>
-            </form>
-        </div>
-    </div>
-
     <!-- NEGADO -->
     <div id="tela-negado" class="hidden min-h-screen flex items-center justify-center p-4">
         <div class="bg-white max-w-md w-full rounded-2xl shadow-xl p-8 text-center border border-slate-200">
@@ -156,7 +129,7 @@
             try { return new Date(iso).toLocaleDateString('pt-BR'); } catch (e) { return '-'; }
         }
         function mostrar(id) {
-            ['tela-login','tela-negado','tela-painel'].forEach(function (t) {
+            ['tela-negado','tela-painel'].forEach(function (t) {
                 document.getElementById(t).classList.toggle('hidden', t !== id);
             });
             lucide.createIcons();
@@ -164,7 +137,7 @@
 
         async function init() {
             const { data } = await sb.auth.getSession();
-            if (!data.session) return mostrar('tela-login');
+            if (!data.session) { window.location.href = 'index.html'; return; }
             USUARIO = data.session.user;
             await verificarAcesso();
         }
@@ -191,35 +164,10 @@
             }
         }
 
-        async function fazerLogin(e) {
-            e.preventDefault();
-            const btn = document.getElementById('login-btn');
-            const erro = document.getElementById('login-erro');
-            erro.classList.add('hidden');
-            btn.disabled = true;
-            btn.innerHTML = '<div class="loader"></div>';
-            try {
-                const { data, error } = await sb.auth.signInWithPassword({
-                    email: document.getElementById('login-email').value.trim(),
-                    password: document.getElementById('login-senha').value
-                });
-                if (error) throw error;
-                USUARIO = data.user;
-                await verificarAcesso();
-            } catch (err) {
-                erro.textContent = err.message || 'Falha no login.';
-                erro.classList.remove('hidden');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i data-lucide="log-in" class="w-4 h-4"></i> Entrar';
-                lucide.createIcons();
-            }
-        }
-
         async function sair() {
-            await sb.auth.signOut();
+            try { await sb.auth.signOut(); } catch (e) {}
             USUARIO = null;
-            mostrar('tela-login');
+            window.location.href = 'index.html';
         }
 
         async function carregarTudo() {
@@ -406,7 +354,7 @@
         }
 
         sb.auth.onAuthStateChange((event) => {
-            if (event === 'SIGNED_OUT') mostrar('tela-login');
+            if (event === 'SIGNED_OUT') window.location.href = 'index.html';
         });
 
         init();
