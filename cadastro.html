@@ -64,6 +64,16 @@
                     <input type="text" id="endereco" placeholder="Rua, número - Cidade/UF" class="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none bg-slate-50">
                 </div>
 
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Plano</label>
+                    <select id="plano" class="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none bg-slate-50">
+                        <option value="essencial">Essencial - R$ 149/mês</option>
+                        <option value="profissional">Profissional - R$ 297/mês</option>
+                        <option value="enterprise">Enterprise - R$ 597/mês</option>
+                    </select>
+                    <p class="text-xs text-slate-400 mt-1">Você pode trocar de plano depois, sem perder seus dados.</p>
+                </div>
+
                 <hr class="border-slate-200">
 
                 <div>
@@ -116,6 +126,13 @@
 
         const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
+        // Pre-seleciona o plano vindo da landing (?plano=essencial|profissional|enterprise)
+        (function planoDaUrl() {
+            const p = new URLSearchParams(window.location.search).get('plano');
+            const sel = document.getElementById('plano');
+            if (p && [...sel.options].some(o => o.value === p)) sel.value = p;
+        })();
+
         function mostrarErro(texto) {
             const el = document.getElementById('msg-erro');
             el.textContent = texto;
@@ -133,6 +150,7 @@
             const email    = document.getElementById('email').value.trim().toLowerCase();
             const senha    = document.getElementById('senha').value;
             const senha2   = document.getElementById('senha2').value;
+            const plano    = document.getElementById('plano').value;
 
             const btn = document.getElementById('btn-criar');
             const load = document.getElementById('loading');
@@ -161,7 +179,8 @@
                     p_admin_nome: admin,
                     p_cnpj: cnpj || null,
                     p_telefone: telefone || null,
-                    p_endereco: endereco || null
+                    p_endereco: endereco || null,
+                    p_plano: plano
                 });
                 if (rpcErr) {
                     await sb.auth.signOut();
@@ -179,7 +198,8 @@
                     slug: ret && ret.slug,
                     cnpj: cnpj || null,
                     telefone: telefone || null,
-                    endereco: endereco || null
+                    endereco: endereco || null,
+                    plano: (ret && ret.plano) || plano
                 }));
 
                 window.location.href = 'sistema.html?t=' + Date.now();

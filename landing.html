@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Névoa - ERP para pequenas e médias empresas</title>
+    <meta name="description" content="Névoa: toda a gestão do seu negócio num só lugar. Vendas, estoque, financeiro, clientes, orçamentos e equipe. Sem instalação, no navegador.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="shortcut icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <meta name="theme-color" content="#0f172a">
+    <style>
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+        .grid-fade { background-image: radial-gradient(circle at 1px 1px, rgba(148,163,184,.25) 1px, transparent 0); background-size: 28px 28px; }
+    </style>
+</head>
+<body class="bg-white text-slate-800 antialiased">
+
+    <header class="sticky top-0 z-50 bg-slate-900/95 backdrop-blur border-b border-slate-800">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <a href="#topo" class="flex items-center gap-3">
+                <span class="w-10 h-10 rounded-full bg-white p-1 overflow-hidden border-2 border-emerald-500">
+                    <img src="logo.png" class="w-full h-full object-contain" alt="Logo Névoa">
+                </span>
+                <span class="text-white font-bold tracking-widest text-lg">NÉVOA</span>
+            </a>
+            <nav class="hidden md:flex items-center gap-7 text-sm font-medium text-slate-300">
+                <a href="#recursos" class="hover:text-white transition">Recursos</a>
+                <a href="#planos" class="hover:text-white transition">Planos</a>
+                <a href="#duvidas" class="hover:text-white transition">Dúvidas</a>
+            </nav>
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="hidden sm:inline text-sm font-semibold text-slate-200 hover:text-white transition">Entrar</a>
+                <a href="cadastro.html" class="text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg transition">Criar conta</a>
+            </div>
+        </div>
+    </header>
+
+    <main id="topo">
+        <section class="relative bg-slate-900 text-white overflow-hidden">
+            <div class="absolute inset-0 grid-fade opacity-40"></div>
+            <div class="relative max-w-6xl mx-auto px-4 py-20 md:py-28 grid md:grid-cols-2 gap-14 items-center">
+                <div>
+                    <span class="inline-flex items-center gap-2 text-xs font-bold tracking-wide uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-3 py-1">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> ERP para pequenas e médias empresas
+                    </span>
+                    <h1 class="mt-5 text-4xl md:text-5xl font-extrabold leading-tight">
+                        Toda a gestão do seu negócio, leve como uma nuvem.
+                    </h1>
+                    <p class="mt-5 text-lg text-slate-300 max-w-xl">
+                        Vendas, estoque, financeiro, clientes, orçamentos e equipe num só lugar.
+                        Sem instalação, sem planilhas espalhadas e sem complicação.
+                    </p>
+                    <div class="mt-8 flex flex-col sm:flex-row gap-3">
+                        <a href="cadastro.html" class="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-emerald-900/30 transition">
+                            Começar agora <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                        </a>
+                        <a href="#planos" class="inline-flex items-center justify-center gap-2 border border-slate-700 hover:border-slate-500 text-slate-100 font-semibold px-6 py-3 rounded-xl transition">
+                            Ver planos
+                        </a>
+                    </div>
+                    <ul class="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-400">
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> Nada para instalar</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> PC e celular</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> Suporte em português</li>
+                    </ul>
+                </div>
+
+                <div class="relative">
+                    <div class="bg-slate-800/70 border border-slate-700 rounded-2xl p-5 shadow-2xl backdrop-blur">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-slate-400 text-xs uppercase tracking-wide">Vendas de hoje</p>
+                                <p class="text-3xl font-extrabold text-white">R$ 3.480,00</p>
+                            </div>
+                            <span class="text-emerald-400 text-sm font-bold flex items-center gap-1"><i data-lucide="trending-up" class="w-4 h-4"></i> +12%</span>
+                        </div>
+                        <div class="mt-5 flex items-end gap-2 h-24">
+                            <div class="flex-1 bg-slate-700 rounded-t" style="height:35%"></div>
+                            <div class="flex-1 bg-slate-700 rounded-t" style="height:55%"></div>
+                            <div class="flex-1 bg-slate-700 rounded-t" style="height:45%"></div>
+                            <div class="flex-1 bg-slate-700 rounded-t" style="height:70%"></div>
+                            <div class="flex-1 bg-emerald-500 rounded-t" style="height:90%"></div>
+                            <div class="flex-1 bg-slate-700 rounded-t" style="height:60%"></div>
+                            <div class="flex-1 bg-slate-700 rounded-t" style="height:80%"></div>
+                        </div>
+                        <div class="mt-5 grid grid-cols-3 gap-3 text-center">
+                            <div class="bg-slate-900/60 rounded-lg py-2">
+                                <p class="text-slate-400 text-[11px]">Estoque baixo</p>
+                                <p class="text-white font-bold">6 itens</p>
+                            </div>
+                            <div class="bg-slate-900/60 rounded-lg py-2">
+                                <p class="text-slate-400 text-[11px]">A receber</p>
+                                <p class="text-white font-bold">R$ 1.200</p>
+                            </div>
+                            <div class="bg-slate-900/60 rounded-lg py-2">
+                                <p class="text-slate-400 text-[11px]">Clientes</p>
+                                <p class="text-white font-bold">128</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="absolute -bottom-4 -left-4 hidden sm:flex items-center gap-2 bg-white text-slate-800 rounded-xl shadow-xl px-4 py-3 border border-slate-200">
+                        <i data-lucide="shield-check" class="w-5 h-5 text-emerald-600"></i>
+                        <span class="text-sm font-semibold">Dados isolados por empresa</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-slate-50 border-y border-slate-200">
+            <div class="max-w-6xl mx-auto px-4 py-6 grid sm:grid-cols-3 gap-4 text-sm font-semibold text-slate-600">
+                <p class="flex items-center justify-center gap-2"><i data-lucide="monitor-smartphone" class="w-5 h-5 text-emerald-600"></i> Funciona no navegador, sem instalar</p>
+                <p class="flex items-center justify-center gap-2"><i data-lucide="cloud" class="w-5 h-5 text-emerald-600"></i> Seus dados na nuvem, sempre acessíveis</p>
+                <p class="flex items-center justify-center gap-2"><i data-lucide="users" class="w-5 h-5 text-emerald-600"></i> Vários usuários na mesma empresa</p>
+            </div>
+        </section>
+
+        <section id="recursos" class="max-w-6xl mx-auto px-4 py-20">
+            <div class="max-w-2xl">
+                <p class="text-emerald-600 font-bold text-sm uppercase tracking-wide">Recursos</p>
+                <h2 class="mt-2 text-3xl md:text-4xl font-extrabold text-slate-900">Tudo o que seu negócio precisa, num só lugar</h2>
+                <p class="mt-4 text-slate-600">Chega de caderno, planilha e sistema separado. O Névoa reúne as áreas do dia a dia para você decidir com clareza.</p>
+            </div>
+
+            <div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="border border-slate-200 rounded-2xl p-6 hover:shadow-lg hover:border-emerald-200 transition">
+                    <span class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><i data-lucide="shopping-cart" class="w-6 h-6"></i></span>
+                    <h3 class="mt-4 font-bold text-slate-900">Vendas e PDV</h3>
+                    <p class="mt-2 text-sm text-slate-600">Registre vendas e atendimentos de forma rápida, com histórico sempre à mão.</p>
+                </div>
+                <div class="border border-slate-200 rounded-2xl p-6 hover:shadow-lg hover:border-emerald-200 transition">
+                    <span class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><i data-lucide="package" class="w-6 h-6"></i></span>
+                    <h3 class="mt-4 font-bold text-slate-900">Estoque</h3>
+                    <p class="mt-2 text-sm text-slate-600">Cadastre produtos, acompanhe entradas e saídas e evite ficar sem mercadoria.</p>
+                </div>
+                <div class="border border-slate-200 rounded-2xl p-6 hover:shadow-lg hover:border-emerald-200 transition">
+                    <span class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><i data-lucide="wallet" class="w-6 h-6"></i></span>
+                    <h3 class="mt-4 font-bold text-slate-900">Financeiro</h3>
+                    <p class="mt-2 text-sm text-slate-600">Contas a pagar e a receber, despesas e o caixa do negócio organizados.</p>
+                </div>
+                <div class="border border-slate-200 rounded-2xl p-6 hover:shadow-lg hover:border-emerald-200 transition">
+                    <span class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><i data-lucide="contact" class="w-6 h-6"></i></span>
+                    <h3 class="mt-4 font-bold text-slate-900">Clientes</h3>
+                    <p class="mt-2 text-sm text-slate-600">Ficha completa, contatos e relacionamento para vender mais e melhor.</p>
+                </div>
+                <div class="border border-slate-200 rounded-2xl p-6 hover:shadow-lg hover:border-emerald-200 transition">
+                    <span class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><i data-lucide="file-text" class="w-6 h-6"></i></span>
+                    <h3 class="mt-4 font-bold text-slate-900">Orçamentos e PDFs</h3>
+                    <p class="mt-2 text-sm text-slate-600">Monte orçamentos e gere documentos com os dados da sua empresa.</p>
+                </div>
+                <div class="border border-slate-200 rounded-2xl p-6 hover:shadow-lg hover:border-emerald-200 transition">
+                    <span class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><i data-lucide="users-2" class="w-6 h-6"></i></span>
+                    <h3 class="mt-4 font-bold text-slate-900">Equipe e folha</h3>
+                    <p class="mt-2 text-sm text-slate-600">Organize a equipe, cargos e a folha de pagamento sem papéis soltos.</p>
+                </div>
+                <div class="border border-slate-200 rounded-2xl p-6 hover:shadow-lg hover:border-emerald-200 transition">
+                    <span class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><i data-lucide="bar-chart-3" class="w-6 h-6"></i></span>
+                    <h3 class="mt-4 font-bold text-slate-900">Relatórios</h3>
+                    <p class="mt-2 text-sm text-slate-600">Enxergue o que entra, o que sai e como o negócio está evoluindo.</p>
+                </div>
+                <div class="border border-slate-200 rounded-2xl p-6 hover:shadow-lg hover:border-emerald-200 transition">
+                    <span class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><i data-lucide="building-2" class="w-6 h-6"></i></span>
+                    <h3 class="mt-4 font-bold text-slate-900">Multiempresa</h3>
+                    <p class="mt-2 text-sm text-slate-600">Acesse diferentes empresas ou filiais com o mesmo login, com dados separados.</p>
+                </div>
+                <div class="border border-emerald-200 bg-emerald-50/60 rounded-2xl p-6">
+                    <span class="w-11 h-11 rounded-xl bg-white text-emerald-600 flex items-center justify-center border border-emerald-200"><i data-lucide="hammer" class="w-6 h-6"></i></span>
+                    <h3 class="mt-4 font-bold text-slate-900">Add-on: Marcenaria / MDF</h3>
+                    <p class="mt-2 text-sm text-slate-600">Para quem trabalha com planejados: agenda, itens e orçamentos de MDF como módulo extra.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-slate-900 text-white">
+            <div class="max-w-6xl mx-auto px-4 py-16 grid md:grid-cols-3 gap-10">
+                <div>
+                    <span class="w-11 h-11 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center"><i data-lucide="lock" class="w-6 h-6"></i></span>
+                    <h3 class="mt-4 font-bold text-lg">Cada empresa, só os seus dados</h3>
+                    <p class="mt-2 text-sm text-slate-300">Isolamento por empresa no banco de dados: um cliente nunca vê a informação do outro.</p>
+                </div>
+                <div>
+                    <span class="w-11 h-11 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center"><i data-lucide="cloud-upload" class="w-6 h-6"></i></span>
+                    <h3 class="mt-4 font-bold text-lg">Na nuvem, com backup</h3>
+                    <p class="mt-2 text-sm text-slate-300">Acesse de qualquer computador ou celular. Sem servidor local para manter.</p>
+                </div>
+                <div>
+                    <span class="w-11 h-11 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center"><i data-lucide="handshake" class="w-6 h-6"></i></span>
+                    <h3 class="mt-4 font-bold text-lg">Suporte que fala a sua língua</h3>
+                    <p class="mt-2 text-sm text-slate-300">Atendimento em português e implantação opcional para começar com o pé direito.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="planos" class="max-w-6xl mx-auto px-4 py-20">
+            <div class="text-center max-w-2xl mx-auto">
+                <p class="text-emerald-600 font-bold text-sm uppercase tracking-wide">Planos</p>
+                <h2 class="mt-2 text-3xl md:text-4xl font-extrabold text-slate-900">Escolha o plano do tamanho do seu negócio</h2>
+                <p class="mt-4 text-slate-600">Comece no Essencial e mude de plano quando quiser. Sem fidelidade e sem taxa de instalação.</p>
+            </div>
+
+            <div class="mt-12 grid lg:grid-cols-3 gap-6 items-stretch">
+                <div class="border border-slate-200 rounded-2xl p-7 flex flex-col">
+                    <h3 class="font-extrabold text-xl text-slate-900">Essencial</h3>
+                    <p class="mt-1 text-sm text-slate-500">Para começar a organizar</p>
+                    <p class="mt-5"><span class="text-4xl font-extrabold text-slate-900">R$ 149</span><span class="text-slate-500">/mês</span></p>
+                    <ul class="mt-6 space-y-3 text-sm text-slate-600 flex-1">
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> 1 filial</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Até 3 usuários</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Vendas / PDV</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Estoque e clientes</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Financeiro e orçamento simples</li>
+                    </ul>
+                    <a href="cadastro.html?plano=essencial" class="mt-7 text-center font-bold border border-slate-300 hover:border-slate-400 text-slate-800 py-3 rounded-xl transition">Começar no Essencial</a>
+                </div>
+
+                <div class="relative border-2 border-emerald-500 rounded-2xl p-7 flex flex-col shadow-xl shadow-emerald-100">
+                    <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full">Mais escolhido</span>
+                    <h3 class="font-extrabold text-xl text-slate-900">Profissional</h3>
+                    <p class="mt-1 text-sm text-slate-500">Para crescer com controle</p>
+                    <p class="mt-5"><span class="text-4xl font-extrabold text-slate-900">R$ 297</span><span class="text-slate-500">/mês</span></p>
+                    <ul class="mt-6 space-y-3 text-sm text-slate-600 flex-1">
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> <span>Tudo do Essencial</span></li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Até 10 usuários</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Relatórios</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Equipe e folha de pagamento</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Documentos em PDF</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Suporte por e-mail e WhatsApp</li>
+                    </ul>
+                    <a href="cadastro.html?plano=profissional" class="mt-7 text-center font-bold bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl shadow-lg transition">Começar no Profissional</a>
+                </div>
+
+                <div class="border border-slate-200 rounded-2xl p-7 flex flex-col">
+                    <h3 class="font-extrabold text-xl text-slate-900">Enterprise</h3>
+                    <p class="mt-1 text-sm text-slate-500">Para operações maiores</p>
+                    <p class="mt-5"><span class="text-4xl font-extrabold text-slate-900">R$ 597</span><span class="text-slate-500">/mês</span></p>
+                    <ul class="mt-6 space-y-3 text-sm text-slate-600 flex-1">
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> <span>Tudo do Profissional</span></li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Usuários e filiais ilimitados</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> API de integração</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Domínio e white-label</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Suporte prioritário</li>
+                    </ul>
+                    <a href="cadastro.html?plano=enterprise" class="mt-7 text-center font-bold border border-slate-300 hover:border-slate-400 text-slate-800 py-3 rounded-xl transition">Falar com o time</a>
+                </div>
+            </div>
+
+            <div class="mt-8 grid sm:grid-cols-2 gap-4">
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-start gap-3">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-emerald-600 mt-0.5"></i>
+                    <p class="text-sm text-slate-600"><strong class="text-slate-800">Add-on Marcenaria/MDF</strong> para quem trabalha com planejados. Valor sob consulta.</p>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-start gap-3">
+                    <i data-lucide="wrench" class="w-5 h-5 text-emerald-600 mt-0.5"></i>
+                    <p class="text-sm text-slate-600"><strong class="text-slate-800">Implantação opcional</strong> (R$ 500 a R$ 1.500): configuramos tudo com você.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="duvidas" class="bg-slate-50 border-t border-slate-200">
+            <div class="max-w-3xl mx-auto px-4 py-20">
+                <h2 class="text-3xl font-extrabold text-slate-900 text-center">Perguntas frequentes</h2>
+                <div class="mt-10 space-y-3">
+                    <details class="bg-white border border-slate-200 rounded-xl p-5 group">
+                        <summary class="font-bold text-slate-800 cursor-pointer list-none flex justify-between items-center">Preciso instalar alguma coisa?<i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 group-open:rotate-180 transition"></i></summary>
+                        <p class="mt-3 text-sm text-slate-600">Não. O Névoa funciona no navegador do computador e do celular. Você só precisa de internet e do seu login.</p>
+                    </details>
+                    <details class="bg-white border border-slate-200 rounded-xl p-5 group">
+                        <summary class="font-bold text-slate-800 cursor-pointer list-none flex justify-between items-center">Meus dados ficam separados de outros clientes?<i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 group-open:rotate-180 transition"></i></summary>
+                        <p class="mt-3 text-sm text-slate-600">Sim. Cada empresa tem seu próprio espaço no banco, com isolamento por segurança. Ninguém acessa dados de outra empresa.</p>
+                    </details>
+                    <details class="bg-white border border-slate-200 rounded-xl p-5 group">
+                        <summary class="font-bold text-slate-800 cursor-pointer list-none flex justify-between items-center">Posso trocar de plano depois?<i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 group-open:rotate-180 transition"></i></summary>
+                        <p class="mt-3 text-sm text-slate-600">Pode. Você começa no plano que faz sentido hoje e muda quando o negócio crescer, sem perder seus dados.</p>
+                    </details>
+                    <details class="bg-white border border-slate-200 rounded-xl p-5 group">
+                        <summary class="font-bold text-slate-800 cursor-pointer list-none flex justify-between items-center">Serve para o meu tipo de negócio?<i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 group-open:rotate-180 transition"></i></summary>
+                        <p class="mt-3 text-sm text-slate-600">O Névoa é um ERP para pequenas e médias empresas de comércio e serviços: venda, estoque, financeiro, clientes, orçamentos e equipe. Há ainda o add-on para marcenaria/planejados.</p>
+                    </details>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-slate-900">
+            <div class="max-w-4xl mx-auto px-4 py-16 text-center">
+                <h2 class="text-3xl md:text-4xl font-extrabold text-white">Comece a organizar o seu negócio hoje</h2>
+                <p class="mt-4 text-slate-300">Crie sua conta em poucos minutos. Sem instalação, sem cartão de crédito para testar.</p>
+                <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+                    <a href="cadastro.html" class="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-7 py-3 rounded-xl shadow-lg transition">Criar conta gratuita <i data-lucide="arrow-right" class="w-5 h-5"></i></a>
+                    <a href="index.html" class="inline-flex items-center justify-center border border-slate-600 hover:border-slate-400 text-white font-semibold px-7 py-3 rounded-xl transition">Já tenho conta</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-slate-950 text-slate-400">
+        <div class="max-w-6xl mx-auto px-4 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-3">
+                <span class="w-9 h-9 rounded-full bg-white p-1 overflow-hidden"><img src="logo.png" class="w-full h-full object-contain" alt="Logo Névoa"></span>
+                <span class="text-white font-bold tracking-widest">NÉVOA</span>
+            </div>
+            <nav class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+                <a href="#recursos" class="hover:text-white transition">Recursos</a>
+                <a href="#planos" class="hover:text-white transition">Planos</a>
+                <a href="#duvidas" class="hover:text-white transition">Dúvidas</a>
+                <a href="index.html" class="hover:text-white transition">Entrar</a>
+                <a href="cadastro.html" class="hover:text-white transition">Criar conta</a>
+            </nav>
+            <p class="text-xs">&copy; <span id="ano"></span> Névoa. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+        document.getElementById('ano').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>

@@ -20,6 +20,7 @@ Frontend estatico (HTML + JS vanilla + Tailwind + Supabase + three.js/pdfmake/Te
 
 ## Estrutura
 
+- `landing.html` — site publico (recursos, planos e CTA de cadastro).
 - `index.html` — login (RPC `buscar_email_por_usuario` + Supabase Auth).
 - `cadastro.html` — cadastro self-service (empresa + admin).
 - `sistema.html` — aplicacao desktop.

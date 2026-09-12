@@ -22,12 +22,16 @@ alter table public.empresas
 -- Chamada pelo usuario autenticado logo apos o signUp.
 -- SECURITY DEFINER: ignora a RLS de empresas/usuarios.
 -- ------------------------------------------------------------
+-- remove a versao anterior (sem plano), se existir
+drop function if exists public.criar_empresa_e_admin(text, text, text, text, text);
+
 create or replace function public.criar_empresa_e_admin(
     p_empresa_nome text,
     p_admin_nome   text,
     p_cnpj         text default null,
     p_telefone     text default null,
-    p_endereco     text default null
+    p_endereco     text default null,
+    p_plano        text default 'essencial'
 ) returns jsonb
 language plpgsql
 security definer
@@ -40,6 +44,7 @@ declare
     v_n       int := 1;
     v_emp_id  uuid;
     v_usu_id  bigint;
+    v_plano   text;
 begin
     if v_email = '' then
         raise exception 'Sessao sem e-mail. Faca o cadastro novamente.';
@@ -49,6 +54,11 @@ begin
     end if;
     if coalesce(trim(p_admin_nome), '') = '' then
         raise exception 'Informe o nome do administrador.';
+    end if;
+
+    v_plano := lower(trim(coalesce(p_plano, 'essencial')));
+    if v_plano not in ('essencial', 'profissional', 'enterprise') then
+        v_plano := 'essencial';
     end if;
 
     if exists (select 1 from public.usuarios where lower(trim(email)) = v_email) then
@@ -69,7 +79,7 @@ begin
         v_slug := v_base || '-' || v_n;
     end loop;
 
-    insert into public.empresas (nome, slug, cnpj, telefone, endereco, logo_url, email_contato)
+    insert into public.empresas (nome, slug, cnpj, telefone, endereco, logo_url, email_contato, plano)
     values (
         trim(p_empresa_nome),
         v_slug,
@@ -77,7 +87,8 @@ begin
         nullif(trim(coalesce(p_telefone, '')), ''),
         nullif(trim(coalesce(p_endereco, '')), ''),
         null,
-        v_email
+        v_email,
+        v_plano
     )
     returning id into v_emp_id;
 
@@ -90,7 +101,8 @@ begin
         'empresa_id', v_emp_id,
         'slug',       v_slug,
         'usuario_id', v_usu_id,
-        'email',      v_email
+        'email',      v_email,
+        'plano',      v_plano
     );
 exception
     when unique_violation then
@@ -98,7 +110,7 @@ exception
 end;
 $$;
 
-revoke all on function public.criar_empresa_e_admin(text, text, text, text, text) from public;
-grant execute on function public.criar_empresa_e_admin(text, text, text, text, text) to authenticated;
+revoke all on function public.criar_empresa_e_admin(text, text, text, text, text, text) from public;
+grant execute on function public.criar_empresa_e_admin(text, text, text, text, text, text) to authenticated;
 
 commit;
