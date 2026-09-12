@@ -5885,14 +5885,27 @@ function loadQuoteToCart(id) {
                         showLoading(false);
                         return showToast("Preencha e-mail e senha!", true);
                     }
+                    // Login curto e unico em todo o sistema (usado na tela de login).
+                    // Evita criar conta de Auth orfa quando o login ja existe.
+                    const { data: loginEmUso } = await sb.rpc('buscar_email_por_usuario', { usuario_busca: login });
+                    if (loginEmUso) {
+                        showLoading(false);
+                        return showToast("Este login ja esta em uso. Escolha outro.", true);
+                    }
                     // 1) Cria a conta no Supabase Auth (cliente descartável p/ não trocar a sessão do admin)
                     const authTemp = window.supabase.createClient(supabaseUrl, supabaseKey, {
                         auth: { persistSession: false, autoRefreshToken: false }
                     });
-                    const { error: authError } = await authTemp.auth.signUp({ email, password: senha });
+                    const { data: authData, error: authError } = await authTemp.auth.signUp({ email, password: senha });
                     if (authError) {
                         showLoading(false);
                         return showToast("Falha ao criar login: " + authError.message, true);
+                    }
+                    // signUp nao erra quando o e-mail ja existe (anti-enumeracao):
+                    // nesse caso vem user null/identities vazio. Evita perfil orfao.
+                    if (!authData || !authData.user || (authData.user.identities && authData.user.identities.length === 0)) {
+                        showLoading(false);
+                        return showToast("Este e-mail ja possui login cadastrado.", true);
                     }
 
                     // 2) Cria o perfil vinculado (senha não é mais gravada)

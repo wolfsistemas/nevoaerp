@@ -92,6 +92,8 @@ begin
     )
     returning id into v_emp_id;
 
+    -- id do usuario: migration 13 usa max(id)+1; a migration 15 adiciona a
+    -- sequencia/trigger e redefine esta funcao para usar o id gerado.
     select coalesce(max(id), 0) + 1 into v_usu_id from public.usuarios;
 
     insert into public.usuarios (id, nome, login, email, empresa_id, nivel_acesso, ativo)
