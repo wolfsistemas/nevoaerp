@@ -329,6 +329,7 @@
         <div class="border-t border-slate-700 my-2 pt-2"></div>
         <button onclick="navigate('users')" id="nav-users" class="nav-btn w-full hidden flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="shield"></i> <span class="font-medium text-sm">Usuários (Admin)</span></button>
         <button onclick="navigate('config')" id="nav-config" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="building-2"></i> <span class="font-medium text-sm">Minha Empresa</span></button>
+        <button onclick="navigate('assinatura')" id="nav-assinatura" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="badge-dollar-sign"></i> <span class="font-medium text-sm">Minha Assinatura</span></button>
         <a href="superadmin.html" id="nav-superadmin" class="nav-btn w-full hidden items-center space-x-3 px-4 py-3 rounded-lg text-amber-400 hover:bg-slate-800 hover:text-amber-300 transition-all"><i data-lucide="key-round"></i> <span class="font-medium text-sm">Super Admin</span></a>
        </nav>
       <div class="p-3 border-t border-slate-800"> <button onclick="fazerLogout()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-900/30 transition-all"><i data-lucide="log-out"></i> <span class="font-medium text-sm">Sair</span></button> </div>
@@ -925,6 +926,7 @@
     <div id="view-gerencial" class="hidden-section"></div>
     <div id="view-mdf" class="hidden-section"></div>
     <div id="view-config" class="hidden-section"></div>
+    <div id="view-assinatura" class="hidden-section"></div>
       
     </main>
     
@@ -7593,6 +7595,7 @@ async function executarPixGAS() {
     <script src="abas/agenda.js"></script>
     <script src="js/relatoriodespesas.js"></script>
     <script src="abas/configuracoes.js"></script>
+    <script src="abas/assinatura.js"></script>
     
     
    
