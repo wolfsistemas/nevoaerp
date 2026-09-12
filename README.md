@@ -28,7 +28,8 @@ Frontend estatico (HTML + JS vanilla + Tailwind + Supabase + three.js/pdfmake/Te
 - `nova-senha.html` — redefinicao de senha.
 - `config.js` — placeholders publicos injetados no deploy (GitHub Actions secrets).
 - `abas/` — modulos (mdf, equipe, gerencial, agenda).
-- `js/` — relatorios/calculadoras.
+- `js/` — relatorios/calculadoras. `js/empresa.js` centraliza `getCompany()`, que alimenta
+  os documentos (white-label: nome, CNPJ, endereco, telefone e logo da empresa).
 - `sql/` — migrations do sistema original (01..06, 08..11). O `07` foi removido por
   conter ~1032 enderecos reais de clientes (PII).
 - `db/` — schema limpo (sem dados) + migrations (`12_multitenant`, `13_signup`).

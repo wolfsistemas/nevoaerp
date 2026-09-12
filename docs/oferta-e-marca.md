@@ -54,6 +54,7 @@ A marca do produto aparece so na interface/login.
 
 1. Nome escolhido: **Névoa**.
 2. Desvinculo da RV: primeira passada concluida (marca, dados fixos e integracoes).
-3. Concluidos: cadastro self-service (empresa + admin) e landing publica com planos.
-4. Ainda pendente: documentos com dados da empresa contratante (white-label), billing
-   (assinatura/planos) e painel super-admin de empresas.
+3. Concluidos: cadastro self-service, landing publica com planos e documentos white-label
+   (nome, CNPJ, endereco, telefone e logo vem de `empresas` via `js/empresa.js`).
+4. Ainda pendente: upload de logo por empresa, billing (assinatura/planos) e painel
+   super-admin de empresas.

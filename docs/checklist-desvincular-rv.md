@@ -19,15 +19,16 @@ e pronto para white-label (documentos com dados da empresa contratante).
 
 ## 2. Dados fixos da RV (endereco/CNPJ/telefone)
 
-- "Rua Mineiros, 532 - Jatai/GO", "(64) 3636-4861", "CNPJ: 30.942.123/0001-02".
-- Devem sair do codigo e vir de `empresas` (white-label).
-- Ocorrencias conhecidas: `mobile.html`, `abas/equipe.js`, `abas/mdf.js`.
+CONCLUIDO. Os documentos (HTML e PDF, desktop e mobile) usam `getCompany()`
+(`js/empresa.js`), que le `window.EMPRESA_INFO` (carregado no login a partir de `empresas`).
+Sem dado da empresa, a linha correspondente (CNPJ/endereco/telefone) e omitida em vez de
+mostrar placeholder. Arquivos ligados: `sistema.html`, `mobile.html`, `abas/equipe.js`,
+`abas/mdf.js`, `js/relatoriodespesas.js`.
 
 ## 3. Logo
 
-- `https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png` (usado em `index.html`, `mobile.html`,
-  `nova-senha.html`, `abas/equipe.js`, `abas/mdf.js`, `js/relatoriodespesas.js`).
-- Trocar por logo do produto e, nos documentos, pela logo da empresa contratante.
+CONCLUIDO nos documentos: usam `company.logoUrl` (campo `empresas.logo_url`) com fallback
+`logo.png`. Pendente: upload/troca de logo por empresa pela interface.
 
 ## 4. Integracoes especificas da RV
 

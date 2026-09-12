@@ -168,11 +168,7 @@ function printExpenseReport() {
     });
 
     const printWindow = window.open('', '_blank', 'width=800,height=600');
-    const company = {
-        name: "NÉVOA",
-        cnpj: "00.000.000/0000-00",
-        logoUrl: "logo.png"
-    };
+    const company = getCompany();
 
     const start = document.getElementById('exp-report-start').value;
     const end = document.getElementById('exp-report-end').value;
@@ -191,7 +187,7 @@ function printExpenseReport() {
     printWindow.document.write(`
         <html>
             <head>
-                <title>Relatório de Despesas - NÉVOA</title>
+                <title>Relatório de Despesas - ${company.name}</title>
                 <style>
                     body { font-family: 'Helvetica', Arial, sans-serif; padding: 30px; background: white; color: #1e293b; }
                     .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #059669; padding-bottom: 15px; margin-bottom: 20px; }
@@ -220,7 +216,7 @@ function printExpenseReport() {
                 <div class="header">
                     <div>
                         <h1>${company.name}</h1>
-                        <p>CNPJ: ${company.cnpj}</p>
+                        ${company.cnpj ? `<p>CNPJ: ${company.cnpj}</p>` : ''}
                     </div>
                     <div style="text-align: right;">
                         <h2 style="margin: 0; font-size: 18px; color: #0f172a;">RELATÓRIO DE DESPESAS</h2>
@@ -232,7 +228,7 @@ function printExpenseReport() {
                 </div>
                 ${content.innerHTML}
                 <div class="footer">
-                    Documento emitido por sistema NÉVOA - Relatório de despesas.
+                    Documento emitido por ${company.name} - Relatório de despesas.
                 </div>
                 <div class="no-print" style="text-align: center; margin-top: 20px;">
                     <button onclick="window.print()" style="padding: 10px 30px; background: #059669; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">🖨️ Imprimir / Salvar PDF</button>
@@ -294,11 +290,7 @@ function printFilteredExpenses() {
     filtered.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
     // Monta o HTML para impressão
-    const company = {
-        name: "NÉVOA",
-        cnpj: "00.000.000/0000-00",
-        logoUrl: "logo.png"
-    };
+    const company = getCompany();
 
     let totalGeral = 0;
     let totalPagos = 0;
@@ -342,7 +334,7 @@ function printFilteredExpenses() {
                     <img src="${company.logoUrl}" style="max-height: 60px;" />
                     <div>
                         <h2 style="margin: 0; color: #059669; font-size: 18px; font-weight: bold;">${company.name}</h2>
-                        <p style="margin: 2px 0; font-size: 11px; color: #64748b;">CNPJ: ${company.cnpj}</p>
+                        ${company.cnpj ? `<p style="margin: 2px 0; font-size: 11px; color: #64748b;">CNPJ: ${company.cnpj}</p>` : ''}
                     </div>
                 </div>
                 <div style="text-align: right;">

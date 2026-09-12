@@ -845,7 +845,7 @@ class ProjetosMDF {
     const html = `
       <div style="font-family: Helvetica; padding: 20px; max-width: 800px; margin: auto; background: white;">
         <div style="text-align: center; margin-bottom: 20px;">
-          <h2>NÉVOA</h2>
+          <h2>${window.getCompany ? window.getCompany().name : 'NÉVOA'}</h2>
           <h3>Detalhamento do Projeto</h3>
         </div>
         <table style="width:100%; border-collapse: collapse; font-size: 12px;">
@@ -1751,10 +1751,11 @@ class OrcamentosMDF {
     });
 
     const content = [];
+    const empresa = window.getCompany ? window.getCompany() : { name: 'NÉVOA', cnpj: '', address: '', phone: '' };
     if (logoBase64) content.push({ image: 'logo', width: 58, alignment: 'center', margin: [0, 0, 0, 4] });
     content.push(
-      { text: 'NÉVOA', fontSize: 20, bold: true, color: '#b8a94e', alignment: 'center', margin: [0, 2, 0, 2] },
-      { text: 'CNPJ: 00.000.000/0000-00 | Endereço da empresa - Cidade/UF', fontSize: 9, color: '#475569', alignment: 'center', margin: [0, 0, 0, 12] },
+      { text: empresa.name, fontSize: 20, bold: true, color: '#b8a94e', alignment: 'center', margin: [0, 2, 0, 2] },
+      { text: [empresa.cnpj ? 'CNPJ: ' + empresa.cnpj : '', empresa.address, empresa.phone ? 'Tel: ' + empresa.phone : ''].filter(Boolean).join(' | '), fontSize: 9, color: '#475569', alignment: 'center', margin: [0, 0, 0, 12] },
       { text: orcId ? `ORÇAMENTO #${orcId}` : 'ORÇAMENTO', fontSize: 14, bold: true, alignment: 'center', margin: [0, 0, 0, 14] },
       { text: [{ text: 'Cliente: ', bold: true }, clienteNome], fontSize: 10, margin: [0, 0, 0, 3] },
       { text: [{ text: 'Data: ', bold: true }, data], fontSize: 10, margin: [0, 0, 0, 3] }
@@ -1784,11 +1785,11 @@ class OrcamentosMDF {
         margin: [0, 8, 0, 0]
       },
       { text: [{ text: 'Total Geral: ', bold: true }, formatarMoedaPDF(total)], fontSize: 15, bold: true, alignment: 'right', margin: [0, 14, 0, 0] },
-      { text: 'Névoa - Obrigado pela preferência!', fontSize: 10, color: '#64748b', alignment: 'center', margin: [0, 30, 0, 0] }
+      { text: 'Obrigado pela preferência!', fontSize: 10, color: '#64748b', alignment: 'center', margin: [0, 30, 0, 0] }
     );
 
     const docDefinition = {
-      info: { title: filename, author: 'Névoa' },
+      info: { title: filename, author: empresa.name },
       pageSize: 'A4',
       pageMargins: [40, 40, 40, 60],
       defaultStyle: { fontSize: 10, font: 'Roboto' },
