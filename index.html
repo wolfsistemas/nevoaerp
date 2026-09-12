@@ -154,6 +154,16 @@
                 });
                 if (loginError) throw loginError;
 
+                // Super-admin (dono da plataforma): vai direto para o painel,
+                // sem exigir perfil em "usuarios".
+                try {
+                    const { data: ehSuper } = await sb.rpc('is_super_admin');
+                    if (ehSuper === true) {
+                        window.location.href = "superadmin.html?t=" + Date.now();
+                        return;
+                    }
+                } catch (e) { /* sem super-admin no ambiente: segue o fluxo normal */ }
+
                 // Busca o perfil (nome/nível) pelo e-mail autenticado
                 const { data: perfil, error: perfilError } = await sb
                     .from('usuarios')
