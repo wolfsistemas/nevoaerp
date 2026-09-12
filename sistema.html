@@ -5892,6 +5892,12 @@ function loadQuoteToCart(id) {
             const senha = document.getElementById('usr-pass').value;
             const nivel = document.getElementById('usr-role').value;
 
+            // Logins reservados da plataforma (nao podem ser usados por tenant)
+            if (['admin', 'administrador'].includes(login)) {
+                showLoading(false);
+                return showToast("Este login e reservado da plataforma. Escolha outro.", true);
+            }
+
             try {
                 if (isNew) {
                     if (!email || !senha) {
