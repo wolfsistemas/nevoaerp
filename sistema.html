@@ -1630,6 +1630,12 @@
             dadosUsuario = JSON.parse(userSessao);
         }
 
+        // Dados da empresa logada (white-label: cabecalho de documentos/PDFs)
+        try {
+            const empSessao = localStorage.getItem('rv_empresa');
+            window.EMPRESA_INFO = empSessao ? JSON.parse(empSessao) : null;
+        } catch (e) { window.EMPRESA_INFO = null; }
+
         // ====== 2. CONEXÃO COM O SUPABASE ======
         // Valores vindos de config.js (injetados no deploy via GitHub Actions)
         const supabaseUrl = window.SUPABASE_URL;

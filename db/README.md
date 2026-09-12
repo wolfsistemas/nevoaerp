@@ -10,7 +10,9 @@ Excluidas as tabelas com prefixo `jsp_` (sistema de ponto/obras, nao faz parte d
 - `schema.sql` — estrutura completa: sequences, tabelas, PK/FK/CHECK/UNIQUE, indices,
   funcoes, triggers, RLS e grants. Sem nenhum `insert`.
 - `metadata.json` — metadados (colunas, constraints, indices, sequences, policies).
-- `migrations/12_multitenant.sql` — ativacao do multi-tenant.
+- `migrations/12_multitenant.sql` — ativacao do multi-tenant (empresa_id + RLS).
+- `migrations/13_signup.sql` — cadastro self-service: perfil da empresa + RPC
+  `criar_empresa_e_admin` (cria empresa e usuario admin).
 
 ## Tabelas (12)
 

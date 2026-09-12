@@ -21,6 +21,7 @@ Frontend estatico (HTML + JS vanilla + Tailwind + Supabase + three.js/pdfmake/Te
 ## Estrutura
 
 - `index.html` — login (RPC `buscar_email_por_usuario` + Supabase Auth).
+- `cadastro.html` — cadastro self-service (empresa + admin).
 - `sistema.html` — aplicacao desktop.
 - `mobile.html` — aplicacao mobile.
 - `nova-senha.html` — redefinicao de senha.
@@ -29,7 +30,7 @@ Frontend estatico (HTML + JS vanilla + Tailwind + Supabase + three.js/pdfmake/Te
 - `js/` — relatorios/calculadoras.
 - `sql/` — migrations do sistema original (01..06, 08..11). O `07` foi removido por
   conter ~1032 enderecos reais de clientes (PII).
-- `db/` — schema limpo (sem dados) + `migrations/12_multitenant.sql`.
+- `db/` — schema limpo (sem dados) + migrations (`12_multitenant`, `13_signup`).
 - `docs/` — planos (multi-tenant, financeiro).
 
 ## Segredos / configuracao

@@ -82,7 +82,12 @@
                     <div class="loader"></div>
                     <span class="text-slate-500 font-bold text-sm">Validando...</span>
                 </div>
-                
+
+                <p class="text-center text-sm text-slate-500 pt-2">
+                    Não tem conta?
+                    <a href="cadastro.html" class="text-indigo-700 font-bold hover:underline">Criar conta</a>
+                </p>
+
             </form>
         </div>
     </div>
@@ -148,7 +153,7 @@
                 // Busca o perfil (nome/nível) pelo e-mail autenticado
                 const { data: perfil, error: perfilError } = await sb
                     .from('usuarios')
-                    .select('id, nome, nivel_acesso, ativo')
+                    .select('id, nome, nivel_acesso, ativo, empresa_id')
                     .eq('email', emailParaLogin)
                     .maybeSingle();
                 if (perfilError || !perfil) {
@@ -160,11 +165,22 @@
                     throw new Error("Usuário bloqueado. Fale com o administrador.");
                 }
 
+                // Carrega os dados da empresa (usados nos documentos / white-label)
+                try {
+                    const { data: emp } = await sb
+                        .from('empresas')
+                        .select('id, nome, slug, cnpj, telefone, endereco, logo_url, plano')
+                        .eq('id', perfil.empresa_id)
+                        .maybeSingle();
+                    if (emp) localStorage.setItem('rv_empresa', JSON.stringify(emp));
+                } catch (e) { /* sem empresa: segue com a marca padrao */ }
+
                 // Salva na sessão
                 localStorage.setItem('rv_user', JSON.stringify({
                     id: perfil.id,
                     nome: perfil.nome,
-                    nivel: perfil.nivel_acesso
+                    nivel: perfil.nivel_acesso,
+                    empresaId: perfil.empresa_id
                 }));
 
                 // Redireciona
