@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin - Névoa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <link rel="icon" type="image/png" href="logo.png">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; }
+        .loader { border: 3px solid #e2e8f0; border-top: 3px solid #059669; border-radius: 50%; width: 22px; height: 22px; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+    <!-- LOGIN -->
+    <div id="tela-login" class="hidden min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+            <div class="bg-slate-900 p-6 flex flex-col items-center">
+                <div class="w-16 h-16 rounded-full border-4 border-emerald-600 mb-3 bg-white overflow-hidden p-1">
+                    <img src="logo.png" class="w-full h-full object-contain" alt="Névoa">
+                </div>
+                <h1 class="text-xl font-bold tracking-wider text-white">NÉVOA</h1>
+                <p class="text-emerald-500 text-xs font-medium mt-1">Painel Super Admin</p>
+            </div>
+            <form onsubmit="fazerLogin(event)" class="p-6 space-y-4">
+                <div id="login-erro" class="hidden bg-red-50 text-red-600 p-3 rounded-lg text-sm font-bold border border-red-200"></div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">E-mail</label>
+                    <input id="login-email" type="email" required class="w-full p-3 border rounded-xl outline-none focus:border-emerald-600 bg-slate-50">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Senha</label>
+                    <input id="login-senha" type="password" required class="w-full p-3 border rounded-xl outline-none focus:border-emerald-600 bg-slate-50">
+                </div>
+                <button id="login-btn" type="submit" class="w-full p-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2">
+                    <i data-lucide="log-in" class="w-4 h-4"></i> Entrar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- NEGADO -->
+    <div id="tela-negado" class="hidden min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white max-w-md w-full rounded-2xl shadow-xl p-8 text-center border border-slate-200">
+            <i data-lucide="shield-x" class="w-12 h-12 text-red-500 mx-auto mb-4"></i>
+            <h1 class="text-xl font-bold text-slate-800">Acesso restrito</h1>
+            <p class="text-sm text-slate-500 mt-2">Esta conta não tem permissão de super-admin.</p>
+            <button onclick="sair()" class="mt-6 px-6 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold">Sair</button>
+        </div>
+    </div>
+
+    <!-- PAINEL -->
+    <div id="tela-painel" class="hidden">
+        <header class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between shadow-lg sticky top-0 z-20">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full border-2 border-emerald-600 bg-white overflow-hidden p-0.5">
+                    <img src="logo.png" class="w-full h-full object-contain" alt="Névoa">
+                </div>
+                <div>
+                    <h1 class="font-bold tracking-wide leading-none">NÉVOA</h1>
+                    <span class="text-emerald-400 text-xs font-medium">Super Admin</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="quem" class="text-xs text-slate-400 hidden sm:inline"></span>
+                <button onclick="carregarTudo()" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-emerald-400" title="Atualizar"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+                <button onclick="sair()" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-red-400" title="Sair"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+            </div>
+        </header>
+
+        <main class="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
+            <!-- Estatisticas -->
+            <section id="stats" class="grid grid-cols-2 md:grid-cols-4 gap-4"></section>
+
+            <!-- Empresas -->
+            <section class="bg-white rounded-xl border shadow-sm overflow-hidden">
+                <div class="p-4 border-b flex flex-wrap gap-3 items-center justify-between bg-slate-50">
+                    <h2 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="building-2" class="text-emerald-600 w-5 h-5"></i> Empresas</h2>
+                    <div class="flex gap-2">
+                        <input id="busca" oninput="filtrarEmpresas()" placeholder="Buscar por nome ou slug" class="p-2.5 border rounded-lg text-sm outline-none focus:border-emerald-600 w-56">
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-slate-50 text-slate-600">
+                            <tr>
+                                <th class="p-3">Empresa</th>
+                                <th class="p-3">Plano</th>
+                                <th class="p-3 text-center">Usuarios</th>
+                                <th class="p-3 text-center">Status</th>
+                                <th class="p-3">Criada em</th>
+                                <th class="p-3 text-center">Acoes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="empresas-list" class="divide-y"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Super admins -->
+            <section class="bg-white rounded-xl border shadow-sm overflow-hidden">
+                <div class="p-4 border-b bg-slate-50 flex items-center justify-between">
+                    <h2 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="key-round" class="text-emerald-600 w-5 h-5"></i> Super admins</h2>
+                    <button onclick="toggleFormAdmin()" class="text-sm bg-indigo-700 hover:bg-indigo-800 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Adicionar</button>
+                </div>
+                <form id="form-admin" onsubmit="salvarAdmin(event)" class="hidden p-4 border-b bg-slate-50 grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <input id="adm-email" type="email" required placeholder="email@dominio.com" class="p-2.5 border rounded-lg text-sm outline-none focus:border-emerald-600 md:col-span-1">
+                    <input id="adm-nome" type="text" placeholder="Nome (opcional)" class="p-2.5 border rounded-lg text-sm outline-none focus:border-emerald-600 md:col-span-1">
+                    <button type="submit" class="p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold">Salvar</button>
+                </form>
+                <div id="admins-list" class="divide-y text-sm"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL USUARIOS -->
+    <div id="modal-usuarios" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+            <div class="p-4 border-b bg-slate-50 flex items-center justify-between">
+                <h3 id="modal-usuarios-titulo" class="font-bold text-slate-800">Usuarios</h3>
+                <button onclick="fecharUsuarios()" class="text-slate-400 hover:text-red-500"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="modal-usuarios-body" class="p-4 overflow-y-auto text-sm"></div>
+        </div>
+    </div>
+
+    <div id="toast" class="hidden fixed top-5 right-5 px-5 py-3 rounded-lg shadow-xl text-white font-medium z-50 bg-slate-800"></div>
+    <div id="loading" class="hidden fixed inset-0 bg-black/30 z-[60] flex items-center justify-center">
+        <div class="bg-white p-5 rounded-xl flex items-center gap-3 shadow-lg"><div class="loader"></div><span class="font-bold text-slate-700 text-sm">Processando...</span></div>
+    </div>
+
+    <script>
+        const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+        let EMPRESAS = [];
+        let ADMINS = [];
+        let USUARIO = null;
+
+        function esc(v) {
+            return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+        function showLoading(on) { document.getElementById('loading').style.display = on ? 'flex' : 'none'; }
+        function toast(msg, err) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'fixed top-5 right-5 px-5 py-3 rounded-lg shadow-xl text-white font-medium z-50 ' + (err ? 'bg-red-600' : 'bg-slate-800');
+            t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 3500);
+        }
+        function dataBR(iso) {
+            if (!iso) return '-';
+            try { return new Date(iso).toLocaleDateString('pt-BR'); } catch (e) { return '-'; }
+        }
+        function mostrar(id) {
+            ['tela-login','tela-negado','tela-painel'].forEach(function (t) {
+                document.getElementById(t).classList.toggle('hidden', t !== id);
+            });
+            lucide.createIcons();
+        }
+
+        async function init() {
+            const { data } = await sb.auth.getSession();
+            if (!data.session) return mostrar('tela-login');
+            USUARIO = data.session.user;
+            await verificarAcesso();
+        }
+
+        async function verificarAcesso() {
+            showLoading(true);
+            try {
+                const { data, error } = await sb.rpc('is_super_admin');
+                if (error) throw error;
+                if (!data) {
+                    document.getElementById('quem').textContent = USUARIO ? USUARIO.email : '';
+                    mostrar('tela-negado');
+                    return;
+                }
+                document.getElementById('quem').textContent = USUARIO ? USUARIO.email : '';
+                mostrar('tela-painel');
+                await carregarTudo();
+            } catch (e) {
+                toast('Erro ao validar acesso: ' + e.message, true);
+                mostrar('tela-negado');
+            } finally {
+                showLoading(false);
+                lucide.createIcons();
+            }
+        }
+
+        async function fazerLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('login-btn');
+            const erro = document.getElementById('login-erro');
+            erro.classList.add('hidden');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loader"></div>';
+            try {
+                const { data, error } = await sb.auth.signInWithPassword({
+                    email: document.getElementById('login-email').value.trim(),
+                    password: document.getElementById('login-senha').value
+                });
+                if (error) throw error;
+                USUARIO = data.user;
+                await verificarAcesso();
+            } catch (err) {
+                erro.textContent = err.message || 'Falha no login.';
+                erro.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="log-in" class="w-4 h-4"></i> Entrar';
+                lucide.createIcons();
+            }
+        }
+
+        async function sair() {
+            await sb.auth.signOut();
+            USUARIO = null;
+            mostrar('tela-login');
+        }
+
+        async function carregarTudo() {
+            showLoading(true);
+            try {
+                const [st, em, ad] = await Promise.all([
+                    sb.rpc('sa_estatisticas'),
+                    sb.rpc('sa_listar_empresas', { p_busca: null }),
+                    sb.rpc('sa_listar_admins')
+                ]);
+                if (st.error) throw st.error;
+                if (em.error) throw em.error;
+                if (ad.error) throw ad.error;
+                renderStats(st.data || {});
+                EMPRESAS = em.data || [];
+                renderEmpresas();
+                renderAdmins(ad.data || []);
+            } catch (e) {
+                toast('Erro ao carregar: ' + e.message, true);
+            } finally {
+                showLoading(false);
+                lucide.createIcons();
+            }
+        }
+
+        function renderStats(s) {
+            const por = s.por_plano || {};
+            const card = (rotulo, valor, icone, cor) => `
+                <div class="bg-white rounded-xl border shadow-sm p-4 flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-lg flex items-center justify-center ${cor}"><i data-lucide="${icone}" class="w-5 h-5"></i></div>
+                    <div><div class="text-2xl font-bold text-slate-800 leading-none">${valor}</div>
+                    <div class="text-xs text-slate-500 font-medium mt-1">${rotulo}</div></div>
+                </div>`;
+            const mrr = Number(s.mrr_estimado || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById('stats').innerHTML =
+                card('Empresas', s.total_empresas || 0, 'building-2', 'bg-indigo-100 text-indigo-700') +
+                card('Ativas', s.empresas_ativas || 0, 'check-circle', 'bg-emerald-100 text-emerald-700') +
+                card('Usuarios', s.total_usuarios || 0, 'users', 'bg-slate-200 text-slate-700') +
+                card('MRR estimado', mrr, 'banknote', 'bg-amber-100 text-amber-700');
+        }
+
+        function planoSelect(e) {
+            return `
+                <select onchange="salvarEmpresa('${e.id}', null, this.value)" class="p-1.5 border rounded-lg text-xs font-bold uppercase outline-none focus:border-emerald-600 bg-white">
+                    ${['essencial','profissional','enterprise'].map(p =>
+                        `<option value="${p}" ${e.plano === p ? 'selected' : ''}>${p}</option>`).join('')}
+                </select>`;
+        }
+
+        function renderEmpresas() {
+            const termo = (document.getElementById('busca').value || '').toLowerCase().trim();
+            const lista = EMPRESAS.filter(e =>
+                !termo || (e.nome || '').toLowerCase().includes(termo) || (e.slug || '').toLowerCase().includes(termo));
+            const tbody = document.getElementById('empresas-list');
+            if (!lista.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Nenhuma empresa encontrada.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = lista.map(e => `
+                <tr class="hover:bg-slate-50 ${e.ativo ? '' : 'bg-red-50/40'}">
+                    <td class="p-3">
+                        <div class="font-bold text-slate-700">${esc(e.nome)}</div>
+                        <div class="text-xs text-slate-400">${esc(e.slug)} ${e.email_contato ? '&middot; ' + esc(e.email_contato) : ''}</div>
+                    </td>
+                    <td class="p-3">${planoSelect(e)}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="abrirUsuarios('${e.id}')" class="text-emerald-700 font-bold hover:underline">${e.total_usuarios}</button>
+                    </td>
+                    <td class="p-3 text-center">
+                        <span class="text-[10px] font-bold uppercase px-2 py-1 rounded ${e.ativo ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">${e.ativo ? 'Ativa' : 'Inativa'}</span>
+                    </td>
+                    <td class="p-3 text-slate-500">${dataBR(e.criado_em)}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="salvarEmpresa('${e.id}', ${!e.ativo}, null)" class="${e.ativo ? 'text-orange-500' : 'text-green-600'} hover:opacity-70" title="${e.ativo ? 'Desativar' : 'Ativar'}">
+                            <i data-lucide="${e.ativo ? 'ban' : 'check-circle'}" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                </tr>`).join('');
+            lucide.createIcons();
+        }
+
+        function filtrarEmpresas() { renderEmpresas(); }
+
+        async function salvarEmpresa(id, ativo, plano) {
+            showLoading(true);
+            try {
+                const { error } = await sb.rpc('sa_atualizar_empresa', {
+                    p_empresa_id: id,
+                    p_ativo: ativo === null ? null : ativo,
+                    p_plano: plano || null
+                });
+                if (error) throw error;
+                toast('Empresa atualizada.');
+                const { data } = await sb.rpc('sa_listar_empresas', { p_busca: null });
+                EMPRESAS = data || [];
+                renderEmpresas();
+            } catch (e) {
+                toast('Erro: ' + e.message, true);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function abrirUsuarios(id) {
+            const emp = EMPRESAS.find(x => String(x.id) === String(id));
+            document.getElementById('modal-usuarios-titulo').textContent = 'Usuarios - ' + (emp ? emp.nome : '');
+            document.getElementById('modal-usuarios-body').innerHTML = '<div class="text-center text-slate-400 py-6">Carregando...</div>';
+            document.getElementById('modal-usuarios').classList.remove('hidden');
+            try {
+                const { data, error } = await sb.rpc('sa_listar_usuarios', { p_empresa_id: id });
+                if (error) throw error;
+                const lista = data || [];
+                document.getElementById('modal-usuarios-body').innerHTML = lista.length
+                    ? '<table class="w-full text-left"><thead class="text-slate-500"><tr><th class="p-2">Nome</th><th class="p-2">Login</th><th class="p-2">Nivel</th><th class="p-2 text-center">Status</th></tr></thead><tbody class="divide-y">'
+                        + lista.map(u => `<tr>
+                            <td class="p-2"><div class="font-bold text-slate-700">${esc(u.nome)}</div><div class="text-xs text-slate-400">${esc(u.email || '')}</div></td>
+                            <td class="p-2 text-slate-500">${esc(u.login)}</td>
+                            <td class="p-2"><span class="text-[10px] font-bold uppercase px-2 py-1 rounded ${u.nivel_acesso === 'admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-600'}">${esc(u.nivel_acesso)}</span></td>
+                            <td class="p-2 text-center text-xs font-bold ${u.ativo ? 'text-green-600' : 'text-red-500'}">${u.ativo ? 'Ativo' : 'Bloqueado'}</td>
+                        </tr>`).join('') + '</tbody></table>'
+                    : '<div class="text-center text-slate-400 py-6">Nenhum usuario.</div>';
+            } catch (e) {
+                document.getElementById('modal-usuarios-body').innerHTML = '<div class="text-red-500">Erro: ' + esc(e.message) + '</div>';
+            }
+        }
+        function fecharUsuarios() { document.getElementById('modal-usuarios').classList.add('hidden'); }
+
+        function renderAdmins(lista) {
+            ADMINS = lista || [];
+            const el = document.getElementById('admins-list');
+            if (!ADMINS.length) { el.innerHTML = '<div class="p-4 text-slate-400 text-center">Nenhum super-admin cadastrado.</div>'; return; }
+            el.innerHTML = ADMINS.map((a, i) => `
+                <div class="p-3 flex items-center justify-between">
+                    <div>
+                        <div class="font-bold text-slate-700">${esc(a.nome || a.email)}</div>
+                        <div class="text-xs text-slate-400">${esc(a.email)}</div>
+                    </div>
+                    <button onclick="alternarAdmin(${i})" class="text-xs font-bold px-3 py-1.5 rounded-lg ${a.ativo ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}">
+                        ${a.ativo ? 'Desativar' : 'Ativar'}
+                    </button>
+                </div>`).join('');
+        }
+
+        function toggleFormAdmin() { document.getElementById('form-admin').classList.toggle('hidden'); }
+
+        async function salvarAdmin(e) {
+            e.preventDefault();
+            showLoading(true);
+            try {
+                const { error } = await sb.rpc('sa_salvar_admin', {
+                    p_email: document.getElementById('adm-email').value.trim(),
+                    p_nome: document.getElementById('adm-nome').value.trim() || null,
+                    p_ativo: true
+                });
+                if (error) throw error;
+                toast('Super-admin salvo.');
+                document.getElementById('adm-email').value = '';
+                document.getElementById('adm-nome').value = '';
+                document.getElementById('form-admin').classList.add('hidden');
+                const { data } = await sb.rpc('sa_listar_admins');
+                renderAdmins(data || []);
+            } catch (err) {
+                toast('Erro: ' + err.message, true);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function alternarAdmin(i) {
+            const a = ADMINS[i];
+            if (!a) return;
+            showLoading(true);
+            try {
+                const { error } = await sb.rpc('sa_salvar_admin', { p_email: a.email, p_nome: a.nome || null, p_ativo: !a.ativo });
+                if (error) throw error;
+                const { data } = await sb.rpc('sa_listar_admins');
+                renderAdmins(data || []);
+                toast('Atualizado.');
+            } catch (e) {
+                toast('Erro: ' + e.message, true);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        sb.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_OUT') mostrar('tela-login');
+        });
+
+        init();
+    </script>
+</body>
+</html>
