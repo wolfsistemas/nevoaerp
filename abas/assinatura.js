@@ -46,12 +46,29 @@
   }
   function dataBR(iso) {
     if (!iso) return '-';
-    try { return new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR'); } catch (e) { return '-'; }
+    try {
+      var s = String(iso).slice(0, 10);
+      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+      if (!m) return '-';
+      var d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('pt-BR');
+    } catch (e) { return '-'; }
   }
+
+  var ASSINATURA_ATUAL = null;
 
   window.addEventListener('load', function () {
     var originalNavigate = window.navigate;
     window.navigate = function (viewId) {
+      // Bloqueia acesso direto a modulos fora do plano (o banco tambem bloqueia os dados).
+      var rec = RECURSOS_NAV['nav-' + viewId];
+      if (rec && ASSINATURA_ATUAL && ASSINATURA_ATUAL.tem_assinatura
+          && (ASSINATURA_ATUAL.recursos || []).indexOf(rec) === -1) {
+        if (typeof showToast === 'function') {
+          showToast('Modulo nao incluido no seu plano. Faca upgrade para liberar.', true);
+        }
+        return;
+      }
       originalNavigate(viewId);
       if (viewId === 'assinatura') renderAssinatura();
     };
@@ -62,6 +79,7 @@
     try {
       var res = await sb.rpc('minha_assinatura');
       if (res.error || !res.data || !res.data.tem_assinatura) return;
+      ASSINATURA_ATUAL = res.data;
       var recursos = res.data.recursos || [];
       Object.keys(RECURSOS_NAV).forEach(function (navId) {
         var el = document.getElementById(navId);
@@ -69,7 +87,7 @@
         var liberado = recursos.indexOf(RECURSOS_NAV[navId]) !== -1;
         el.classList.toggle('hidden', !liberado);
       });
-    } catch (e) { /* mantem tudo visivel em caso de erro */ }
+    } catch (e) { /* em caso de erro, mantem tudo visivel (nao travar o app) */ }
   }
 
   async function renderAssinatura() {
@@ -87,6 +105,7 @@
       container.innerHTML = '<div class="p-6 text-slate-500">Nenhuma assinatura encontrada para esta empresa.</div>';
       return;
     }
+    ASSINATURA_ATUAL = a;
 
     var st = STATUS_INFO[a.status] || { label: a.status, cls: 'bg-slate-200 text-slate-600' };
     var limite = a.max_usuarios == null ? 'ilimitado' : a.max_usuarios;

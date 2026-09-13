@@ -151,8 +151,10 @@
 
       if (!payload.nome) throw new Error('Informe o nome da empresa.');
 
-      var res = await sb.from('empresas').update(payload).eq('id', empresaId);
+      var res = await sb.from('empresas').update(payload).eq('id', empresaId).select('id');
       if (res.error) throw res.error;
+      // RLS negada nao gera erro, apenas 0 linhas: trata como falha real.
+      if (!res.data || !res.data.length) throw new Error('Sem permissao para alterar os dados desta empresa.');
 
       var info = Object.assign({}, window.EMPRESA_INFO || {}, payload, { id: empresaId });
       atualizarMarcaLocal(info);

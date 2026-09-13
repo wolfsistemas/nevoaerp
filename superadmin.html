@@ -81,9 +81,10 @@
                     <h2 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="key-round" class="text-emerald-600 w-5 h-5"></i> Super admins</h2>
                     <button onclick="toggleFormAdmin()" class="text-sm bg-indigo-700 hover:bg-indigo-800 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Adicionar</button>
                 </div>
-                <form id="form-admin" onsubmit="salvarAdmin(event)" class="hidden p-4 border-b bg-slate-50 grid grid-cols-1 md:grid-cols-3 gap-3">
+                <form id="form-admin" onsubmit="salvarAdmin(event)" class="hidden p-4 border-b bg-slate-50 grid grid-cols-1 md:grid-cols-4 gap-3">
                     <input id="adm-email" type="email" required placeholder="email@dominio.com" class="p-2.5 border rounded-lg text-sm outline-none focus:border-emerald-600 md:col-span-1">
                     <input id="adm-nome" type="text" placeholder="Nome (opcional)" class="p-2.5 border rounded-lg text-sm outline-none focus:border-emerald-600 md:col-span-1">
+                    <input id="adm-login" type="text" placeholder="Login curto (opcional)" class="p-2.5 border rounded-lg text-sm outline-none focus:border-emerald-600 md:col-span-1">
                     <button type="submit" class="p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold">Salvar</button>
                 </form>
                 <div id="admins-list" class="divide-y text-sm"></div>
@@ -166,6 +167,7 @@
         let EMPRESAS = [];
         let ADMINS = [];
         let PLANOS = [];
+        let USUARIOS_REQ = 0;
         let USUARIO = null;
 
         function esc(v) {
@@ -181,7 +183,15 @@
         }
         function dataBR(iso) {
             if (!iso) return '-';
-            try { return new Date(iso).toLocaleDateString('pt-BR'); } catch (e) { return '-'; }
+            try {
+                // Datas "YYYY-MM-DD" (coluna date) devem ser lidas como locais,
+                // senao viram o dia anterior em UTC-3.
+                const s = String(iso).slice(0, 10);
+                const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+                if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).toLocaleDateString('pt-BR');
+                const d = new Date(iso);
+                return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('pt-BR');
+            } catch (e) { return '-'; }
         }
         function mostrar(id) {
             ['tela-negado','tela-painel'].forEach(function (t) {
@@ -344,7 +354,12 @@
             document.getElementById('as-addon').checked = !!e.addon_mdf;
             document.getElementById('as-uso').innerHTML =
                 `Usuarios: <b>${e.total_usuarios}</b> / ${e.limite_usuarios == null ? 'ilimitado' : e.limite_usuarios}`;
-            recalcValor();
+            // Preserva valor negociado; so recalcula quando o usuario troca plano/ciclo.
+            const pAtual = PLANOS.find(x => x.codigo === (e.plano || ''));
+            const valorAtual = e.assinatura_valor != null
+                ? Number(e.assinatura_valor)
+                : (pAtual ? Number((e.assinatura_ciclo === 'anual') ? pAtual.preco_anual : pAtual.preco_mensal) : 0);
+            document.getElementById('as-valor').value = Number(valorAtual).toFixed(2);
             document.getElementById('modal-assinatura').classList.remove('hidden');
             lucide.createIcons();
         }
@@ -432,11 +447,13 @@
 
         async function abrirUsuarios(id) {
             const emp = EMPRESAS.find(x => String(x.id) === String(id));
+            const req = ++USUARIOS_REQ;
             document.getElementById('modal-usuarios-titulo').textContent = 'Usuarios - ' + (emp ? emp.nome : '');
             document.getElementById('modal-usuarios-body').innerHTML = '<div class="text-center text-slate-400 py-6">Carregando...</div>';
             document.getElementById('modal-usuarios').classList.remove('hidden');
             try {
                 const { data, error } = await sb.rpc('sa_listar_usuarios', { p_empresa_id: id });
+                if (req !== USUARIOS_REQ) return; // resposta de uma empresa antiga
                 if (error) throw error;
                 const lista = data || [];
                 document.getElementById('modal-usuarios-body').innerHTML = lista.length
@@ -459,10 +476,10 @@
             const el = document.getElementById('admins-list');
             if (!ADMINS.length) { el.innerHTML = '<div class="p-4 text-slate-400 text-center">Nenhum super-admin cadastrado.</div>'; return; }
             el.innerHTML = ADMINS.map((a, i) => `
-                <div class="p-3 flex items-center justify-between">
+                <div class="p-3 flex items-center justify-between ${a.ativo ? '' : 'opacity-60'}">
                     <div>
                         <div class="font-bold text-slate-700">${esc(a.nome || a.email)}</div>
-                        <div class="text-xs text-slate-400">${esc(a.email)}</div>
+                        <div class="text-xs text-slate-400">${esc(a.email)}${a.login ? ' &middot; login: <b>' + esc(a.login) + '</b>' : ''}</div>
                     </div>
                     <button onclick="alternarAdmin(${i})" class="text-xs font-bold px-3 py-1.5 rounded-lg ${a.ativo ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}">
                         ${a.ativo ? 'Desativar' : 'Ativar'}
@@ -479,12 +496,14 @@
                 const { error } = await sb.rpc('sa_salvar_admin', {
                     p_email: document.getElementById('adm-email').value.trim(),
                     p_nome: document.getElementById('adm-nome').value.trim() || null,
-                    p_ativo: true
+                    p_ativo: true,
+                    p_login: (document.getElementById('adm-login').value.trim() || null)
                 });
                 if (error) throw error;
                 toast('Super-admin salvo.');
                 document.getElementById('adm-email').value = '';
                 document.getElementById('adm-nome').value = '';
+                document.getElementById('adm-login').value = '';
                 document.getElementById('form-admin').classList.add('hidden');
                 const { data } = await sb.rpc('sa_listar_admins');
                 renderAdmins(data || []);
@@ -516,7 +535,9 @@
             if (event === 'SIGNED_OUT') window.location.href = 'index.html';
         });
 
-        init();
+        init().catch(function (e) {
+            toast('Erro ao iniciar painel: ' + (e && e.message ? e.message : e), true);
+        });
     </script>
 </body>
 </html>

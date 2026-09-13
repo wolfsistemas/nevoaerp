@@ -1,4 +1,9 @@
 // ========== RELATÓRIO DE DESPESAS ==========
+function esc(v) {
+    return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 function openExpenseReportModal() {
     // Preenche com o mês atual
     const hoje = new Date();
@@ -119,8 +124,8 @@ function renderExpenseReportResults(expenses) {
         html += `
             <tr class="hover:bg-slate-50">
                 <td class="p-3 text-xs font-medium">${formatDate(e.date)}</td>
-                <td class="p-3 font-bold text-slate-700">${e.item}</td>
-                <td class="p-3 text-sm text-slate-600">${providerVal}</td>
+                <td class="p-3 font-bold text-slate-700">${esc(e.item)}</td>
+                <td class="p-3 text-sm text-slate-600">${esc(providerVal)}</td>
                 <td class="p-3 text-right font-bold text-red-600">${formatMoney(e.cost)}</td>
                 <td class="p-3 text-center">
                     <span class="px-2 py-1 rounded-full text-xs font-bold ${statusColor}">${statusLabel}</span>
@@ -187,7 +192,7 @@ function printExpenseReport() {
     printWindow.document.write(`
         <html>
             <head>
-                <title>Relatório de Despesas - ${company.name}</title>
+                <title>Relatório de Despesas - ${esc(company.name)}</title>
                 <style>
                     body { font-family: 'Helvetica', Arial, sans-serif; padding: 30px; background: white; color: #1e293b; }
                     .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #059669; padding-bottom: 15px; margin-bottom: 20px; }
@@ -215,8 +220,8 @@ function printExpenseReport() {
             <body>
                 <div class="header">
                     <div>
-                        <h1>${company.name}</h1>
-                        ${company.cnpj ? `<p>CNPJ: ${company.cnpj}</p>` : ''}
+                        <h1>${esc(company.name)}</h1>
+                        ${company.cnpj ? `<p>CNPJ: ${esc(company.cnpj)}</p>` : ''}
                     </div>
                     <div style="text-align: right;">
                         <h2 style="margin: 0; font-size: 18px; color: #0f172a;">RELATÓRIO DE DESPESAS</h2>
@@ -228,7 +233,7 @@ function printExpenseReport() {
                 </div>
                 ${content.innerHTML}
                 <div class="footer">
-                    Documento emitido por ${company.name} - Relatório de despesas.
+                    Documento emitido por ${esc(company.name)} - Relatório de despesas.
                 </div>
                 <div class="no-print" style="text-align: center; margin-top: 20px;">
                     <button onclick="window.print()" style="padding: 10px 30px; background: #059669; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">🖨️ Imprimir / Salvar PDF</button>
@@ -314,8 +319,8 @@ function printFilteredExpenses() {
         return `
             <tr>
                 <td style="border-bottom:1px solid #ccc; border-right:1px solid #000; padding:5px;">${formatDate(e.date)}</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #000; padding:5px; font-weight:bold;">${e.item}</td>
-                <td style="border-bottom:1px solid #ccc; border-right:1px solid #000; padding:5px;">${providerVal}</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #000; padding:5px; font-weight:bold;">${esc(e.item)}</td>
+                <td style="border-bottom:1px solid #ccc; border-right:1px solid #000; padding:5px;">${esc(providerVal)}</td>
                 <td style="border-bottom:1px solid #ccc; border-right:1px solid #000; padding:5px; text-align:center;">
                     <span style="font-weight:bold; ${e.status === 'PAGO' ? 'color:green;' : (isVencido ? 'color:red;' : 'color:orange;')}">${situacao}</span>
                 </td>
@@ -324,17 +329,17 @@ function printFilteredExpenses() {
         `;
     }).join('');
 
-    const filtroTexto = `Período: ${formatDate(start + 'T00:00:00')} até ${formatDate(end + 'T00:00:00')} | Categoria: ${category === 'TODAS' ? 'Todas' : category} | Status: ${statusFilter === 'TODOS' ? 'Todos' : statusFilter}`;
+    const filtroTexto = `Período: ${formatDate(start + 'T00:00:00')} até ${formatDate(end + 'T00:00:00')} | Categoria: ${category === 'TODAS' ? 'Todas' : esc(category)} | Status: ${statusFilter === 'TODOS' ? 'Todos' : statusFilter}`;
 
     const el = document.getElementById('print-area');
     el.innerHTML = `
         <div class="invoice-box-orig" style="font-family: 'Helvetica', sans-serif; max-width: 1000px; margin: auto; padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
                 <div style="display: flex; gap: 15px; align-items: center;">
-                    <img src="${company.logoUrl}" style="max-height: 60px;" />
+                    <img src="${esc(company.logoUrl)}" style="max-height: 60px;" />
                     <div>
-                        <h2 style="margin: 0; color: #059669; font-size: 18px; font-weight: bold;">${company.name}</h2>
-                        ${company.cnpj ? `<p style="margin: 2px 0; font-size: 11px; color: #64748b;">CNPJ: ${company.cnpj}</p>` : ''}
+                        <h2 style="margin: 0; color: #059669; font-size: 18px; font-weight: bold;">${esc(company.name)}</h2>
+                        ${company.cnpj ? `<p style="margin: 2px 0; font-size: 11px; color: #64748b;">CNPJ: ${esc(company.cnpj)}</p>` : ''}
                     </div>
                 </div>
                 <div style="text-align: right;">

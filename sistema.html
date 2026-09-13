@@ -2038,8 +2038,8 @@
         async function saveClient(e) {
             e.preventDefault();
             showLoading(true);
-            const isNew = !document.getElementById('cli-id').value;
-            const newId = isNew ? getNextId(STATE.clients) : document.getElementById('cli-id').value;
+            const idExisting = document.getElementById('cli-id').value;
+            const isNew = !idExisting;
 
             const docDigitado = (document.getElementById('cli-doc').value || '').trim();
             const docLimpo = docDigitado.replace(/\D/g, '');
@@ -2053,17 +2053,20 @@
             // preserva o endereço texto que o cliente já tinha.
             const endInfo = lerEnderecoCliente();
             const endereco = endInfo.preenchido ? montarEnderecoCompleto(endInfo) :
-                             (isNew ? '' : (STATE.clients.find(x => String(x.id) === String(newId))?.address || ''));
+                             (isNew ? '' : (STATE.clients.find(x => String(x.id) === String(idExisting))?.address || ''));
 
             const payload = {
-                id: newId, nome: document.getElementById('cli-name').value.trim(), telefone: document.getElementById('cli-phone').value.trim(),
+                nome: document.getElementById('cli-name').value.trim(), telefone: document.getElementById('cli-phone').value.trim(),
                 documento: doc, endereco: endereco,
                 logradouro: endInfo.logradouro, numero: endInfo.numero, complemento: endInfo.complemento,
                 bairro: endInfo.bairro, cidade: endInfo.cidade, uf: endInfo.uf,
                 cep: endInfo.cep || null
             };
 
-            const { error } = await sb.from('clientes').upsert(payload);
+            // ID eh gerado pelo banco (sequencia global), para nao colidir entre tenants.
+            const { error } = isNew
+                ? await sb.from('clientes').insert([payload])
+                : await sb.from('clientes').update(payload).eq('id', idExisting);
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
             
             document.getElementById('client-form-container').classList.add('hidden');
@@ -2175,17 +2178,16 @@
        async function saveProduct(e) {
             e.preventDefault();
             showLoading(true);
-            const isNew = !document.getElementById('prd-id').value;
-            const newId = isNew ? getNextId(STATE.products) : document.getElementById('prd-id').value;
-        
+            const idExisting = document.getElementById('prd-id').value;
+            const isNew = !idExisting;
+
             const payload = {
-                id: newId,
                 nome: document.getElementById('prd-name').value,
                 categoria: document.getElementById('prd-cat').value,
                 preco: parseFloat(document.getElementById('prd-price').value),
                 custo: parseFloat(document.getElementById('prd-cost').value) || 0,
                 estoque_fisico: parseFloat(document.getElementById('prd-stock').value),
-                estoque_comprometido: isNew ? 0 : STATE.products.find(p => p.id == newId).committed,
+                estoque_comprometido: isNew ? 0 : (STATE.products.find(p => String(p.id) === String(idExisting))?.committed || 0),
         
                 // Novos campos
                 produto_parceiro: document.getElementById('prd-parceiro').checked,
@@ -2196,7 +2198,10 @@
                     : false
             };
         
-            const { error } = await sb.from('produtos').upsert(payload);
+            // ID eh gerado pelo banco (sequencia global), para nao colidir entre tenants.
+            const { error } = isNew
+                ? await sb.from('produtos').insert([payload])
+                : await sb.from('produtos').update(payload).eq('id', idExisting);
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
         
             document.getElementById('prod-form-container').classList.add('hidden');
@@ -3314,12 +3319,12 @@ function printStockCountSheet() {
                 // Um log 'recebimento' por forma; desconto/juros acompanham a 1a forma (rastreio).
                 // Insere ANTES de atualizar o título: se falhar, o título permanece consistente.
                 // ID vindo do banco (máx logs + 1) para nunca colidir com orçamentos/outros logs.
-                const uidBatch = gerarUidLocal();
+                // uid individual por forma de pagamento (logs.uid e PK)
                 for (let f of formas) {
                     const isPrimeira = f === formas[0];
                     await inserirLogBaixa({
                         id: await getNextIdFromDB(),
-                        uid: uidBatch,
+                        uid: gerarUidLocal(),
                         tipo: 'recebimento',
                         produto_nome: 'Baixa de Conta',
                         quantidade: 0,
@@ -3606,12 +3611,12 @@ function printStockCountSheet() {
                 const novoStatus = saldo <= 0.005 ? 'PAGO' : 'PARCIAL';
 
                 // Grava os logs de pagamento PRIMEIRO: se falhar, a despesa continua consistente (PENDENTE/PARCIAL).
-                const uidBatch = gerarUidLocal();
+                // uid individual por forma de pagamento (logs.uid e PK)
                 for (let f of formas) {
                     const isPrimeira = f === formas[0];
                     await inserirLogBaixa({
                         id: await getNextIdFromDB(),
-                        uid: uidBatch,
+                        uid: gerarUidLocal(),
                         tipo: 'despesa',
                         produto_nome: exp.item,
                         quantidade: exp.quantity || 1,
@@ -5832,17 +5837,23 @@ function loadQuoteToCart(id) {
             window.location.href = "index.html?t=" + Date.now();
         }
 
+        function esc(v) {
+            return String(v == null ? '' : v)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
         function renderUsers() {
             const list = document.getElementById('users-list');
             if(!list) return;
             list.innerHTML = (STATE.users||[]).map(u => `
                 <tr class="hover:bg-slate-50 ${!u.ativo ? 'opacity-50' : ''}">
-                    <td class="p-4 font-bold text-slate-700">${u.nome}</td>
+                    <td class="p-4 font-bold text-slate-700">${esc(u.nome)}</td>
                     <td class="p-4">
-                        <div class="text-emerald-600 font-bold">${u.login}</div>
-                        ${u.email ? `<div class="text-xs text-slate-400">${u.email}</div>` : `<div class="text-xs text-red-400 font-medium">sem e-mail</div>`}
+                        <div class="text-emerald-600 font-bold">${esc(u.login)}</div>
+                        ${u.email ? `<div class="text-xs text-slate-400">${esc(u.email)}</div>` : `<div class="text-xs text-red-400 font-medium">sem e-mail</div>`}
                     </td>
-                    <td class="p-4"><span class="text-[10px] font-bold uppercase px-2 py-1 rounded ${u.nivel_acesso === 'admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-600'}">${u.nivel_acesso}</span></td>
+                    <td class="p-4"><span class="text-[10px] font-bold uppercase px-2 py-1 rounded ${u.nivel_acesso === 'admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-600'}">${esc(u.nivel_acesso)}</span></td>
                     <td class="p-4 text-center"><span class="text-xs font-bold ${u.ativo ? 'text-green-600' : 'text-red-500'}">${u.ativo ? 'Ativo' : 'Bloqueado'}</span></td>
                     <td class="p-4 text-center flex justify-center gap-3">
                         <button onclick="openUserForm('${u.id}')" class="text-indigo-700 hover:text-indigo-900" title="Editar"><i data-lucide="edit-3" width="16"></i></button>
@@ -5905,6 +5916,17 @@ function loadQuoteToCart(id) {
                     if (!email || !senha) {
                         showLoading(false);
                         return showToast("Preencha e-mail e senha!", true);
+                    }
+                    // Checa o limite de usuarios do plano ANTES de criar a conta de Auth,
+                    // para nao deixar login orfao quando o plano esta cheio.
+                    const { data: podeAdd, error: limiteErr } = await sb.rpc('empresa_pode_adicionar_usuario', { p_empresa_id: dadosUsuario.empresaId });
+                    if (limiteErr) {
+                        showLoading(false);
+                        return showToast("Nao foi possivel validar o plano: " + limiteErr.message, true);
+                    }
+                    if (podeAdd === false) {
+                        showLoading(false);
+                        return showToast("Limite de usuarios do plano atingido. Faca upgrade para adicionar mais.", true);
                     }
                     // Login curto e unico em todo o sistema (usado na tela de login).
                     // Evita criar conta de Auth orfa quando o login ja existe.

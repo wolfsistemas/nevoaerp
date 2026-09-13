@@ -590,21 +590,23 @@
                  <div>
                     <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Categoria</label>
                     <select id="exp-item" class="w-full p-3 border rounded-xl focus:border-red-500 outline-none bg-slate-50">
-                        <option value="Fornecedor">Fornecedor</option>
-                        <option value="Salário">Salário</option>
-                        <option value="Energia">Energia</option>
-                        <option value="Água">Água</option>
-                        <option value="Internet">Internet</option>
-                        <option value="Imposto">Imposto</option>
-                        <option value="Sistema">Sistema</option>
-                        <option value="Contabilidade">Contabilidade</option>
-                        <option value="Combustível">Combustível</option>
-                        <option value="Man. Maquinas">Man. Máquinas</option>
-                        <option value="Juros/Taxas">Juros/Taxas</option>
-                        <option value="Veículos">Veículos</option>
-                        <option value="Marcenaria">Marcenaria</option>
-                        <option value="Instalação">Instalação</option>
-                        <option value="Outros">Outros</option>
+                        <option value="FORNECEDOR">FORNECEDOR</option>
+                        <option value="SALÁRIO">SALÁRIO</option>
+                        <option value="ENERGIA">ENERGIA</option>
+                        <option value="ESCRITORIO">ESCRITÓRIO</option>
+                        <option value="ÁGUA">ÁGUA</option>
+                        <option value="INTERNET">INTERNET</option>
+                        <option value="IMPOSTO">IMPOSTO</option>
+                        <option value="SISTEMA">SISTEMA</option>
+                        <option value="CONTABILIDADE">CONTABILIDADE</option>
+                        <option value="COMBUSTÍVEL">COMBUSTÍVEL</option>
+                        <option value="MAN. MAQUINAS">MAN. MAQUINAS</option>
+                        <option value="JUROS/TAXAS">JUROS/TAXAS</option>
+                        <option value="VEÍCULOS">VEÍCULOS</option>
+                        <option value="MARCENARIA">MARCENARIA</option>
+                        <option value="INSTALAÇÃO">INSTALAÇÃO</option>
+                        <option value="PROLABORE">PROLABORE</option>
+                        <option value="OUTROS">OUTROS</option>
                     </select>
                 </div>
                 <div>
@@ -903,6 +905,11 @@
             return new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
         }
 
+        // Timestamp no fuso local (evita venda perto da meia-noite cair no dia errado).
+        function agoraLocalISO() {
+            return new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString();
+        }
+
         let dadosUsuario = null;
         const userSessao = localStorage.getItem('rv_user');
 
@@ -970,6 +977,7 @@
                 if (data.session) return true;
             } catch(e) {}
             localStorage.removeItem('rv_user');
+                localStorage.removeItem('rv_empresa');
             window.location.replace('index.html?motivo=sessao');
             return false;
         }
@@ -977,6 +985,7 @@
         sb.auth.onAuthStateChange((event) => {
             if (event === 'SIGNED_OUT') {
                 localStorage.removeItem('rv_user');
+                localStorage.removeItem('rv_empresa');
                 window.location.replace('index.html?motivo=sessao');
             }
         });
@@ -1595,7 +1604,7 @@
             showLoading(true);
             try {
                 const baseDue = master.dueDate ? new Date(String(master.dueDate).split('T')[0] + 'T12:00:00') : new Date();
-                const todayISO = new Date().toISOString();
+                const todayISO = agoraLocalISO();
                 const client = master;
                 const centsTotal = Math.round(saldo * 100);
                 const baseCents = Math.floor(centsTotal / N);
@@ -1702,12 +1711,12 @@
                 // Um log 'recebimento' por forma; desconto/juros acompanham a 1a forma (rastreio).
                 // Insere ANTES de atualizar o título: se falhar, o título permanece consistente.
                 // ID vindo do banco (máx logs + 1) para nunca colidir com orçamentos/outros logs.
-                const uidBatch = gerarUid();
+                // uid individual por forma de pagamento (logs.uid e PK)
                 for (let f of formas) {
                     const isPrimeira = f === formas[0];
                     await inserirLogBaixa({
                         id: await getNextId('logs'),
-                        uid: uidBatch,
+                        uid: gerarUid(),
                         tipo: 'recebimento',
                         produto_nome: 'Baixa de Conta',
                         quantidade: 0,
@@ -1844,13 +1853,16 @@
                 const baseCents = Math.floor(centsTotal / parcelas);
                 const restCents = centsTotal - baseCents * parcelas;
                 const rows = [];
+                // Um unico id base para o lote: cada parcela recebe idBase + (k-1),
+                // para que editar/baixar uma parcela nao afete as demais.
+                const idBase = await getNextId('despesas');
                 for (let k = 1; k <= parcelas; k++) {
                     const vCents = k <= restCents ? baseCents + 1 : baseCents;
                     const dt = new Date(date + 'T12:00:00');
                     dt.setDate(dt.getDate() + (k - 1) * intervalo);
                     const dataParc = dt.toISOString().split('T')[0];
                     const obsParc = [finalNote, `Parcela ${k}/${parcelas}`].filter(s => s).join(' — ');
-                    rows.push({ ...payload, custo: vCents / 100, data: dataParc, observacao: obsParc, id: await getNextId('despesas') });
+                    rows.push({ ...payload, custo: vCents / 100, data: dataParc, observacao: obsParc, id: idBase + (k - 1) });
                 }
                 const res = await sb.from('despesas').insert(rows);
                 error = res.error;
@@ -1960,12 +1972,12 @@
                 const novoStatus = saldo <= 0.005 ? 'PAGO' : 'PARCIAL';
 
                 // Grava os logs de pagamento PRIMEIRO: se falhar, a despesa continua consistente (PENDENTE/PARCIAL).
-                const uidBatch = gerarUid();
+                // uid individual por forma de pagamento (logs.uid e PK)
                 for (let f of formas) {
                     const isPrimeira = f === formas[0];
                     await inserirLogBaixa({
                         id: await getNextId('logs'),
-                        uid: uidBatch,
+                        uid: gerarUid(),
                         tipo: 'despesa', produto_nome: String(id), quantidade: exp.quantity || 1,
                         data: dataPgto,
                         observacao: 'Ref Despesa #' + exp.id,
@@ -2347,7 +2359,7 @@
             const customObsCheck = document.getElementById('pos-custom-obs-check').checked;
             const obs = customObsCheck ? document.getElementById('pos-custom-obs').value : '';
         
-            const date = new Date().toISOString();
+            const date = agoraLocalISO();
             //const budgetId = CURRENT_QUOTE_ID || getNextId(STATE.logs, STATE.quotes);
             const budgetId = CURRENT_QUOTE_ID || await getNextId('logs');
         
@@ -3025,7 +3037,7 @@ function downloadPDF(blob, filename) {
                 const logsToCopy = STATE.logs.filter(l => String(l.id) === String(id) && l.type === 'venda');
                 //const newId = getNextId(STATE.logs, STATE.quotes);
                 const newId = await getNextId('logs');
-                const date = new Date().toISOString();
+                const date = agoraLocalISO();
 
                 // Recompõe o valor BRUTO de cada item (venda guarda líquido; orçamento guarda bruto + desconto)
                 const hasAllUid = logsToCopy.every(l => l.uid);
@@ -3507,23 +3519,25 @@ function downloadPDF(blob, filename) {
         async function saveProduct(e) {
             e.preventDefault();
             showLoading(true);
-            const isNew = !document.getElementById('prd-id').value;
-            const newId = isNew ? getNextId(STATE.products) : document.getElementById('prd-id').value;
+            const idExisting = document.getElementById('prd-id').value;
+            const isNew = !idExisting;
         
             const payload = {
-                id: newId,
                 nome: document.getElementById('prd-name').value,
                 categoria: document.getElementById('prd-cat').value,
                 preco: parseFloat(document.getElementById('prd-price').value), 
                 custo: parseFloat(document.getElementById('prd-cost').value) || 0,
                 estoque_fisico: parseFloat(document.getElementById('prd-stock').value),
-                estoque_comprometido: isNew ? 0 : STATE.products.find(p => p.id == newId).committed,
+                estoque_comprometido: isNew ? 0 : (STATE.products.find(p => String(p.id) === String(idExisting))?.committed || 0),
                 produto_parceiro: document.getElementById('prd-parceiro').checked,
                 fornecedor_parceiro: document.getElementById('prd-fornecedor').value.trim(),
                 unidade_medida: document.getElementById('prd-unidade').value
             };
         
-            const { error } = await sb.from('produtos').upsert(payload);
+            // ID gerado pelo banco (sequencia global) para nao colidir entre tenants.
+            const { error } = isNew
+                ? await sb.from('produtos').insert([payload])
+                : await sb.from('produtos').update(payload).eq('id', idExisting);
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
         
             document.getElementById('prod-form-container').classList.add('hidden');
@@ -3662,8 +3676,8 @@ function downloadPDF(blob, filename) {
         async function saveClient(e) {
             e.preventDefault();
             showLoading(true);
-            const isNew = !document.getElementById('cli-id').value;
-            const newId = isNew ? getNextId(STATE.clients) : document.getElementById('cli-id').value;
+            const idExisting = document.getElementById('cli-id').value;
+            const isNew = !idExisting;
 
             const docDigitado = (document.getElementById('cli-doc').value || '').trim();
             const docLimpo = docDigitado.replace(/\D/g, '');
@@ -3675,17 +3689,20 @@ function downloadPDF(blob, filename) {
 
             const endInfo = lerEnderecoCliente();
             const endereco = endInfo.preenchido ? montarEnderecoCompleto(endInfo) :
-                             (isNew ? '' : (STATE.clients.find(x => String(x.id) === String(newId))?.address || ''));
+                             (isNew ? '' : (STATE.clients.find(x => String(x.id) === String(idExisting))?.address || ''));
 
             const payload = {
-                id: newId, nome: document.getElementById('cli-name').value.trim(), telefone: document.getElementById('cli-phone').value.trim(),
+                nome: document.getElementById('cli-name').value.trim(), telefone: document.getElementById('cli-phone').value.trim(),
                 documento: doc, endereco: endereco,
                 logradouro: endInfo.logradouro, numero: endInfo.numero, complemento: endInfo.complemento,
                 bairro: endInfo.bairro, cidade: endInfo.cidade, uf: endInfo.uf,
                 cep: endInfo.cep || null
             };
 
-            const { error } = await sb.from('clientes').upsert(payload);
+            // ID gerado pelo banco (sequencia global) para nao colidir entre tenants.
+            const { error } = isNew
+                ? await sb.from('clientes').insert([payload])
+                : await sb.from('clientes').update(payload).eq('id', idExisting);
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
             
             document.getElementById('client-form-container').classList.add('hidden');
@@ -4051,6 +4068,7 @@ function showFilteredExpenses() {
         async function fazerLogout() {
             try { await sb.auth.signOut(); } catch(e) {}
             localStorage.removeItem('rv_user');
+                localStorage.removeItem('rv_empresa');
             window.location.replace('index.html');
         }
     </script>

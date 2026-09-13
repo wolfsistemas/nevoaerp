@@ -109,6 +109,9 @@
             const motivo = new URLSearchParams(window.location.search).get('motivo');
             if (motivo === 'sessao') {
                 localStorage.removeItem('rv_user');
+                localStorage.removeItem('rv_empresa');
+                // Garante que uma sessao ainda valida tambem seja encerrada.
+                sb.auth.signOut().catch(function () {});
                 const msg = document.getElementById('msg-erro');
                 if (msg) {
                     msg.textContent = "Sessão expirada. Faça login novamente.";

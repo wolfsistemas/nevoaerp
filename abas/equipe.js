@@ -2,6 +2,17 @@
 (function () {
   'use strict';
 
+  function esc(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function mesLocalISO(d) {
+    d = d || new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+
   let subAbaAtiva = 'lancamentos'; // 'lancamentos' | 'cadastro'
 
   // Aguarda carregamento do sistema principal
@@ -53,10 +64,8 @@
   if (subAbaAtiva === 'lancamentos') {
     const inputMes = document.getElementById('eq-filtro-mes');
     if (inputMes && !inputMes.value) {   // só define se ainda estiver vazio
-      const dataAtual = new Date();
-      dataAtual.setMonth(dataAtual.getMonth() - 1);
-      const mesAnterior = dataAtual.toISOString().slice(0, 7);
-      inputMes.value = mesAnterior;
+      const dataAtual = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
+      inputMes.value = mesLocalISO(dataAtual);
     }
     safeCall(carregarLancamentos);
   } else {
@@ -190,13 +199,14 @@
 
   // ========== MODAL CRIAR FOLHA ==========
   function abrirModalCriarFolha() {
-    const mesRef = document.getElementById('eq-filtro-mes')?.value || new Date().toISOString().slice(0,7);
+    const mesRef = document.getElementById('eq-filtro-mes')?.value || mesLocalISO();
     carregarEquipeParaFolha(mesRef);
   }
 
   async function carregarEquipeParaFolha(mesRef) {
     showLoading(true);
-    const { data: equipe } = await sb.from('equipe').select('*').eq('ativo', true);
+    const { data: equipe, error: equipeErr } = await sb.from('equipe').select('*').eq('ativo', true);
+    if (equipeErr) { showLoading(false); showToast('Erro ao carregar equipe: ' + equipeErr.message, true); return; }
     const { data: vales } = await sb.from('vales').select('*').eq('mes_referencia', mesRef);
     const { data: folhasExistentes } = await sb.from('folhas').select('equipe_id').eq('mes_referencia', mesRef);
     const valesMap = {};
@@ -224,7 +234,7 @@
               </thead>
               <tbody>`;
     let algumBloqueado = false;
-    equipe.forEach(f => {
+    (equipe || []).forEach(f => {
       const valeFuncionario = valesMap[f.id] || 0;
       const bloqueado = jaLancados.has(f.id);
       if (bloqueado) algumBloqueado = true;
@@ -232,7 +242,7 @@
       const liquido = base - valeFuncionario;
       html += `
         <tr class="border-b ${bloqueado ? 'opacity-50 bg-slate-50' : ''}" data-id="${f.id}" data-diaria="${f.valor_diaria || 0}" data-vales="${valeFuncionario}" data-bloqueado="${bloqueado ? '1' : '0'}">
-          <td class="p-2 font-bold">${f.nome}${bloqueado ? '<span class="ml-2 text-[10px] font-bold text-amber-600 uppercase">Já lançada</span>' : ''}</td>
+          <td class="p-2 font-bold">${esc(f.nome)}${bloqueado ? '<span class="ml-2 text-[10px] font-bold text-amber-600 uppercase">Já lançada</span>' : ''}</td>
           <td class="p-2 text-center">${f.tipo}</td>
           <td class="p-2 text-center">${formatMoney(base)}</td>
           <td class="p-2 text-center text-red-600">-${formatMoney(valeFuncionario)}</td>
@@ -276,13 +286,14 @@
 
   async function salvarFolha(mesRef) {
     showLoading(true);
-    const { data: equipe } = await sb.from('equipe').select('*').eq('ativo', true);
+    const { data: equipe, error: equipeErr } = await sb.from('equipe').select('*').eq('ativo', true);
+    if (equipeErr) { showLoading(false); showToast('Erro ao carregar equipe: ' + equipeErr.message, true); return; }
     const { data: vales } = await sb.from('vales').select('*').eq('mes_referencia', mesRef);
     const valesMap = {};
     (vales||[]).forEach(v => { valesMap[v.equipe_id] = (valesMap[v.equipe_id]||0) + v.valor; });
 
     const folhas = [];
-    equipe.forEach(f => {
+    (equipe || []).forEach(f => {
       const row = document.querySelector(`#modal-folha tr[data-id="${f.id}"]`);
       if (row && row.dataset.bloqueado === '1') return; // já possui folha neste mês, não duplicar
       const valesTotal = valesMap[f.id] || 0;
@@ -325,9 +336,10 @@
 
   // ========== MODAL VALE ==========
   async function abrirModalVale() {
-    const mesRef = document.getElementById('eq-filtro-mes')?.value || new Date().toISOString().slice(0,7);
-    const { data: equipe } = await sb.from('equipe').select('*').eq('ativo', true);
-    let options = equipe.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+    const mesRef = document.getElementById('eq-filtro-mes')?.value || mesLocalISO();
+    const { data: equipe, error: equipeErr } = await sb.from('equipe').select('*').eq('ativo', true);
+    if (equipeErr) { showLoading(false); showToast('Erro ao carregar equipe: ' + equipeErr.message, true); return; }
+    let options = equipe.map(f => `<option value="${f.id}">${esc(f.nome)}</option>`).join('');
 
     const html = `
       <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" id="modal-vale">
@@ -419,7 +431,7 @@
     } else {
       tbody.innerHTML = folhas.map(f => `
         <tr class="border-b hover:bg-slate-50">
-          <td class="p-3 font-bold">${f.equipe?.nome || '–'}</td>
+          <td class="p-3 font-bold">${esc(f.equipe?.nome) || '–'}</td>
           <td class="p-3">${f.tipo}</td>
           <td class="p-3">${f.mes_referencia}</td>
           <td class="p-3 text-center">${formatMoney(f.salario_base)}</td>
@@ -455,7 +467,7 @@
     }
     tbody.innerHTML = vales.map(v => `
       <tr class="border-b hover:bg-slate-50">
-        <td class="p-3 font-medium">${v.equipe?.nome || '–'}</td>
+        <td class="p-3 font-medium">${esc(v.equipe?.nome) || '–'}</td>
         <td class="p-3">${v.mes_referencia}</td>
         <td class="p-3 text-right font-bold text-red-600">${formatMoney(v.valor)}</td>
         <td class="p-3 text-center flex gap-2 justify-center">
@@ -486,12 +498,12 @@
         return alert('Erro: função getNextId não disponível.');
     }
 
-    //const descricao = `Salário ${folha.equipe.nome} (${folha.mes_referencia})`;
+    //const descricao = `Salário ${esc(folha.equipe?.nome)} (${folha.mes_referencia})`;
     // Padrão atual: categoria/observação em CAIXA ALTA e mês entre
     // parênteses — igual às despesas de salário históricas e parseável
     // pelo backfill (que lê "AAAA-MM" na observação).
     const descricao = `SALÁRIO REF. (${folha.mes_referencia})`;
-    const forn = `${folha.equipe.nome}`;
+    const forn = `${esc(folha.equipe?.nome)}`;
     const novoIdDespesa = getNextId(STATE.expenses); // ID único para despesas
 
     // 1. Inserir a despesa (já paga)
@@ -600,8 +612,8 @@
           <div style="display: flex; align-items: center; gap: 15px;">
             <img src="${empresa.logoUrl}" style="max-height: 70px;" alt="Logo">
             <div>
-              <h2 style="margin:0; color: #059669; font-size: 20px;">${empresa.name}</h2>
-              ${empresa.cnpj ? `<p style="margin:2px 0; font-size: 11px; color: #475569;">CNPJ: ${empresa.cnpj}</p>` : ''}
+              <h2 style="margin:0; color: #059669; font-size: 20px;">${esc(empresa.name)}</h2>
+              ${empresa.cnpj ? `<p style="margin:2px 0; font-size: 11px; color: #475569;">CNPJ: ${esc(empresa.cnpj)}</p>` : ''}
               ${empresa.address ? `<p style="margin:2px 0; font-size: 11px; color: #475569;">${empresa.address}</p>` : ''}
             </div>
           </div>
@@ -613,10 +625,10 @@
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
           <div>
-            <strong>Funcionário:</strong> ${folha.equipe.nome}<br>
+            <strong>Funcionário:</strong> ${esc(folha.equipe?.nome)}<br>
             <strong>Tipo:</strong> ${folha.tipo}<br>
             ${folha.tipo === 'Diarista' ? `<strong>Dias Trabalhados:</strong> ${folha.dias_trabalhados}<br>` : ''}
-            <strong>Chave PIX:</strong> ${folha.chave_pix || 'Não informada'}
+            <strong>Chave PIX:</strong> ${esc(folha.chave_pix) || 'Não informada'}
           </div>
           <div style="text-align: right;">
             <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
@@ -628,7 +640,7 @@
         </div>
 
         <div style="border: 1px dashed #94a3b8; padding: 12px; border-radius: 6px; background: #f8fafc; margin-bottom: 25px; font-size: 0.9em;">
-          Recebemos de ${empresa.name} a importância acima referente ao pagamento do mês de <strong>${folha.mes_referencia}</strong>.
+          Recebemos de ${esc(empresa.name)} a importância acima referente ao pagamento do mês de <strong>${folha.mes_referencia}</strong>.
         </div>
 
         <div style="margin-top: 60px; text-align: center;">
@@ -672,13 +684,13 @@
       totalGeral += f.valor_pago;
       return `
         <tr style="border-bottom: 1px solid #ddd;">
-          <td style="padding: 8px 5px;">${f.equipe?.nome || '–'}</td>
+          <td style="padding: 8px 5px;">${esc(f.equipe?.nome) || '–'}</td>
           <td style="padding: 8px 5px;">${f.tipo}</td>
           <td style="padding: 8px 5px; text-align: center;">${f.tipo === 'Diarista' ? f.dias_trabalhados : '–'}</td>
           <td style="padding: 8px 5px; text-align: right;">${formatMoney(f.salario_base)}</td>
           <td style="padding: 8px 5px; text-align: right; color: #b91c1c;">-${formatMoney(f.vales_total)}</td>
           <td style="padding: 8px 5px; text-align: right; font-weight: bold;">${formatMoney(f.valor_pago)}</td>
-          <td style="padding: 8px 5px; font-size: 0.85em; color: #444;">${f.chave_pix || ''}</td>
+          <td style="padding: 8px 5px; font-size: 0.85em; color: #444;">${esc(f.chave_pix) || ''}</td>
         </tr>`;
     }).join('');
 
@@ -688,8 +700,8 @@
           <div style="display: flex; align-items: center; gap: 10px;">
             <img src="${empresa.logoUrl}" style="max-height: 50px;" alt="Logo">
             <div>
-              <h2 style="margin:0; color: #059669; font-size: 18px;">${empresa.name}</h2>
-              ${empresa.cnpj ? `<p style="margin:2px 0; font-size: 10px; color: #475569;">CNPJ: ${empresa.cnpj}</p>` : ''}
+              <h2 style="margin:0; color: #059669; font-size: 18px;">${esc(empresa.name)}</h2>
+              ${empresa.cnpj ? `<p style="margin:2px 0; font-size: 10px; color: #475569;">CNPJ: ${esc(empresa.cnpj)}</p>` : ''}
             </div>
           </div>
           <div style="text-align: right;">
@@ -757,7 +769,7 @@
         totalGeral += v.valor;
         return `
           <tr style="border-bottom: 1px solid #ddd;">
-            <td style="padding: 8px 5px;">${v.equipe?.nome || '–'}</td>
+            <td style="padding: 8px 5px;">${esc(v.equipe?.nome) || '–'}</td>
             <td style="padding: 8px 5px; text-align: right; color: #b91c1c; font-weight: bold;">${formatMoney(v.valor)}</td>
           </tr>`;
       }).join('');
@@ -768,8 +780,8 @@
             <div style="display: flex; align-items: center; gap: 10px;">
               <img src="${empresa.logoUrl}" style="max-height: 50px;" alt="Logo">
               <div>
-                <h2 style="margin:0; color: #059669; font-size: 18px;">${empresa.name}</h2>
-                ${empresa.cnpj ? `<p style="margin:2px 0; font-size: 10px; color: #475569;">CNPJ: ${empresa.cnpj}</p>` : ''}
+                <h2 style="margin:0; color: #059669; font-size: 18px;">${esc(empresa.name)}</h2>
+                ${empresa.cnpj ? `<p style="margin:2px 0; font-size: 10px; color: #475569;">CNPJ: ${esc(empresa.cnpj)}</p>` : ''}
               </div>
             </div>
             <div style="text-align: right;">
@@ -822,8 +834,8 @@
             <div style="display: flex; align-items: center; gap: 15px;">
               <img src="${empresa.logoUrl}" style="max-height: 70px;" alt="Logo">
               <div>
-                <h2 style="margin:0; color: #059669; font-size: 20px;">${empresa.name}</h2>
-                ${empresa.cnpj ? `<p style="margin:2px 0; font-size: 11px; color: #475569;">CNPJ: ${empresa.cnpj}</p>` : ''}
+                <h2 style="margin:0; color: #059669; font-size: 20px;">${esc(empresa.name)}</h2>
+                ${empresa.cnpj ? `<p style="margin:2px 0; font-size: 11px; color: #475569;">CNPJ: ${esc(empresa.cnpj)}</p>` : ''}
                 ${empresa.address ? `<p style="margin:2px 0; font-size: 11px; color: #475569;">${empresa.address}</p>` : ''}
               </div>
             </div>
@@ -834,9 +846,9 @@
           </div>
   
           <div style="margin-bottom: 25px;">
-            <strong>Funcionário:</strong> ${vale.equipe?.nome || '–'}<br>
+            <strong>Funcionário:</strong> ${esc(vale.equipe?.nome) || '–'}<br>
             <strong>Data do Lançamento:</strong> ${dataVale}<br>
-            <strong>Chave PIX:</strong> ${vale.equipe?.chave_pix || 'Não informada'}
+            <strong>Chave PIX:</strong> ${esc(vale.equipe?.chave_pix) || 'Não informada'}
           </div>
   
           <div style="text-align: center; margin: 30px 0;">
@@ -845,7 +857,7 @@
           </div>
   
           <div style="border: 1px dashed #94a3b8; padding: 12px; border-radius: 6px; background: #f8fafc; margin-bottom: 25px; font-size: 0.9em;">
-            Recebi de ${empresa.name} a importância acima, referente a adiantamento (vale) do mês de <strong>${vale.mes_referencia}</strong>, a ser descontado da folha de pagamento correspondente.
+            Recebi de ${esc(empresa.name)} a importância acima, referente a adiantamento (vale) do mês de <strong>${vale.mes_referencia}</strong>, a ser descontado da folha de pagamento correspondente.
           </div>
   
           <div style="margin-top: 60px; text-align: center;">
@@ -881,11 +893,11 @@
 
     tbody.innerHTML = data.map(f => `
       <tr class="border-b hover:bg-slate-50">
-        <td class="p-3 font-bold">${f.nome}</td>
+        <td class="p-3 font-bold">${esc(f.nome)}</td>
         <td class="p-3">${f.tipo}</td>
         <td class="p-3 text-center">${f.valor_mensal ? formatMoney(f.valor_mensal) : '–'}</td>
         <td class="p-3 text-center">${f.valor_diaria ? formatMoney(f.valor_diaria) : '–'}</td>
-        <td class="p-3 text-sm">${f.chave_pix || '–'}</td>
+        <td class="p-3 text-sm">${esc(f.chave_pix) || '–'}</td>
         <td class="p-3 text-center">
           <span class="px-2 py-1 rounded text-xs font-bold ${f.ativo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}">${f.ativo ? 'Ativo' : 'Inativo'}</span>
         </td>
