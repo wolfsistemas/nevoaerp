@@ -9,6 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <script src="js/empresa.js"></script>
+    <script src="js/papeis.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
@@ -932,6 +933,13 @@
             return (ASSINATURA_ATUAL.recursos || []).includes(recurso);
         }
 
+        // Combina plano + papel: vendedor so acessa forca de vendas
+        // (orcamentos, PDV/venda, clientes e produtos).
+        function podeAcessarMobile(view) {
+            if (!recursoLiberado(RECURSOS_MOBILE[view])) return false;
+            return !window.papeis || window.papeis.podeAcessarModulo(view);
+        }
+
         async function carregarAssinaturaMobile() {
             try {
                 const { data, error } = await sb.rpc('minha_assinatura');
@@ -942,7 +950,7 @@
 
         function aplicarGatingMobile() {
             Object.keys(RECURSOS_MOBILE).forEach(view => {
-                const liberado = recursoLiberado(RECURSOS_MOBILE[view]);
+                const liberado = podeAcessarMobile(view);
                 const navBtn = document.getElementById('nav-' + view);
                 if (navBtn) navBtn.style.display = liberado ? '' : 'none';
                 const viewEl = document.getElementById('view-' + view);
@@ -1020,6 +1028,7 @@
                 const ok = await verificarSessaoAuth();
                 if (!ok) return;
                 aplicarBrandingMobile();
+                aplicarGatingMobile();
                 carregarAssinaturaMobile();
                 showLoading(true); 
                 loadData(); 
@@ -1070,8 +1079,8 @@
     }
 
         function navigate(viewId) {
-            if (RECURSOS_MOBILE[viewId] && !recursoLiberado(RECURSOS_MOBILE[viewId])) {
-                showToast('Recurso indisponivel no plano atual.', true);
+            if (RECURSOS_MOBILE[viewId] && !podeAcessarMobile(viewId)) {
+                showToast('Modulo indisponivel para o seu perfil/plano.', true);
                 return;
             }
             document.querySelectorAll('main > div[id^="view-"]').forEach(el => { el.classList.add('hidden-section'); el.classList.remove('active-section'); });
@@ -1176,9 +1185,12 @@
 
        async function loadData() {
                 try {
+                    // Vendedor nao carrega despesas (modulo financeiro indisponivel para ele).
+                    const ehAdmin = !window.papeis || window.papeis.ehAdmin();
                     const [resProd, resCli, resLog, resDesp] = await Promise.all([
                         fetchAllRecords('produtos'), fetchAllRecords('clientes'),
-                        fetchAllRecords('logs'), fetchAllRecords('despesas')
+                        fetchAllRecords('logs'),
+                        ehAdmin ? fetchAllRecords('despesas') : Promise.resolve({ data: [] })
                     ]);
             
                     STATE.products = (resProd.data || []).map(p => ({

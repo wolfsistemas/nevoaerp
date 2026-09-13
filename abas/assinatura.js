@@ -72,8 +72,21 @@
       originalNavigate(viewId);
       if (viewId === 'assinatura') renderAssinatura();
     };
+    aplicarPapel();
     aplicarPlano();
   });
+
+  // Esconde ja de cara os modulos que o papel do usuario nao permite,
+  // independentemente do plano (assim funciona mesmo sem assinatura carregada).
+  function aplicarPapel() {
+    if (!window.papeis) return;
+    Object.keys(RECURSOS_NAV).forEach(function (navId) {
+      if (window.papeis.podeAcessarModulo(navId.replace('nav-', ''))) return;
+      var el = document.getElementById(navId);
+      if (el) el.classList.add('hidden');
+    });
+    window.papeis.aplicarNavAdminOnly();
+  }
 
   async function aplicarPlano() {
     try {
@@ -84,7 +97,9 @@
       Object.keys(RECURSOS_NAV).forEach(function (navId) {
         var el = document.getElementById(navId);
         if (!el) return;
-        var liberado = recursos.indexOf(RECURSOS_NAV[navId]) !== -1;
+        var modulo = navId.replace('nav-', '');
+        var papelOk = !window.papeis || window.papeis.podeAcessarModulo(modulo);
+        var liberado = recursos.indexOf(RECURSOS_NAV[navId]) !== -1 && papelOk;
         el.classList.toggle('hidden', !liberado);
       });
     } catch (e) { /* em caso de erro, mantem tudo visivel (nao travar o app) */ }

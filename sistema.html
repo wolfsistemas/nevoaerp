@@ -16,6 +16,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <script src="js/empresa.js"></script>
+    <script src="js/papeis.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -1730,6 +1731,7 @@
             if (dadosUsuario) {
                 const ok = await verificarSessaoAuth();
                 if (!ok) return;
+                if (window.papeis) window.papeis.aplicarNavAdminOnly();
                 showLoading(true); 
                 loadData(); 
                 startInactivityMonitoring();
@@ -1771,6 +1773,10 @@
 
     
   function navigate(viewId) {
+    if (window.papeis && !window.papeis.podeAcessarModulo(viewId)) {
+      showToast('Acesso restrito ao administrador.', true);
+      return;
+    }
     document.querySelectorAll('div[id^="view-"]').forEach(el => { el.classList.add('hidden-section'); el.classList.remove('active-section'); });
     const target = document.getElementById('view-' + viewId);
     if(target) { target.classList.remove('hidden-section'); target.classList.add('active-section'); }
@@ -1878,12 +1884,16 @@
 
         async function loadData() {
     try {
+        // Vendedor nao carrega dados administrativos (despesas/equipe); a UI
+        // desses modulos tambem fica indisponivel para ele.
+        const ehAdmin = !window.papeis || window.papeis.ehAdmin();
+        const vazio = Promise.resolve({ data: [] });
         const [resProd, resCli, resLog, resDesp, resEquipe, /*resConf*/] = await Promise.all([
             fetchAllRecords('produtos'),
             fetchAllRecords('clientes'),
             fetchAllRecords('logs'),
-            fetchAllRecords('despesas'),
-            fetchAllRecords('equipe')
+            ehAdmin ? fetchAllRecords('despesas') : vazio,
+            ehAdmin ? fetchAllRecords('equipe') : vazio
            //sb.from('configuracoes').select('*').eq('chave', 'custo_material_b10').maybeSingle()
         ]);
 
