@@ -397,23 +397,14 @@
 
   // Ajusta (delta) o vales_total e o valor_pago de folhas PENDENTES do funcionário/mês,
   // sem sobrescrever eventuais ajustes manuais feitos no valor líquido.
+  // O ajuste é atômico no banco (evita condição de corrida entre lançamentos simultâneos).
   async function sincronizarFolhaComVale(equipeId, mesRef, delta) {
-    const { data: folhasPendentes, error } = await sb.from('folhas')
-      .select('id, vales_total, valor_pago')
-      .eq('equipe_id', equipeId)
-      .eq('mes_referencia', mesRef)
-      .eq('status', 'PENDENTE');
-
-    if (error || !folhasPendentes || folhasPendentes.length === 0) return;
-
-    for (const folha of folhasPendentes) {
-      const novoValesTotal = (parseFloat(folha.vales_total) || 0) + delta;
-      const novoValorPago = (parseFloat(folha.valor_pago) || 0) - delta;
-      await sb.from('folhas').update({
-        vales_total: novoValesTotal,
-        valor_pago: novoValorPago
-      }).eq('id', folha.id);
-    }
+    const { error } = await sb.rpc('ajustar_folha_com_vale', {
+      p_equipe_id: equipeId,
+      p_mes: mesRef,
+      p_delta: delta
+    });
+    if (error) console.warn('Falha ao sincronizar vale com folha:', error.message);
   }
 
   // ========== LISTAGEM DE FOLHAS ==========

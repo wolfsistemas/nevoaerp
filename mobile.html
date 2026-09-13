@@ -74,9 +74,9 @@
     <header class="bg-slate-900 text-white p-4 flex justify-between items-center shadow-md sticky top-0 z-40">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-full border-2 border-emerald-500 bg-white overflow-hidden p-0.5 flex items-center justify-center">
-                <img src="logo.png" class="w-full h-full object-contain" />
+                <img id="brand-logo" src="logo.png" alt="" class="w-full h-full object-contain" />
             </div>
-            <h1 class="text-lg font-black tracking-wider text-emerald-400">NÉVOA</h1>
+            <h1 id="brand-name" class="text-lg font-black tracking-wider text-emerald-400">NÉVOA</h1>
         </div>
         <button onclick="fazerLogout()" class="text-red-400 hover:text-red-300 p-2"><i data-lucide="log-out"></i></button>
     </header>
@@ -922,6 +922,60 @@
             window.EMPRESA_INFO = empSessao ? JSON.parse(empSessao) : null;
         } catch (e) { window.EMPRESA_INFO = null; }
 
+        // Assinatura/plano da empresa (gating de modulos no mobile)
+        let ASSINATURA_ATUAL = null;
+        const RECURSOS_MOBILE = { quotes: 'orcamentos', reports: 'relatorios', fin: 'financeiro', prod: 'produtos', clients: 'clientes', pos: 'pdv' };
+
+        function recursoLiberado(recurso) {
+            if (!ASSINATURA_ATUAL) return true;
+            if (ASSINATURA_ATUAL.bloqueada) return false;
+            return (ASSINATURA_ATUAL.recursos || []).includes(recurso);
+        }
+
+        async function carregarAssinaturaMobile() {
+            try {
+                const { data, error } = await sb.rpc('minha_assinatura');
+                if (!error && data) ASSINATURA_ATUAL = Array.isArray(data) ? data[0] : data;
+            } catch (e) {}
+            aplicarGatingMobile();
+        }
+
+        function aplicarGatingMobile() {
+            Object.keys(RECURSOS_MOBILE).forEach(view => {
+                const liberado = recursoLiberado(RECURSOS_MOBILE[view]);
+                const navBtn = document.getElementById('nav-' + view);
+                if (navBtn) navBtn.style.display = liberado ? '' : 'none';
+                const viewEl = document.getElementById('view-' + view);
+                if (!liberado && viewEl && viewEl.classList.contains('active-section')) navigate('quotes');
+            });
+            if (ASSINATURA_ATUAL && ASSINATURA_ATUAL.bloqueada && !document.getElementById('billing-aviso-mobile')) {
+                const aviso = document.createElement('div');
+                aviso.id = 'billing-aviso-mobile';
+                aviso.className = 'bg-amber-100 border-b border-amber-300 text-amber-800 text-xs font-bold p-3 text-center';
+                aviso.textContent = 'Assinatura inativa. O aplicativo esta em modo somente leitura. Regularize na versao desktop.';
+                const main = document.querySelector('main');
+                if (main) main.prepend(aviso);
+            }
+        }
+
+        function aplicarBrandingMobile() {
+            const c = (window.getCompany ? window.getCompany() : null) || {};
+            const nome = (c.nome && c.nome !== 'Minha Empresa') ? c.nome : 'NÉVOA';
+            const h1 = document.getElementById('brand-name');
+            if (h1) h1.textContent = nome.toUpperCase();
+            if (c.logoUrl && c.logoUrl !== 'logo.png') {
+                const img = document.getElementById('brand-logo');
+                if (img) img.src = c.logoUrl;
+            }
+        }
+
+        // Escapa texto antes de inserir em innerHTML (evita XSS armazenado).
+        function esc(v) {
+            return String(v == null ? '' : v)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
         // Valores vindos de config.js (injetados no deploy via GitHub Actions)
         const supabaseUrl = window.SUPABASE_URL;
         const supabaseKey = window.SUPABASE_ANON_KEY;
@@ -965,6 +1019,8 @@
             if (dadosUsuario) {
                 const ok = await verificarSessaoAuth();
                 if (!ok) return;
+                aplicarBrandingMobile();
+                carregarAssinaturaMobile();
                 showLoading(true); 
                 loadData(); 
             }
@@ -1014,6 +1070,10 @@
     }
 
         function navigate(viewId) {
+            if (RECURSOS_MOBILE[viewId] && !recursoLiberado(RECURSOS_MOBILE[viewId])) {
+                showToast('Recurso indisponivel no plano atual.', true);
+                return;
+            }
             document.querySelectorAll('main > div[id^="view-"]').forEach(el => { el.classList.add('hidden-section'); el.classList.remove('active-section'); });
             
             const target = document.getElementById('view-' + viewId);
@@ -1313,9 +1373,9 @@
                 recHtml += `
                 <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center border-l-4 ${isVencido ? 'border-l-red-500' : 'border-l-green-500'} relative">
                     <div class="flex-1 pr-2">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase">${r.desc} ${isVencido ? '<span class="text-red-500 ml-1">VENCIDO</span>' : ''}</span>
-                        <h4 class="font-bold text-slate-700 text-sm leading-tight">${r.clientName}</h4>
-                        <p class="text-[10px] text-slate-500 mt-1">Venc: ${formatDate(r.dueDate)} | ${r.payment || '-'}</p>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">${esc(r.desc)} ${isVencido ? '<span class="text-red-500 ml-1">VENCIDO</span>' : ''}</span>
+                        <h4 class="font-bold text-slate-700 text-sm leading-tight">${esc(r.clientName)}</h4>
+                        <p class="text-[10px] text-slate-500 mt-1">Venc: ${formatDate(r.dueDate)} | ${esc(r.payment || '-')}</p>
                         <p class="text-[10px] text-red-600 font-bold mt-1">Falta: ${formatMoney(falta)}</p>
                         ${(r.jur || 0) > 0 ? `<p class="text-[10px] text-red-500 font-bold">+ Juros ${formatMoney(r.jur)}</p>` : ''}
                         ${(r.disc || 0) > 0 ? `<p class="text-[10px] text-green-600 font-bold">- Desc. ${formatMoney(r.disc)}</p>` : ''}
@@ -1343,8 +1403,8 @@
                 <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center border-l-4 ${isVencido ? 'border-l-red-500' : 'border-l-red-500'} relative">
                     <div class="flex-1 pr-2">
                         <span class="text-[10px] font-bold text-slate-400 uppercase">${formatDate(e.date)} ${isVencido ? '<span class="text-red-500 ml-1">VENCIDO</span>' : ''}</span>
-                        <h4 class="font-bold text-slate-700 text-sm leading-tight">${e.item}</h4>
-                        <p class="text-[10px] text-slate-500 truncate">${e.provider || e.note || '-'}</p>
+                        <h4 class="font-bold text-slate-700 text-sm leading-tight">${esc(e.item)}</h4>
+                        <p class="text-[10px] text-slate-500 truncate">${esc(e.provider || e.note || '-')}</p>
                         ${(e.valorPago || 0) > 0 ? `<p class="text-[10px] text-orange-500 font-bold mt-1">Pago ${formatMoney(e.valorPago)} | Resta ${formatMoney(Math.max(0, saldoExp))}</p>` : `<p class="text-[10px] text-red-600 font-bold mt-1">Pagar: ${formatMoney(Math.max(0, saldoExp))}</p>`}
                         ${(e.acrescimoTotal || 0) > 0 ? `<p class="text-[10px] text-red-500 font-bold">+ Juros ${formatMoney(e.acrescimoTotal)}</p>` : ''}
                         ${(e.descontoTotal || 0) > 0 ? `<p class="text-[10px] text-green-600 font-bold">- Desc. ${formatMoney(e.descontoTotal)}</p>` : ''}
@@ -1405,8 +1465,8 @@
                 <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
                     <div class="flex-1 pr-2">
                         <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">${formatDate(i.date)}</span>
-                        <h4 class="text-xs font-bold text-slate-700 leading-tight">${i.title}</h4>
-                        <p class="text-[10px] text-slate-500 truncate mt-0.5">${i.desc}</p>
+                        <h4 class="text-xs font-bold text-slate-700 leading-tight">${esc(i.title)}</h4>
+                        <p class="text-[10px] text-slate-500 truncate mt-0.5">${esc(i.desc)}</p>
                     </div>
                     <div class="flex flex-col items-end gap-1.5">
                         <span class="font-black text-sm ${i.type === 'in' ? 'text-green-600' : 'text-red-600'}">${i.type === 'in' ? '+' : '-'} ${formatMoney(i.val)}</span>
@@ -2158,7 +2218,7 @@
                 <div class="bg-white p-3 border rounded-xl flex flex-col gap-2">
                     <div class="flex justify-between items-start">
                         <div class="flex-1 pr-2">
-                            <span class="font-bold text-sm text-slate-800 leading-tight">${i.name}</span>
+                            <span class="font-bold text-sm text-slate-800 leading-tight">${esc(i.name)}</span>
                             ${descExtra}
                         </div>
                         <button onclick="CART.splice(${idx},1);renderCart()" class="text-red-400 hover:text-red-600 bg-red-50 p-1.5 rounded-lg active:scale-95 transition-transform">
@@ -2231,7 +2291,7 @@
         return `
         <div class="p-3 border rounded-xl bg-white flex flex-col gap-2">
             <div class="flex justify-between">
-                <h4 class="font-bold text-sm text-slate-800 leading-tight">${p.name}</h4>
+                <h4 class="font-bold text-sm text-slate-800 leading-tight">${esc(p.name)}</h4>
                 <span class="text-[10px] px-2 py-0.5 rounded h-max ${isPartner ? 'bg-amber-100 text-amber-700' : (p.available<=0 ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700')} font-bold">
                     ${isPartner ? 'Parceiro' : 'Disp: ' + p.available}
                 </span>
@@ -2324,10 +2384,10 @@
 
             grid.innerHTML = filtered.slice(0, 50).map(c => {
                 return `
-                <div class="p-4 border rounded-xl bg-white flex items-center justify-between" onclick="selectPosClient('${c.id}', '${c.name.replace(/'/g, "\\'")}')">
+                <div class="p-4 border rounded-xl bg-white flex items-center justify-between" onclick="selectPosClient('${c.id}')">
                     <div class="flex flex-col flex-1 truncate">
-                        <h4 class="font-bold text-sm text-slate-800 truncate">${c.name}</h4>
-                        <span class="text-[11px] text-slate-500 font-medium mt-0.5">Doc: ${c.doc || '-'} | Tel: ${c.phone || '-'}</span>
+                        <h4 class="font-bold text-sm text-slate-800 truncate">${esc(c.name)}</h4>
+                        <span class="text-[11px] text-slate-500 font-medium mt-0.5">Doc: ${esc(c.doc || '-')} | Tel: ${esc(c.phone || '-')}</span>
                     </div>
                     <button class="bg-indigo-50 text-indigo-600 p-2 rounded-full"><i data-lucide="check" class="w-5 h-5"></i></button>
                 </div>`;
@@ -2335,7 +2395,9 @@
             lucide.createIcons();
         }
 
-        function selectPosClient(id, name) {
+        function selectPosClient(id) {
+            const c = (STATE.clients || []).find(x => String(x.id) === String(id));
+            const name = c ? c.name : 'Consumidor Final';
             document.getElementById('pos-client').value = id;
             document.getElementById('pos-client-btn').querySelector('span').innerText = name;
             closePosClientModal();
@@ -2547,8 +2609,8 @@
         return `
             <tr>
                 <td style="border-bottom: 1px solid #000; padding: 8px;">
-                    ${i.name}
-                    ${i.metragem ? `<br><span style="font-size:9px;">${i.metragem}</span>` : ''}
+                    ${esc(i.name)}
+                    ${i.metragem ? `<br><span style="font-size:9px;">${esc(i.metragem)}</span>` : ''}
                 </td>
                 <td align="center" style="border-bottom: 1px solid #000; padding: 8px;">${i.qty}</td>
                 <td align="right" style="border-bottom: 1px solid #000; padding: 8px;">${formatMoney(i.price)}</td>
@@ -2587,9 +2649,9 @@
                         <img src="${company.logoUrl}" crossorigin="anonymous" style="max-height: 80px; max-width: 120px; display: block; margin: 0 auto;" />
                     </td>
                     <td valign="middle" style="padding-left: 15px;">
-                        <h2 style="margin: 0; color: #059669; font-size: 20px; font-weight: 800;">${company.name}</h2>
-                        ${company.cnpj ? `<div style="font-size: 11px; color: #475569; margin-top: 5px; line-height: 1.4;">CNPJ: ${company.cnpj}</div>` : ''}
-                        ${company.address ? `<div style="font-size: 11px; color: #475569; line-height: 1.4;">${company.address}</div>` : ''}
+                        <h2 style="margin: 0; color: #059669; font-size: 20px; font-weight: 800;">${esc(company.name)}</h2>
+                        ${company.cnpj ? `<div style="font-size: 11px; color: #475569; margin-top: 5px; line-height: 1.4;">CNPJ: ${esc(company.cnpj)}</div>` : ''}
+                        ${company.address ? `<div style="font-size: 11px; color: #475569; line-height: 1.4;">${esc(company.address)}</div>` : ''}
                     </td>
                     <td align="right" valign="top">
                         <h2 style="margin: 0 0 5px 0; font-size: 16px; font-weight: 900; color: #0f172a;">${tituloDoc}</h2>
@@ -2604,14 +2666,14 @@
                     <td width="48%" valign="top" style="border: 1px solid #000; border-radius: 6px; padding: 0; overflow: hidden;">
                         <div style="background-color: #f1f5f9; padding: 5px 10px; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #64748b; border-bottom: 1px solid #000;">Dados do Cliente</div>
                         <div style="padding: 10px; font-size: 11px; line-height: 1.5;">
-                            <strong>${cli.name}</strong><br>${cli.doc || ''}<br>${cli.phone || ''}<br>${addressToShow}
+                            <strong>${esc(cli.name)}</strong><br>${esc(cli.doc || '')}<br>${esc(cli.phone || '')}<br>${esc(addressToShow)}
                         </div>
                     </td>
                     <td width="4%"></td>
                     <td width="48%" valign="top" style="border: 1px solid #000; border-radius: 6px; padding: 0; overflow: hidden;">
                         <div style="background-color: #f1f5f9; padding: 5px 10px; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #64748b; border-bottom: 1px solid #000;">Pagamento</div>
                         <div style="padding: 10px; font-size: 11px; line-height: 1.5;">
-                            <strong>Forma:</strong> ${q.paymentMethod || 'A Combinar'}<br><strong>Vendedor:</strong> ${getVendedor()}
+                            <strong>Forma:</strong> ${esc(q.paymentMethod || 'A Combinar')}<br><strong>Vendedor:</strong> ${esc(getVendedor())}
                         </div>
                     </td>
                 </tr>
@@ -2634,7 +2696,7 @@
                     <td valign="top" style="padding-right: 30px;">
                         <div style="border: 1px dashed #cbd5e1; border-radius: 6px; padding: 10px;">
                             <div style="font-size: 10px; font-weight: bold; color: #64748b; margin-bottom: 5px;">Observações:</div>
-                            <div style="font-size: 10px; color: #334155;">${obsText}</div>
+                            <div style="font-size: 10px; color: #334155;">${esc(obsText)}</div>
                         </div>
                     </td>
                     <td width="250" valign="top">
@@ -3139,7 +3201,7 @@ function downloadPDF(blob, filename) {
                                       <div class="flex items-center gap-2 flex-wrap justify-end">
                                           <span class="font-black text-xl text-slate-800">${formatMoney(valorLiquido)}</span>
                                           <!-- Botão WhatsApp -->
-                                          <button onclick="openWhatsApp('${q.id}', '${q.clientName.replace(/'/g, "\\'")}')" 
+                                          <button onclick="openWhatsApp('${q.id}')" 
                                                   class="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full shadow-md active:scale-95 transition-transform" 
                                                   title="Enviar mensagem via WhatsApp">
                                               <i data-lucide="message-circle" class="w-5 h-5"></i>
@@ -3155,7 +3217,7 @@ function downloadPDF(blob, filename) {
                               </div>
                               <div class="mb-4 bg-white/60 p-3 rounded-xl border border-white/50">
                                   <div class="font-bold text-sm text-slate-800 flex items-center gap-1 mb-1">
-                                      <i data-lucide="user" class="w-4 h-4 text-slate-400"></i> ${q.clientName}
+                                      <i data-lucide="user" class="w-4 h-4 text-slate-400"></i> ${esc(q.clientName)}
                                   </div>
                               </div>
                               <div class="flex gap-2 justify-end mt-2">
@@ -3180,11 +3242,11 @@ function downloadPDF(blob, filename) {
                             </div>
                             <div class="text-right">
                                 <div class="font-black text-xl text-emerald-600">${formatMoney(valorLiquido)}</div>
-                                <span class="mt-1 inline-block bg-slate-200 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">${q.paymentMethod || 'Pago'}</span>
+                                <span class="mt-1 inline-block bg-slate-200 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">${esc(q.paymentMethod || 'Pago')}</span>
                             </div>
                         </div>
                         <div class="mb-4 bg-white p-3 rounded-xl border border-slate-200">
-                            <div class="font-bold text-sm text-slate-800 flex items-center gap-1 mb-1"><i data-lucide="user" class="w-4 h-4 text-slate-400"></i> ${q.clientName}</div>
+                            <div class="font-bold text-sm text-slate-800 flex items-center gap-1 mb-1"><i data-lucide="user" class="w-4 h-4 text-slate-400"></i> ${esc(q.clientName)}</div>
                         </div>
                         <div class="flex gap-2 justify-end mt-2">
                             <button onclick="shareQuote('${q.id}')" class="flex-1 p-2 bg-green-100 border border-green-300 text-green-700 rounded-xl flex justify-center items-center gap-1 font-bold shadow-sm active:scale-95 transition-transform text-xs">
@@ -3200,13 +3262,14 @@ function downloadPDF(blob, filename) {
             lucide.createIcons();
         }
 
-      function openWhatsApp(quoteId, clientName) {
+      function openWhatsApp(quoteId) {
           // Busca o orçamento pelo ID
           const quote = STATE.quotes.find(q => String(q.id) === String(quoteId));
           if (!quote) {
               showToast("Orçamento não encontrado.", true);
               return;
           }
+          const clientName = quote.clientName || '';
       
           // Busca o cliente pelo nome (para pegar o telefone)
           const client = STATE.clients.find(c => c.name === clientName);
@@ -3265,17 +3328,17 @@ function downloadPDF(blob, filename) {
                 rowsHtml += `
                     <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm mb-2 flex flex-col gap-1">
                         <div class="flex justify-between items-start">
-                            <span class="font-bold text-sm text-slate-800">#${s.id} - ${s.clientName}</span>
+                            <span class="font-bold text-sm text-slate-800">#${s.id} - ${esc(s.clientName)}</span>
                             <span class="font-black text-emerald-600">${formatMoney(valorFinal)}</span>
                         </div>
-                        <span class="text-[11px] text-slate-500 font-bold uppercase bg-slate-100 w-max px-2 py-0.5 rounded">${s.paymentMethod}</span>
+                        <span class="text-[11px] text-slate-500 font-bold uppercase bg-slate-100 w-max px-2 py-0.5 rounded">${esc(s.paymentMethod)}</span>
                     </div>
                 `;
             });
 
             let pgtoRowsHtml = Object.entries(pagamentosMap).map(([metodo, valor]) => `
                 <div class="flex justify-between items-center border-b border-dashed border-slate-300 py-2">
-                    <span class="text-sm font-medium text-slate-600">${metodo}</span>
+                    <span class="text-sm font-medium text-slate-600">${esc(metodo)}</span>
                     <span class="text-sm font-bold text-slate-800">${formatMoney(valor)}</span>
                 </div>
             `).join('');
@@ -3386,12 +3449,12 @@ function downloadPDF(blob, filename) {
                 return `
                     <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm mb-2 flex flex-col gap-1">
                         <div class="flex justify-between items-start">
-                            <span class="font-bold text-sm text-slate-800">#${s.id} - ${s.clientName}</span>
+                            <span class="font-bold text-sm text-slate-800">#${s.id} - ${esc(s.clientName)}</span>
                             <span class="font-black text-emerald-600">${formatMoney(valorFinal)}</span>
                         </div>
                         <div class="flex justify-between items-center mt-1">
                             <span class="text-[10px] text-slate-400 font-bold"><i data-lucide="calendar" class="inline w-3 h-3"></i> ${formatDate(s.date)}</span>
-                            <span class="text-[10px] text-slate-500 font-bold uppercase bg-slate-100 px-2 py-0.5 rounded">${s.paymentMethod}</span>
+                            <span class="text-[10px] text-slate-500 font-bold uppercase bg-slate-100 px-2 py-0.5 rounded">${esc(s.paymentMethod)}</span>
                         </div>
                     </div>
                 `;
@@ -3399,12 +3462,12 @@ function downloadPDF(blob, filename) {
 
             let pgtoRowsHtml = Object.entries(pagamentosMap).map(([metodo, valor]) => `
                 <div class="flex justify-between items-center border-b border-dashed border-slate-300 py-2">
-                    <span class="text-sm font-medium text-slate-600">${metodo}</span>
+                    <span class="text-sm font-medium text-slate-600">${esc(metodo)}</span>
                     <span class="text-sm font-bold text-slate-800">${formatMoney(valor)}</span>
                 </div>
             `).join('');
 
-            const filtroTexto = `${start ? formatDate(start) : 'Início'} até ${end ? formatDate(end) : 'Hoje'} <br> Pgto: ${payment} ${client ? '| Cliente: ' + client : ''}`;
+            const filtroTexto = `${start ? formatDate(start) : 'Início'} até ${end ? formatDate(end) : 'Hoje'} <br> Pgto: ${esc(payment)} ${client ? '| Cliente: ' + esc(client) : ''}`;
             const el = document.getElementById('report-result-content');
             el.innerHTML = `
                 <div class="max-w-md mx-auto">
@@ -3474,8 +3537,8 @@ function downloadPDF(blob, filename) {
             list.innerHTML = filtered.map(p => `
             <div class="bg-white p-4 rounded-2xl border shadow-sm flex items-center justify-between mb-1">
                 <div class="flex flex-col flex-1 mr-2 overflow-hidden">
-                    <h4 class="font-black text-slate-800 text-sm truncate mb-1">${p.name}</h4>
-                    <span class="text-[10px] text-slate-500 font-bold bg-slate-100 px-2 py-1 rounded w-max uppercase">${p.category || 'Geral'}</span>
+                    <h4 class="font-black text-slate-800 text-sm truncate mb-1">${esc(p.name)}</h4>
+                    <span class="text-[10px] text-slate-500 font-bold bg-slate-100 px-2 py-1 rounded w-max uppercase">${esc(p.category || 'Geral')}</span>
                 </div>
                 <div class="flex flex-col items-end gap-1">
                     <span class="font-black text-orange-500 text-lg">${formatMoney(p.price)}</span>
@@ -3591,8 +3654,8 @@ function downloadPDF(blob, filename) {
                     return `
                     <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center mb-1">
                         <div class="flex flex-col flex-1 truncate mr-3">
-                            <span class="font-bold text-sm text-slate-800 truncate">${c.name}</span>
-                            <span class="text-[11px] text-slate-500 font-medium mt-0.5">${c.phone || 'Sem telefone'}</span>
+                            <span class="font-bold text-sm text-slate-800 truncate">${esc(c.name)}</span>
+                            <span class="text-[11px] text-slate-500 font-medium mt-0.5">${esc(c.phone || 'Sem telefone')}</span>
                         </div>
                         
                         <div class="flex items-center gap-2">
@@ -3846,7 +3909,7 @@ function downloadPDF(blob, filename) {
           let rowsHtml = produtos.map(i => `
               <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm mb-2">
                   <div class="flex justify-between items-start mb-1">
-                      <span class="font-bold text-sm text-slate-800">${i.nome}</span>
+                      <span class="font-bold text-sm text-slate-800">${esc(i.nome)}</span>
                       <span class="font-black text-emerald-600">${formatMoney(i.valorVenda)}</span>
                   </div>
                   <div class="flex justify-between text-xs text-slate-500">
@@ -3994,14 +4057,14 @@ function showFilteredExpenses() {
         return `
             <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm mb-2 flex flex-col gap-1">
                 <div class="flex justify-between items-start">
-                    <span class="font-bold text-sm text-slate-800">${e.item}</span>
+                    <span class="font-bold text-sm text-slate-800">${esc(e.item)}</span>
                     <span class="font-black ${e.status === 'PAGO' ? 'text-green-600' : (isVencido ? 'text-red-600' : 'text-orange-500')}">${formatMoney(valor)}</span>
                 </div>
                 <div class="flex justify-between items-center text-[10px] text-slate-500">
                     <span><i data-lucide="calendar" class="inline w-3 h-3"></i> ${formatDate(e.date)}</span>
                     <span class="font-bold uppercase">${situacao}</span>
                 </div>
-                <div class="text-[10px] text-slate-400 truncate">${providerVal}</div>
+                <div class="text-[10px] text-slate-400 truncate">${esc(providerVal)}</div>
             </div>
         `;
     }).join('');
