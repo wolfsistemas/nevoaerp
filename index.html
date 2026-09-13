@@ -71,6 +71,9 @@
                                autocomplete="current-password"
                                class="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-600 outline-none bg-slate-50">
                     </div>
+                    <div class="text-right mt-1">
+                        <button type="button" onclick="abrirRecuperacao()" class="text-xs text-slate-500 hover:text-emerald-700 hover:underline font-medium">Esqueci minha senha</button>
+                    </div>
                 </div>
 
                 <button type="submit" id="btn-login" class="w-full py-3 bg-indigo-700 hover:bg-indigo-800 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-4">
@@ -93,6 +96,37 @@
                 </p>
 
             </form>
+        </div>
+    </div>
+
+    <div id="reset-overlay" class="hidden fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden">
+            <div class="bg-slate-900 p-5">
+                <h2 class="text-white font-bold text-lg">Recuperar acesso</h2>
+                <p class="text-slate-400 text-xs mt-1">Enviaremos um link para redefinir sua senha.</p>
+            </div>
+            <div class="p-6 space-y-4">
+                <div id="reset-step1">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Seu e-mail cadastrado</label>
+                    <input type="email" id="reset-email" placeholder="voce@empresa.com.br" autocomplete="email"
+                           class="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-600 outline-none bg-slate-50">
+                    <button type="button" id="reset-send-btn" onclick="enviarLinkRecuperacao()"
+                            class="w-full mt-3 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl">Enviar link</button>
+                </div>
+                <div id="reset-step2" class="hidden">
+                    <p class="text-sm text-slate-600 mb-3">Defina sua nova senha.</p>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Nova senha</label>
+                    <input type="password" id="reset-nova" placeholder="Mínimo 6 caracteres" autocomplete="new-password"
+                           class="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-600 outline-none bg-slate-50">
+                    <label class="block text-sm font-bold text-slate-700 mb-1 mt-3">Confirmar nova senha</label>
+                    <input type="password" id="reset-confirma" placeholder="Repita a nova senha" autocomplete="new-password"
+                           class="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-600 outline-none bg-slate-50">
+                    <button type="button" id="reset-save-btn" onclick="salvarNovaSenha()"
+                            class="w-full mt-3 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl">Salvar nova senha</button>
+                </div>
+                <div id="reset-msg" class="hidden text-sm text-center font-bold rounded-lg p-3"></div>
+                <button type="button" onclick="fecharRecuperacao()" class="w-full text-slate-400 text-xs hover:text-slate-600">Fechar</button>
+            </div>
         </div>
     </div>
 
@@ -120,6 +154,80 @@
             }
         })();
 
+        // ===== Recuperacao de senha (fluxo PKCE) =====
+        // O Supabase dispara PASSWORD_RECOVERY quando o usuario volta pelo link do e-mail.
+        function resetMsg(texto, erro) {
+            const el = document.getElementById('reset-msg');
+            if (!el) return;
+            el.textContent = texto;
+            el.className = 'text-sm text-center font-bold rounded-lg p-3 ' + (erro
+                ? 'bg-red-50 text-red-600 border border-red-200'
+                : 'bg-emerald-50 text-emerald-700 border border-emerald-200');
+        }
+
+        function abrirRecuperacao() {
+            document.getElementById('reset-overlay').classList.remove('hidden');
+            document.getElementById('reset-step1').classList.remove('hidden');
+            document.getElementById('reset-step2').classList.add('hidden');
+            document.getElementById('reset-msg').classList.add('hidden');
+        }
+
+        function fecharRecuperacao() {
+            document.getElementById('reset-overlay').classList.add('hidden');
+        }
+
+        function mostrarNovaSenha() {
+            document.getElementById('reset-overlay').classList.remove('hidden');
+            document.getElementById('reset-step1').classList.add('hidden');
+            document.getElementById('reset-step2').classList.remove('hidden');
+            document.getElementById('reset-msg').classList.add('hidden');
+            const campo = document.getElementById('reset-nova');
+            if (campo) campo.focus();
+        }
+
+        async function enviarLinkRecuperacao() {
+            const email = (document.getElementById('reset-email').value || '').trim().toLowerCase();
+            if (!email) return resetMsg('Informe seu e-mail.', true);
+            const btn = document.getElementById('reset-send-btn');
+            btn.disabled = true; btn.textContent = 'Enviando...';
+            try {
+                // redirectTo volta para esta pagina; com PKCE o Supabase anexa ?code=...
+                await sb.auth.resetPasswordForEmail(email, {
+                    redirectTo: window.location.origin + window.location.pathname
+                });
+                // Mensagem generica: nao revela se o e-mail existe na base.
+                resetMsg('Se o e-mail estiver cadastrado, o link chegara em instantes. Verifique tambem a caixa de spam.', false);
+            } catch (err) {
+                resetMsg('Nao foi possivel enviar agora. Tente novamente.', true);
+            } finally {
+                btn.disabled = false; btn.textContent = 'Enviar link';
+            }
+        }
+
+        async function salvarNovaSenha() {
+            const p1 = document.getElementById('reset-nova').value || '';
+            const p2 = document.getElementById('reset-confirma').value || '';
+            if (p1.length < 6) return resetMsg('A senha deve ter ao menos 6 caracteres.', true);
+            if (p1 !== p2) return resetMsg('As senhas nao conferem.', true);
+            const btn = document.getElementById('reset-save-btn');
+            btn.disabled = true; btn.textContent = 'Salvando...';
+            try {
+                const { error } = await sb.auth.updateUser({ password: p1 });
+                if (error) throw error;
+                resetMsg('Senha alterada! Redirecionando para o login...', false);
+                await sb.auth.signOut();
+                setTimeout(function () { window.location.replace('index.html'); }, 1500);
+            } catch (err) {
+                resetMsg('Erro ao salvar: ' + (err.message || 'tente novamente.'), true);
+            } finally {
+                btn.disabled = false; btn.textContent = 'Salvar nova senha';
+            }
+        }
+
+        sb.auth.onAuthStateChange(function (event) {
+            if (event === 'PASSWORD_RECOVERY') mostrarNovaSenha();
+        });
+
         async function fazerLogin(e) {
             e.preventDefault();
             
@@ -145,7 +253,8 @@
                         .rpc('buscar_email_por_usuario', { usuario_busca: entrada });
 
                     if (rpcError || !emailEncontrado) {
-                        throw new Error("Usuário não encontrado.");
+                        // Mensagem generica: nao revela se o usuario existe (anti-enumeracao).
+                        throw new Error("Usuário/e-mail ou senha incorretos.");
                     }
                     emailParaLogin = emailEncontrado;
                 }

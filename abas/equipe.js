@@ -13,6 +13,21 @@
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
   }
 
+  // Folha de pagamento: somente administradores da empresa podem alterar
+  // (a RLS tambem bloqueia no banco; aqui e a barreira de UX).
+  function podeGerenciarFolha() {
+    try {
+      const u = JSON.parse(localStorage.getItem('rv_user') || 'null');
+      return !!u && u.nivel === 'admin';
+    } catch (e) { return false; }
+  }
+
+  function negarFolha() {
+    const msg = 'Apenas administradores podem gerenciar a folha de pagamento.';
+    if (typeof showToast === 'function') showToast(msg, true);
+    else alert(msg);
+  }
+
   let subAbaAtiva = 'lancamentos'; // 'lancamentos' | 'cadastro'
 
   // Aguarda carregamento do sistema principal
@@ -285,6 +300,7 @@
   };
 
   async function salvarFolha(mesRef) {
+    if (!podeGerenciarFolha()) return negarFolha();
     showLoading(true);
     const { data: equipe, error: equipeErr } = await sb.from('equipe').select('*').eq('ativo', true);
     if (equipeErr) { showLoading(false); showToast('Erro ao carregar equipe: ' + equipeErr.message, true); return; }
@@ -373,6 +389,7 @@
   }
 
   async function salvarVale() {
+    if (!podeGerenciarFolha()) return negarFolha();
     const funcId = document.getElementById('vale-funcionario')?.value;
     const valor = parseFloat(document.getElementById('vale-valor')?.value);
     const mes = document.getElementById('vale-mes')?.value;
@@ -471,6 +488,7 @@
 
   // ========== AÇÕES ==========
  window.baixarFolha = async function(id) {
+    if (!podeGerenciarFolha()) return negarFolha();
     if (!confirm('Confirmar pagamento desta folha? Isso lançará uma despesa no financeiro.')) return;
 
     // Buscar a folha com dados da equipe
@@ -557,6 +575,7 @@
 };
 
   window.excluirFolha = async function(id) {
+    if (!podeGerenciarFolha()) return negarFolha();
     const { data: folha } = await sb.from('folhas').select('*').eq('id', id).single();
     if (!folha) return;
 
@@ -578,6 +597,7 @@
   };
 
   window.excluirVale = async function(id) {
+    if (!podeGerenciarFolha()) return negarFolha();
     if (!confirm('Excluir este vale?')) return;
 
     const { data: vale } = await sb.from('vales').select('*').eq('id', id).single();
@@ -966,6 +986,7 @@
   }
 
   window.salvarFuncionario = async function() {
+    if (!podeGerenciarFolha()) return negarFolha();
     const id = document.getElementById('func-id')?.value;
     const nome = document.getElementById('func-nome')?.value.trim();
     const tipo = document.getElementById('func-tipo')?.value;
@@ -1003,6 +1024,7 @@
   };
 
   window.alternarStatusFuncionario = async function(id) {
+    if (!podeGerenciarFolha()) return negarFolha();
     const { data } = await sb.from('equipe').select('ativo').eq('id', id).single();
     const novo = !data.ativo;
     await sb.from('equipe').update({ ativo: novo }).eq('id', id);
