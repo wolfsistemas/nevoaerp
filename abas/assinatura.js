@@ -56,6 +56,68 @@
   }
 
   var ASSINATURA_ATUAL = null;
+  var PLANOS_CACHE = null;
+
+  function precoPlano(p, ciclo) {
+    return Number(ciclo === 'anual' ? p.preco_anual : p.preco_mensal) || 0;
+  }
+
+  async function carregarPlanos() {
+    if (PLANOS_CACHE) return PLANOS_CACHE;
+    var res = await sb.from('planos')
+      .select('codigo,nome,preco_mensal,preco_anual,destaque,ordem')
+      .eq('ativo', true)
+      .order('ordem');
+    PLANOS_CACHE = (res && !res.error && res.data) ? res.data : [];
+    return PLANOS_CACHE;
+  }
+
+  // Chama a Edge Function mp-checkout e redireciona para o Mercado Pago.
+  async function iniciarCheckout(plano, btn) {
+    var sel = document.getElementById('assinatura-ciclo');
+    var ciclo = sel ? sel.value : 'mensal';
+    if (btn) {
+      btn.disabled = true;
+      btn.setAttribute('data-label', btn.textContent);
+      btn.textContent = 'Redirecionando...';
+    }
+    try {
+      var res = await sb.functions.invoke('mp-checkout', { body: { plano: plano, ciclo: ciclo } });
+      if (res.error) {
+        var msg = 'Nao foi possivel iniciar o pagamento.';
+        try {
+          if (res.error.context && typeof res.error.context.json === 'function') {
+            var j = await res.error.context.json();
+            if (j && (j.message || j.error)) msg = j.message || j.error;
+          } else if (res.error.message) {
+            msg = res.error.message;
+          }
+        } catch (e2) { /* mantem mensagem padrao */ }
+        throw new Error(msg);
+      }
+      var d = res.data || {};
+      if (!d.init_point) throw new Error('Checkout sem link de pagamento.');
+      window.location.href = d.init_point;
+    } catch (e) {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = btn.getAttribute('data-label') || 'Assinar';
+      }
+      if (typeof showToast === 'function') showToast(e.message || 'Erro ao iniciar pagamento.', true);
+    }
+  }
+
+  function atualizarPrecosCheckout() {
+    var sel = document.getElementById('assinatura-ciclo');
+    var ciclo = sel ? sel.value : 'mensal';
+    (PLANOS_CACHE || []).forEach(function (p) {
+      var el = document.querySelector('[data-preco="' + p.codigo + '"]');
+      if (el) el.textContent = money(precoPlano(p, ciclo)) + (ciclo === 'anual' ? '/ano' : '/mes');
+    });
+  }
+
+  window.iniciarCheckout = iniciarCheckout;
+  window.atualizarPrecosCheckout = atualizarPrecosCheckout;
 
   window.addEventListener('load', function () {
     var originalNavigate = window.navigate;
@@ -74,6 +136,19 @@
     };
     aplicarPapel();
     aplicarPlano();
+
+    // Retorno do checkout do Mercado Pago: leva para "Minha Assinatura".
+    try {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('assinatura')) {
+        setTimeout(function () {
+          if (typeof showToast === 'function') {
+            showToast('Recebemos o retorno do Mercado Pago. A ativacao pode levar alguns instantes.');
+          }
+          if (typeof window.navigate === 'function') window.navigate('assinatura');
+        }, 700);
+      }
+    } catch (e) { /* sem parametros */ }
   });
 
   // Esconde ja de cara os modulos que o papel do usuario nao permite,
@@ -125,6 +200,8 @@
     var st = STATUS_INFO[a.status] || { label: a.status, cls: 'bg-slate-200 text-slate-600' };
     var limite = a.max_usuarios == null ? 'ilimitado' : a.max_usuarios;
     var recursos = a.recursos || [];
+    var planos = await carregarPlanos();
+    var mpAtiva = a.mp_status === 'authorized';
 
     container.innerHTML = ''
       + '<div class="space-y-5 p-4 max-w-3xl">'
@@ -157,6 +234,35 @@
                 return '<span class="text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg">' + esc(NOMES_RECURSO[r] || r) + '</span>';
               }).join('')
       +     '</div>'
+      +   '</div>'
+
+      +   '<div class="bg-white rounded-xl border shadow-sm p-6">'
+      +     '<div class="flex items-center justify-between flex-wrap gap-3 mb-4">'
+      +       '<div>'
+      +         '<h3 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="credit-card" class="w-5 h-5 text-emerald-600"></i> Pagamento da assinatura</h3>'
+      +         '<p class="text-sm text-slate-500">Cobranca recorrente via Mercado Pago.</p>'
+      +       '</div>'
+      +       '<label class="text-xs font-bold text-slate-500 flex items-center gap-2">Ciclo '
+      +         '<select id="assinatura-ciclo" onchange="atualizarPrecosCheckout()" class="border rounded-lg px-3 py-2 text-sm font-bold text-slate-700">'
+      +           '<option value="mensal"' + (a.ciclo !== 'anual' ? ' selected' : '') + '>Mensal</option>'
+      +           '<option value="anual"' + (a.ciclo === 'anual' ? ' selected' : '') + '>Anual</option>'
+      +         '</select>'
+      +       '</label>'
+      +     '</div>'
+      +     (mpAtiva
+              ? '<div class="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg p-4 text-sm font-medium flex items-center gap-2"><i data-lucide="check-circle" class="w-5 h-5"></i> Assinatura ativa no Mercado Pago. Para trocar de plano ou cancelar, gerencie por la.</div>'
+              : (planos.length === 0
+                  ? '<div class="text-sm text-slate-500">Nao foi possivel carregar os planos.</div>'
+                  : '<div class="grid grid-cols-1 md:grid-cols-3 gap-3">'
+                    + planos.map(function (p) {
+                        var atual = p.codigo === a.plano_codigo;
+                        return '<div class="border rounded-xl p-4 ' + (atual ? 'border-emerald-400 bg-emerald-50/40' : 'border-slate-200') + '">'
+                          + '<div class="font-bold text-slate-800">' + esc(p.nome) + (atual ? ' <span class="text-[10px] uppercase text-emerald-600 font-bold">atual</span>' : '') + '</div>'
+                          + '<div class="text-lg font-bold text-slate-700 mt-1" data-preco="' + esc(p.codigo) + '">' + money(precoPlano(p, a.ciclo)) + (a.ciclo === 'anual' ? '/ano' : '/mes') + '</div>'
+                          + '<button type="button" onclick="iniciarCheckout(\'' + esc(p.codigo) + '\', this)" class="mt-3 w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg font-bold shadow">' + (atual ? 'Renovar' : 'Assinar') + '</button>'
+                          + '</div>';
+                      }).join('')
+                    + '</div>'))
       +   '</div>'
 
       +   '<div class="bg-white rounded-xl border shadow-sm p-6 flex items-center justify-between flex-wrap gap-3">'
