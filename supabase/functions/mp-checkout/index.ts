@@ -96,12 +96,13 @@ Deno.serve(async (req) => {
   if (planoErr) return json({ error: 'erro ao carregar plano' }, 500);
   if (!planoRow || planoRow.ativo === false) return json({ error: 'plano indisponivel' }, 400);
 
-  const valor = ciclo === 'anual' ? Number(planoRow.preco_anual) : Number(planoRow.preco_mensal);
-  if (!(valor > 0)) return json({ error: 'valor do plano invalido' }, 400);
+  const valorNormal = ciclo === 'anual'
+    ? Number(planoRow.preco_anual)
+    : Number(planoRow.preco_mensal);
 
   const { data: assinatura } = await admin
     .from('assinaturas')
-    .select('empresa_id, mp_preapproval_id, mp_status, plano_codigo, ciclo')
+    .select('empresa_id, mp_preapproval_id, mp_status, plano_codigo, ciclo, promo_codigo, promo_encerrada, promo_valor, promo_meses')
     .eq('empresa_id', empresaId)
     .maybeSingle();
 
@@ -113,12 +114,58 @@ Deno.serve(async (req) => {
     }, 409);
   }
 
+  // Promocao "novo CNPJ": somente no ciclo mensal. Reaproveita a promo
+  // ja vinculada (checkout interrompido) ou avalia a elegibilidade.
+  let promo = null;
+  if (ciclo === 'mensal') {
+    if (assinatura?.promo_codigo && assinatura.promo_encerrada !== true) {
+      promo = {
+        codigo: assinatura.promo_codigo,
+        valor: Number(assinatura.promo_valor),
+        meses: assinatura.promo_meses || 3,
+      };
+    } else {
+      const hoje = new Date().toISOString().slice(0, 10);
+      const { data: promoRows } = await admin
+        .from('promocoes')
+        .select('codigo, valor_promocional, meses, vigencia_inicio, vigencia_fim')
+        .eq('plano_codigo', plano)
+        .eq('ciclo', 'mensal')
+        .eq('ativo', true);
+      const cand = (promoRows || []).find((p) =>
+        (!p.vigencia_inicio || p.vigencia_inicio <= hoje) &&
+        (!p.vigencia_fim || p.vigencia_fim >= hoje));
+      if (cand) {
+        const { data: eleg } = await admin.rpc('promo_elegivel', {
+          p_empresa_id: empresaId,
+          p_promocao: cand.codigo,
+        });
+        if (eleg === true) {
+          promo = {
+            codigo: cand.codigo,
+            valor: Number(cand.valor_promocional),
+            meses: cand.meses || 3,
+          };
+        }
+      }
+    }
+  }
+
+  const valor = promo ? promo.valor : valorNormal;
+  if (!(valor > 0)) return json({ error: 'valor do plano invalido' }, 400);
+
+  function addMeses(base, meses) {
+    const d = new Date(base);
+    d.setMonth(d.getMonth() + Number(meses || 0));
+    return d.toISOString().slice(0, 10);
+  }
+
   const backUrl = APP_BASE_URL
     ? `${APP_BASE_URL}/sistema.html?assinatura=retorno`
     : undefined;
 
   const preapprovalReq = {
-    reason: `Nevoa ${planoRow.nome} (${ciclo})`,
+    reason: `Nevoa ${planoRow.nome} (${ciclo})${promo ? ' - promocao novo CNPJ' : ''}`,
     external_reference: empresaId,
     payer_email: email,
     status: 'pending',
@@ -157,14 +204,27 @@ Deno.serve(async (req) => {
   const preapprovalId = mpJson?.id ? String(mpJson.id) : null;
   if (!preapprovalId) return json({ error: 'sem_preapproval', message: 'MP nao retornou o id.' }, 502);
 
+  const agora = new Date().toISOString();
+  const link: Record<string, unknown> = {
+    mp_preapproval_id: preapprovalId,
+    mp_status: mpJson.status || 'pending',
+    mp_iniciada_em: agora,
+    mp_atualizado_em: agora,
+  };
+  if (promo) {
+    link.promo_codigo = promo.codigo;
+    link.promo_valor = promo.valor;
+    link.promo_meses = promo.meses;
+    link.valor_normal = valorNormal;
+    link.promo_aplicada_em = agora;
+    link.promo_ate = addMeses(agora, promo.meses);
+    link.promo_encerrada = false;
+    link.valor = promo.valor;
+  }
+
   const { error: updErr } = await admin
     .from('assinaturas')
-    .update({
-      mp_preapproval_id: preapprovalId,
-      mp_status: mpJson.status || 'pending',
-      mp_iniciada_em: new Date().toISOString(),
-      mp_atualizado_em: new Date().toISOString(),
-    })
+    .update(link)
     .eq('empresa_id', empresaId);
   if (updErr) return json({ error: 'erro ao vincular assinatura: ' + updErr.message }, 500);
 
@@ -181,5 +241,7 @@ Deno.serve(async (req) => {
     plano,
     ciclo,
     valor,
+    promo: promo ? { codigo: promo.codigo, valor: promo.valor, meses: promo.meses } : null,
+    valor_normal: valorNormal,
   });
 });

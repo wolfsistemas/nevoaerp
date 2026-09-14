@@ -131,12 +131,22 @@ Deno.serve(async (req) => {
 
   try {
     let preapprovalId = null;
+    // Marca true apenas quando ha de fato uma cobranca da assinatura.
+    // Contamos no evento canonico de recorrencia (subscription_authorized_payment)
+    // para nao contar duas vezes a mesma cobranca (o topico "payment" tambem
+    // dispara para o mesmo pagamento).
+    let pagamentoAprovado = false;
 
     if (tipo.includes('preapproval')) {
       preapprovalId = resourceId;
     } else if (tipo.includes('authorized_payment')) {
       const r = await mpGet(MP_API, MP_ACCESS_TOKEN, `/authorized_payments/${resourceId}`);
-      if (r.ok) preapprovalId = r.data?.preapproval_id ? String(r.data.preapproval_id) : null;
+      if (r.ok) {
+        preapprovalId = r.data?.preapproval_id ? String(r.data.preapproval_id) : null;
+        const stPag = String(r.data?.payment?.status || '').toLowerCase();
+        const stRes = String(r.data?.status || '').toLowerCase();
+        pagamentoAprovado = stPag === 'approved' || stRes === 'processed';
+      }
     } else if (tipo.includes('payment')) {
       const r = await mpGet(MP_API, MP_ACCESS_TOKEN, `/payments/${resourceId}`);
       if (r.ok) {
@@ -170,10 +180,48 @@ Deno.serve(async (req) => {
     });
     if (rpcErr) return await finalizar('erro', rpcErr.message);
 
+    // Contabiliza o ciclo da promocao "novo CNPJ" a cada cobranca aprovada.
+    // Ao completar os meses da promocao, aumenta o valor do preapproval para
+    // o preco normal (PUT /preapproval/{id}) e encerra a promocao.
+    let promoRes = null;
+    if (pagamentoAprovado) {
+      const pid = String(d.id || preapprovalId);
+      const { data: cicloRes, error: cicloErr } = await admin.rpc('mp_registrar_pagamento', {
+        p_preapproval_id: pid,
+      });
+      if (cicloErr) return await finalizar('erro', cicloErr.message);
+      promoRes = cicloRes;
+
+      if (cicloRes?.encerrar_promo) {
+        const ar = d.auto_recurring || {};
+        const putResp = await fetch(`${MP_API}/preapproval/${pid}`, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            auto_recurring: {
+              frequency: ar.frequency ?? 1,
+              frequency_type: ar.frequency_type ?? 'months',
+              transaction_amount: Number(cicloRes.valor_normal),
+              currency_id: ar.currency_id ?? 'BRL',
+            },
+          }),
+        });
+        if (!putResp.ok) {
+          const txt = await putResp.text();
+          return await finalizar('erro', `PUT preapproval ${putResp.status}: ${txt.slice(0, 300)}`);
+        }
+        await admin.rpc('mp_encerrar_promo', { p_preapproval_id: pid });
+      }
+    }
+
     return await finalizar('processado', null, {
       preapproval_id: String(d.id || preapprovalId),
       status_mp: d.status || null,
       resultado: rpcRes,
+      promo: promoRes,
     });
   } catch (e) {
     return await finalizar('erro', String(e?.message || e));

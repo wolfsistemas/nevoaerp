@@ -62,6 +62,31 @@
     return Number(ciclo === 'anual' ? p.preco_anual : p.preco_mensal) || 0;
   }
 
+  // Promocao mensal vigente e aplicavel ao plano informado (se o usuario
+  // for elegivel). A promocao nunca vale no ciclo anual.
+  function promoPara(planoCodigo, ciclo) {
+    var a = ASSINATURA_ATUAL;
+    var pd = a && a.promo_disponivel;
+    if (!a || !pd || !a.promo_elegivel) return null;
+    if (ciclo !== 'mensal') return null;
+    if (pd.plano_codigo && pd.plano_codigo !== planoCodigo) return null;
+    return pd;
+  }
+
+  function precoHTML(p, ciclo) {
+    var base = precoPlano(p, ciclo);
+    var pd = promoPara(p.codigo, ciclo);
+    if (pd) {
+      var promoVal = Number(pd.valor) || base;
+      return '<span class="text-sm font-bold text-slate-400 line-through mr-2">' + money(base) + '</span>'
+        + '<span class="text-lg font-bold text-emerald-700">' + money(promoVal) + '</span><span class="text-slate-500">/mes</span>'
+        + '<div class="text-[11px] text-emerald-600 font-semibold mt-0.5">'
+        +   (Number(pd.meses) || 3) + ' primeiros meses. Depois ' + money(base) + '/mes.'
+        + '</div>';
+    }
+    return money(base) + (ciclo === 'anual' ? '/ano' : '/mes');
+  }
+
   async function carregarPlanos() {
     if (PLANOS_CACHE) return PLANOS_CACHE;
     var res = await sb.from('planos')
@@ -112,7 +137,7 @@
     var ciclo = sel ? sel.value : 'mensal';
     (PLANOS_CACHE || []).forEach(function (p) {
       var el = document.querySelector('[data-preco="' + p.codigo + '"]');
-      if (el) el.textContent = money(precoPlano(p, ciclo)) + (ciclo === 'anual' ? '/ano' : '/mes');
+      if (el) el.innerHTML = precoHTML(p, ciclo);
     });
   }
 
@@ -249,6 +274,23 @@
       +         '</select>'
       +       '</label>'
       +     '</div>'
+      +     (a.promo_codigo && !a.promo_encerrada
+              ? '<div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-3 text-sm mb-3 flex items-start gap-2">'
+                + '<i data-lucide="sparkles" class="w-4 h-4 mt-0.5 shrink-0"></i>'
+                + '<div><b>Promocao novo CNPJ ativa:</b> ' + money(a.promo_valor) + '/mes nos '
+                + (Number(a.promo_meses) || 3) + ' primeiros meses ('
+                + (Number(a.promo_ciclos_pagos) || 0) + ' de ' + (Number(a.promo_meses) || 3)
+                + ' pagos). Depois ' + money(a.valor_normal || a.preco_mensal) + '/mes.</div></div>'
+              : '')
+      +     (a.promo_elegivel && a.promo_disponivel
+              ? '<div class="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg p-3 text-sm mb-3 flex items-start gap-2">'
+                + '<i data-lucide="tag" class="w-4 h-4 mt-0.5 shrink-0"></i>'
+                + '<div><b>Oferta novo CNPJ:</b> assine o Profissional por '
+                + money(a.promo_disponivel.valor) + '/mes nos '
+                + (Number(a.promo_disponivel.meses) || 3) + ' primeiros meses (depois '
+                + money((PLANOS_CACHE || []).filter(function (x) { return x.codigo === a.promo_disponivel.plano_codigo; }).map(function (x) { return x.preco_mensal; })[0] || 389.90)
+                + '/mes).</div></div>'
+              : '')
       +     (mpAtiva
               ? '<div class="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg p-4 text-sm font-medium flex items-center gap-2"><i data-lucide="check-circle" class="w-5 h-5"></i> Assinatura ativa no Mercado Pago. Para trocar de plano ou cancelar, gerencie por la.</div>'
               : (planos.length === 0
@@ -258,7 +300,7 @@
                         var atual = p.codigo === a.plano_codigo;
                         return '<div class="border rounded-xl p-4 ' + (atual ? 'border-emerald-400 bg-emerald-50/40' : 'border-slate-200') + '">'
                           + '<div class="font-bold text-slate-800">' + esc(p.nome) + (atual ? ' <span class="text-[10px] uppercase text-emerald-600 font-bold">atual</span>' : '') + '</div>'
-                          + '<div class="text-lg font-bold text-slate-700 mt-1" data-preco="' + esc(p.codigo) + '">' + money(precoPlano(p, a.ciclo)) + (a.ciclo === 'anual' ? '/ano' : '/mes') + '</div>'
+                          + '<div class="text-lg font-bold text-slate-700 mt-1" data-preco="' + esc(p.codigo) + '">' + precoHTML(p, a.ciclo) + '</div>'
                           + '<button type="button" onclick="iniciarCheckout(\'' + esc(p.codigo) + '\', this)" class="mt-3 w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg font-bold shadow">' + (atual ? 'Renovar' : 'Assinar') + '</button>'
                           + '</div>';
                       }).join('')
