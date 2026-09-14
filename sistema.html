@@ -5184,7 +5184,7 @@ function loadQuoteToCart(id) {
             el.innerHTML = `
             <div class="invoice-full">
                 <div class="header-section">
-                    <div class="logo-area"><img src="logo.png" style="max-height: 80px;" /></div>
+                    <div class="logo-area"><img src="${company.logoUrl}" style="max-height: 80px;" /></div>
                     <div class="company-details">
                         <h2 class="company-title">${company.name}</h2>
                         ${company.cnpj ? `<div class="company-info">CNPJ: ${company.cnpj}</div>` : ''}
