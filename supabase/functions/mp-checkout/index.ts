@@ -118,14 +118,32 @@ Deno.serve(async (req) => {
   // ja vinculada (checkout interrompido) ou avalia a elegibilidade.
   let promo = null;
   if (ciclo === 'mensal') {
+    const hoje = new Date().toISOString().slice(0, 10);
+
+    // Promo ja vinculada a um checkout interrompido: reaproveita somente se ela
+    // valer para o plano/ciclo solicitado (evita aplicar a promo de um plano em
+    // outro, ex.: desconto do Profissional ao assinar o Essencial).
     if (assinatura?.promo_codigo && assinatura.promo_encerrada !== true) {
-      promo = {
-        codigo: assinatura.promo_codigo,
-        valor: Number(assinatura.promo_valor),
-        meses: assinatura.promo_meses || 3,
-      };
-    } else {
-      const hoje = new Date().toISOString().slice(0, 10);
+      const { data: vinculada } = await admin
+        .from('promocoes')
+        .select('codigo, plano_codigo, ciclo, valor_promocional, meses, ativo, vigencia_inicio, vigencia_fim')
+        .eq('codigo', assinatura.promo_codigo)
+        .maybeSingle();
+      const valida = vinculada && vinculada.ativo !== false
+        && vinculada.plano_codigo === plano
+        && vinculada.ciclo === 'mensal'
+        && (!vinculada.vigencia_inicio || vinculada.vigencia_inicio <= hoje)
+        && (!vinculada.vigencia_fim || vinculada.vigencia_fim >= hoje);
+      if (valida) {
+        promo = {
+          codigo: vinculada.codigo,
+          valor: Number(vinculada.valor_promocional),
+          meses: vinculada.meses || 3,
+        };
+      }
+    }
+
+    if (!promo) {
       const { data: promoRows } = await admin
         .from('promocoes')
         .select('codigo, valor_promocional, meses, vigencia_inicio, vigencia_fim')
@@ -163,6 +181,100 @@ Deno.serve(async (req) => {
   const backUrl = APP_BASE_URL
     ? `${APP_BASE_URL}/sistema.html?assinatura=retorno`
     : undefined;
+
+  const agora = new Date().toISOString();
+
+  // Campos de sincronizacao da assinatura local (comuns ao reuso e ao criar).
+  function camposAssinatura(
+    p: { codigo: string; valor: number; meses: number } | null,
+  ): Record<string, unknown> {
+    const campos: Record<string, unknown> = {
+      mp_status: 'pending',
+      mp_atualizado_em: agora,
+      // Aplicado quando o preapproval for autorizado (mp_aplicar_assinatura).
+      plano_intencao: plano,
+      valor_normal: valorNormal,
+    };
+    if (p) {
+      campos.promo_codigo = p.codigo;
+      campos.promo_valor = p.valor;
+      campos.promo_meses = p.meses;
+      campos.promo_encerrada = false;
+      campos.valor = p.valor;
+    } else {
+      // Checkout sem promo (preco normal): limpa residuos de uma promo
+      // anterior para nao reaplicar desconto em outro plano.
+      campos.promo_codigo = null;
+      campos.promo_valor = null;
+      campos.promo_meses = null;
+      campos.promo_encerrada = true;
+      campos.promo_aplicada_em = null;
+      campos.promo_ate = null;
+      campos.valor = valorNormal;
+    }
+    return campos;
+  }
+
+  // Reaproveita um preapproval PENDENTE do proprio usuario (checkout
+  // interrompido) para nao acumular cobrancas orfas no Mercado Pago.
+  const pendenteId = assinatura?.mp_preapproval_id
+    ? String(assinatura.mp_preapproval_id)
+    : null;
+  const statusLocal = String(assinatura?.mp_status || '').toLowerCase();
+  if (pendenteId && statusLocal !== 'authorized') {
+    const rAtual = await fetch(`${MP_API}/preapproval/${pendenteId}`, {
+      headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` },
+    });
+    if (rAtual.ok) {
+      const atual = await rAtual.json();
+      const stAtual = String(atual?.status || '').toLowerCase();
+
+      if (stAtual === 'authorized') {
+        return json({
+          error: 'ja_assinante',
+          message: 'A assinatura ja esta ativa no Mercado Pago.',
+          preapproval_id: pendenteId,
+        }, 409);
+      }
+
+      if (stAtual === 'pending') {
+        const amountAtual = Number(atual?.auto_recurring?.transaction_amount);
+        if (Number.isFinite(amountAtual) && amountAtual === Number(valor)) {
+          await admin.from('assinaturas')
+            .update(camposAssinatura(promo))
+            .eq('empresa_id', empresaId);
+          const reuso = sandbox
+            ? (atual.sandbox_init_point || atual.init_point)
+            : (atual.init_point || atual.sandbox_init_point);
+          return json({
+            ok: true,
+            reaproveitado: true,
+            preapproval_id: pendenteId,
+            status: 'pending',
+            init_point: reuso,
+            sandbox_init_point: atual.sandbox_init_point || null,
+            plano,
+            ciclo,
+            valor,
+            promo: promo
+              ? { codigo: promo.codigo, valor: promo.valor, meses: promo.meses }
+              : null,
+            valor_normal: valorNormal,
+          });
+        }
+        // Valor diferente (troca de plano/ciclo): cancela o pendente antes
+        // de gerar um novo checkout, evitando duplicidade no MP.
+        await fetch(`${MP_API}/preapproval/${pendenteId}`, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status: 'cancelled' }),
+        });
+      }
+    }
+  }
 
   const preapprovalReq = {
     reason: `Nevoa ${planoRow.nome} (${ciclo})${promo ? ' - promocao novo CNPJ' : ''}`,
@@ -204,24 +316,15 @@ Deno.serve(async (req) => {
   const preapprovalId = mpJson?.id ? String(mpJson.id) : null;
   if (!preapprovalId) return json({ error: 'sem_preapproval', message: 'MP nao retornou o id.' }, 502);
 
-  const agora = new Date().toISOString();
   const link: Record<string, unknown> = {
-    mp_preapproval_id: preapprovalId,
+    ...camposAssinatura(promo),
     mp_status: mpJson.status || 'pending',
+    mp_preapproval_id: preapprovalId,
     mp_iniciada_em: agora,
-    mp_atualizado_em: agora,
-    // Aplicado quando o preapproval for autorizado (mp_aplicar_assinatura).
-    plano_intencao: plano,
   };
   if (promo) {
-    link.promo_codigo = promo.codigo;
-    link.promo_valor = promo.valor;
-    link.promo_meses = promo.meses;
-    link.valor_normal = valorNormal;
     link.promo_aplicada_em = agora;
     link.promo_ate = addMeses(agora, promo.meses);
-    link.promo_encerrada = false;
-    link.valor = promo.valor;
   }
 
   const { error: updErr } = await admin
