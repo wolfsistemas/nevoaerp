@@ -1,4 +1,5 @@
-// assinatura.js - Minha Assinatura (plano, status, limites) + gating de modulos
+// assinatura.js - Secao "Assinatura e Plano" da aba unificada "Empresa e Plano"
+// (plano, status, limites, promo) + gating de modulos por plano/papel.
 (function () {
   'use strict';
 
@@ -157,12 +158,12 @@
         return;
       }
       originalNavigate(viewId);
-      if (viewId === 'assinatura') renderAssinatura();
+      if (viewId === 'config') renderAssinatura();
     };
     aplicarPapel();
     aplicarPlano();
 
-    // Retorno do checkout do Mercado Pago: leva para "Minha Assinatura".
+    // Retorno do checkout do Mercado Pago: leva para "Empresa e Plano".
     try {
       var params = new URLSearchParams(window.location.search);
       if (params.get('assinatura')) {
@@ -170,7 +171,7 @@
           if (typeof showToast === 'function') {
             showToast('Recebemos o retorno do Mercado Pago. A ativacao pode levar alguns instantes.');
           }
-          if (typeof window.navigate === 'function') window.navigate('assinatura');
+          if (typeof window.navigate === 'function') window.navigate('config');
         }, 700);
       }
     } catch (e) { /* sem parametros */ }
@@ -206,7 +207,9 @@
   }
 
   async function renderAssinatura() {
-    var container = document.getElementById('view-assinatura');
+    var container = document.getElementById('config-assinatura-panel')
+      || document.getElementById('view-assinatura')
+      || document.getElementById('view-config');
     if (!container) return;
     container.innerHTML = '<div class="p-6 text-slate-400">Carregando assinatura...</div>';
 
@@ -230,8 +233,8 @@
 
     container.innerHTML = ''
       + '<div class="space-y-5 p-4 max-w-3xl">'
-      +   '<div>'
-      +     '<h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="badge-dollar-sign" class="text-emerald-600"></i> Minha Assinatura</h2>'
+      +   '<div class="border-t pt-5">'
+      +     '<h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i data-lucide="badge-dollar-sign" class="text-emerald-600"></i> Assinatura e Plano</h3>'
       +     '<p class="text-sm text-slate-500 mt-1">Plano atual, limites de uso e recursos liberados.</p>'
       +   '</div>'
 

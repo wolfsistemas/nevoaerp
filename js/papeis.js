@@ -9,7 +9,7 @@
   var MODULOS_VENDEDOR = ['pos', 'quotes', 'clients', 'prod'];
 
   // Itens de navegacao exclusivos do admin (nao entram no RECURSOS_NAV de plano).
-  var NAV_ADMIN_ONLY = ['nav-users', 'nav-config', 'nav-assinatura'];
+  var NAV_ADMIN_ONLY = ['nav-users', 'nav-config'];
 
   function usuarioAtual() {
     try { return JSON.parse(localStorage.getItem('rv_user') || 'null'); } catch (e) { return null; }

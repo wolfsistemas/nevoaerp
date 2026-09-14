@@ -295,7 +295,7 @@
                 try {
                     const { data: emp } = await sb
                         .from('empresas')
-                        .select('id, nome, slug, cnpj, telefone, endereco, logo_url, plano')
+                        .select('id, nome, slug, cnpj, telefone, endereco, logo_url, email_contato, plano')
                         .eq('id', perfil.empresa_id)
                         .maybeSingle();
                     if (emp) localStorage.setItem('rv_empresa', JSON.stringify(emp));

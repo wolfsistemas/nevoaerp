@@ -210,6 +210,8 @@ Deno.serve(async (req) => {
     mp_status: mpJson.status || 'pending',
     mp_iniciada_em: agora,
     mp_atualizado_em: agora,
+    // Aplicado quando o preapproval for autorizado (mp_aplicar_assinatura).
+    plano_intencao: plano,
   };
   if (promo) {
     link.promo_codigo = promo.codigo;

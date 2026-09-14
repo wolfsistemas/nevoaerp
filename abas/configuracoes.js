@@ -1,4 +1,5 @@
-// configuracoes.js - Minha Empresa (perfil + logo white-label)
+// configuracoes.js - Aba "Empresa e Plano": perfil/white-label da empresa
+// (renderiza no painel #config-empresa-panel da aba unificada).
 (function () {
   'use strict';
 
@@ -38,9 +39,29 @@
     };
   });
 
-  function renderConfig() {
-    var container = document.getElementById('view-config');
+  // Busca os dados da empresa no banco para nao depender do cache do
+  // localStorage (que pode estar incompleto/desatualizado).
+  async function carregarEmpresaInfo() {
+    var empresaId = empresaIdAtual();
+    if (!empresaId || typeof sb === 'undefined') return;
+    try {
+      var res = await sb.from('empresas')
+        .select('id, nome, slug, cnpj, telefone, endereco, logo_url, email_contato, plano')
+        .eq('id', empresaId)
+        .maybeSingle();
+      if (res && !res.error && res.data) {
+        atualizarMarcaLocal(Object.assign({}, window.EMPRESA_INFO || {}, res.data));
+      }
+    } catch (e) { /* mantem os dados locais em caso de falha */ }
+  }
+
+  async function renderConfig() {
+    var container = document.getElementById('config-empresa-panel') || document.getElementById('view-config');
     if (!container) return;
+
+    container.innerHTML = '<div class="p-4 max-w-3xl text-slate-400">Carregando dados da empresa...</div>';
+
+    await carregarEmpresaInfo();
 
     var info = window.EMPRESA_INFO || {};
     var podeEditar = ehAdmin();
@@ -48,9 +69,10 @@
     container.innerHTML = ''
       + '<div class="space-y-4 p-4 max-w-3xl">'
       +   '<div>'
-      +     '<h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="building-2" class="text-emerald-600"></i> Minha Empresa</h2>'
-      +     '<p class="text-sm text-slate-500 mt-1">Dados que aparecem nos documentos, relatorios e PDFs gerados pelo sistema.</p>'
+      +     '<h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="building-2" class="text-emerald-600"></i> Empresa e Plano</h2>'
+      +     '<p class="text-sm text-slate-500 mt-1">Dados cadastrais, marca e assinatura em um so lugar.</p>'
       +   '</div>'
+      +   '<h3 class="text-lg font-bold text-slate-800">Dados da Empresa</h3>'
       +   (podeEditar ? '' : '<div class="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg p-3">Somente administradores podem alterar os dados da empresa.</div>')
       +   '<form id="config-form" class="bg-white rounded-xl border shadow-sm p-6 space-y-5" onsubmit="salvarConfiguracoesEmpresa(event)">'
 
@@ -78,8 +100,7 @@
       +         '<input id="config-email" type="email" value="' + esc(info.email_contato || '') + '" placeholder="contato@empresa.com.br" class="w-full p-2.5 border rounded-lg outline-none focus:border-emerald-600" ' + (podeEditar ? '' : 'disabled') + '></div>'
       +     '</div>'
 
-      +     '<div class="flex items-center justify-between border-t pt-4">'
-      +       '<span class="text-xs text-slate-400">Plano atual: <strong class="text-slate-600 uppercase">' + esc(info.plano || 'essencial') + '</strong></span>'
+      +     '<div class="flex items-center justify-end border-t pt-4">'
       +       (podeEditar ? '<button type="submit" id="config-submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"><i data-lucide="save"></i> Salvar alteracoes</button>' : '')
       +     '</div>'
       +   '</form>'
