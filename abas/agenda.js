@@ -247,7 +247,7 @@ class AgendaManager {
       this.atualizarApPosAlteracao();
     });
     modal.querySelector('#btn-cancelar')?.addEventListener('click', async () => {
-      if (confirm('Cancelar esta instalação?')) {
+      if (await confirmDialog('Cancelar esta instalação?', { danger: true, confirmText: 'Cancelar instalação', cancelText: 'Voltar' })) {
         await this.atualizarStatusAgenda(agenda.id, 'CANCELADO');
         modal.remove();
         this.atualizarApPosAlteracao();

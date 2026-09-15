@@ -10,6 +10,7 @@
     <script src="config.js"></script>
     <script src="js/empresa.js"></script>
     <script src="js/papeis.js"></script>
+    <script src="js/ui.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
@@ -1121,12 +1122,13 @@
         showLoading (true);
         }
         
-        function showToast(msg, isError) { 
+        function showToast(msg, isError, duration) { 
             const t = document.getElementById('toast'); 
             t.textContent = msg; 
-            t.className = `fixed top-24 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl text-white font-bold text-sm z-[100] transition-all text-center min-w-[250px] ${isError ? 'bg-red-600' : 'bg-slate-900'}`; 
+            t.className = `fixed top-24 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl text-white font-bold text-sm z-[100] transition-all text-center min-w-[250px] max-w-[90vw] ${isError ? 'bg-red-600' : 'bg-slate-900'}`; 
             t.style.display = 'block'; 
-            setTimeout(() => t.style.display = 'none', 3000); 
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => t.style.display = 'none', duration || 3000); 
         }
     
 
@@ -1842,7 +1844,7 @@
                         const marcadoPago = titulo.some(t => (Number(t.paidValue) || 0) > 0 || t.finStatus === 'PAGO' || t.finStatus === 'PARCIAL');
                         if (titulo.length && marcadoPago) {
                             showLoading(false);
-                            if (!confirm("Não há um registro de baixa (log) para estornar. Deseja apenas reabrir este título, voltando-o para PENDENTE?")) return;
+                            if (!await confirmDialog("Não há um registro de baixa (log) para estornar. Deseja apenas reabrir este título, voltando-o para PENDENTE?")) return;
                             showLoading(true);
                             for (let row of titulo) {
                                 await sb.from('logs').update({ valor_pago: 0, status_financeiro: 'PENDENTE' }).eq('uid', row.uid);
@@ -1860,7 +1862,7 @@
                     alvo.push(...refs.filter(b => String(b.date || '') === String(ultima)));
                 }
 
-                if (!confirm("Estornar a última baixa deste recebimento? O valor voltará para 'A Receber'.")) {
+                if (!await confirmDialog("Estornar a última baixa deste recebimento? O valor voltará para 'A Receber'.", { danger: true, confirmText: "Estornar" })) {
                     showLoading(false);
                     return;
                 }
@@ -2081,7 +2083,7 @@
         async function duplicarDespesa(id) {
             const exp = STATE.expenses.find(e => String(e.id) === String(id));
             if(!exp) return showToast("Despesa não encontrada", true);
-            if(!confirm("Duplicar esta despesa (vencimento +30 dias)?")) return;
+            if(!await confirmDialog("Duplicar esta despesa (vencimento +30 dias)?", { confirmText: "Duplicar" })) return;
             showLoading(true);
             try {
                 const novaData = new Date();
@@ -2124,7 +2126,7 @@
                     const exp = STATE.expenses.find(e => String(e.id) === String(id));
                     if (exp && (Number(exp.valorPago) || 0) > 0) {
                         showLoading(false);
-                        if (!confirm("Não há um registro de pagamento (log) para estornar. Deseja apenas reabrir esta despesa, voltando-a para PENDENTE?")) return;
+                        if (!await confirmDialog("Não há um registro de pagamento (log) para estornar. Deseja apenas reabrir esta despesa, voltando-a para PENDENTE?")) return;
                         showLoading(true);
                         await sb.from('despesas').update({ valor_pago: 0, desconto_total: 0, acrescimo_total: 0, status: 'PENDENTE' }).eq('id', id);
                         showToast("Despesa reaberta!");
@@ -2135,7 +2137,7 @@
                     return showToast("Nenhum pagamento para estornar", true);
                 }
 
-                if (!confirm("Estornar o último pagamento desta despesa? Ela voltará a ficar pendente.")) {
+                if (!await confirmDialog("Estornar o último pagamento desta despesa? Ela voltará a ficar pendente.", { danger: true, confirmText: "Estornar" })) {
                     showLoading(false);
                     return;
                 }
@@ -2573,7 +2575,7 @@
         }
 
         async function deleteQuote(id) {
-            if(!confirm("Excluir este orçamento definitivamente?")) return;
+            if(!await confirmDialog("Excluir este orçamento definitivamente?", { danger: true, confirmText: "Excluir" })) return;
             showLoading(true);
             const { error } = await sb.from('logs').delete().eq('id', id).eq('tipo', 'orcamento');
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
@@ -3023,7 +3025,7 @@ function downloadPDF(blob, filename) {
 }
 
         async function estornarVenda(id) {
-            if(!confirm("Tem certeza que deseja estornar esta VENDA para ORÇAMENTO? Os produtos retornarão ao estoque!")) return;
+            if(!await confirmDialog("Tem certeza que deseja estornar esta VENDA para ORÇAMENTO? Os produtos retornarão ao estoque!", { danger: true, confirmText: "Estornar" })) return;
             showLoading(true);
             
             const saleLogs = STATE.logs.filter(l => String(l.id) === String(id) && l.type === 'venda');
@@ -3101,7 +3103,7 @@ function downloadPDF(blob, filename) {
         }
 
         async function duplicarParaOrcamento(id) {
-            if(!confirm("Duplicar esta venda como um novo ORÇAMENTO em aberto?")) return;
+            if(!await confirmDialog("Duplicar esta venda como um novo ORÇAMENTO em aberto?", { confirmText: "Duplicar" })) return;
             showLoading(true);
 
             const sale = STATE.sales.find(s => String(s.id) === String(id));

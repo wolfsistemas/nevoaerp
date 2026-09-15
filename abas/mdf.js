@@ -1587,7 +1587,7 @@ class OrcamentosMDF {
   }
 
   async excluirOrcamento(id) {
-    if (!confirm('Excluir este orçamento?')) return;
+    if (!await confirmDialog('Excluir este orçamento?', { danger: true, confirmText: 'Excluir' })) return;
     const { error: errItens } = await supabaseClient.from('mdf_itens').delete().eq('orcamento_id', id);
     if (errItens) {
       console.error(errItens);
@@ -1605,7 +1605,7 @@ class OrcamentosMDF {
   }
 
   async duplicarOrcamento(id) {
-    if (!confirm('Duplicar este orçamento?')) return;
+    if (!await confirmDialog('Duplicar este orçamento?')) return;
     const { data: orc, error: errOrc } = await supabaseClient.from('mdf_orcamentos').select().eq('id', id).single();
     if (errOrc || !orc) {
       window.showToast('Orçamento não encontrado.', true);
@@ -1855,7 +1855,7 @@ class OrcamentosMDF {
 
   // ========== NOVOS MÉTODOS DE FATURAMENTO E AGENDA ==========
   async faturarOrcamento(id) {
-    if (!confirm(`Faturar orçamento #${id}? Isso criará uma venda no sistema financeiro.`)) return;
+    if (!await confirmDialog(`Faturar orçamento #${id}? Isso criará uma venda no sistema financeiro.`, { confirmText: 'Faturar' })) return;
     if (typeof showLoading === 'function') showLoading(true);
 
     try {
@@ -1968,7 +1968,7 @@ class OrcamentosMDF {
   }
 
   async estornarOrcamento(id) {
-    if (!confirm(`Estornar venda do orçamento #${id}? Isso removerá a venda do financeiro.`)) return;
+    if (!await confirmDialog(`Estornar venda do orçamento #${id}? Isso removerá a venda do financeiro.`, { danger: true, confirmText: 'Estornar' })) return;
     if (typeof showLoading === 'function') showLoading(true);
 
     try {
@@ -2232,7 +2232,7 @@ class OrcamentosMDF {
   }
 
   async cancelarAgenda(orcamentoId, modal) {
-    if (!confirm('Cancelar esta instalação? O status será alterado para CANCELADO.')) return;
+    if (!await confirmDialog('Cancelar esta instalação? O status será alterado para CANCELADO.', { danger: true, confirmText: 'Cancelar instalação', cancelText: 'Voltar' })) return;
 
     const { error } = await supabaseClient
       .from('mdf_agenda')

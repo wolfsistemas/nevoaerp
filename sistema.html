@@ -17,6 +17,7 @@
     <script src="config.js"></script>
     <script src="js/empresa.js"></script>
     <script src="js/papeis.js"></script>
+    <script src="js/ui.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -1278,10 +1279,6 @@
                             class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shadow transition" title="Anexar comprovantes para leitura">
                         <i data-lucide="upload"></i> Ler Documento
                     </button>
-                    <button onclick="executarPixGAS()" 
-                            class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 shadow transition" title="Buscar comprovantes no e-mail">
-                        <i data-lucide="refresh-cw"></i> Gerar Automático
-                    </button>
                     <input type="file" id="file-input" accept="image/*,application/pdf" style="display:none" onchange="processDocument(this.files[0])">
                 </div>
                 <button onclick="closeExpenseModal()" class="text-slate-400 hover:text-red-500">
@@ -1835,12 +1832,13 @@
         }
 
         function showLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
-        function showToast(msg, isError) { 
+        function showToast(msg, isError, duration) { 
             const t=document.getElementById('toast'); 
             t.textContent=msg; 
-            t.className=`fixed top-5 right-5 px-6 py-3 rounded-lg shadow-xl text-white font-medium z-50 ${isError?'bg-red-600':'bg-slate-800'}`; 
+            t.className=`fixed top-5 right-5 px-6 py-3 rounded-lg shadow-xl text-white font-medium z-50 max-w-sm ${isError?'bg-red-600':'bg-slate-800'}`; 
             t.style.display='block'; 
-            setTimeout(()=>t.style.display='none',3000); 
+            clearTimeout(t._timer);
+            t._timer=setTimeout(()=>t.style.display='none', duration || 3000); 
         }
 
 
@@ -2167,7 +2165,7 @@
         }
 
         async function deleteClient(id) {
-            if(!confirm("Excluir cliente?")) return;
+            if(!await confirmDialog("Excluir cliente?", { danger: true, confirmText: "Excluir" })) return;
             showLoading(true);
             const { error } = await sb.from('clientes').delete().eq('id', id);
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
@@ -2657,7 +2655,7 @@ function printStockCountSheet() {
         }
 
         async function deleteQuote(id) {
-            if(!confirm("Excluir orçamento?")) return;
+            if(!await confirmDialog("Excluir orçamento?", { danger: true, confirmText: "Excluir" })) return;
             showLoading(true);
             const { error } = await sb.from('logs').delete().eq('id', id).eq('tipo', 'orcamento');
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
@@ -2666,7 +2664,7 @@ function printStockCountSheet() {
         }
 
         async function cancelSaleToQuote(saleId) {
-            if(!confirm("Tem certeza que deseja estornar esta venda? Ela voltará a ser um Orçamento e o estoque será devolvido.")) return;
+            if(!await confirmDialog("Tem certeza que deseja estornar esta venda? Ela voltará a ser um Orçamento e o estoque será devolvido.", { danger: true, confirmText: "Estornar" })) return;
             showLoading(true);
 
             const saleItems = STATE.logs.filter(l => String(l.id) === String(saleId) && l.type === 'venda');
@@ -2925,7 +2923,7 @@ function printStockCountSheet() {
                     const marcadoPago = titulo.some(t => (Number(t.paidValue) || 0) > 0 || t.finStatus === 'PAGO' || t.finStatus === 'PARCIAL');
                     if (titulo.length && marcadoPago) {
                         showLoading(false);
-                        if (!confirm("Não há um registro de baixa (log) para estornar. Deseja apenas reabrir este título, voltando-o para PENDENTE?")) return;
+                        if (!await confirmDialog("Não há um registro de baixa (log) para estornar. Deseja apenas reabrir este título, voltando-o para PENDENTE?")) return;
                         showLoading(true);
                         for (let row of titulo) {
                             await sb.from('logs').update({ valor_pago: 0, status_financeiro: 'PENDENTE' }).eq('uid', row.uid);
@@ -2938,7 +2936,7 @@ function printStockCountSheet() {
                     return showToast("Nenhuma baixa encontrada para estornar", true);
                 }
 
-                if (!confirm("Deseja estornar a última baixa desta conta? Ela voltará a ficar pendente no financeiro.")) {
+                if (!await confirmDialog("Deseja estornar a última baixa desta conta? Ela voltará a ficar pendente no financeiro.", { danger: true, confirmText: "Estornar" })) {
                     showLoading(false);
                     return;
                 }
@@ -2972,11 +2970,11 @@ function printStockCountSheet() {
             const isVenda = items.some(i => i.type === 'venda');
 
             if(isVenda) {
-                if(confirm("Esta conta pertence a um Pedido de Venda. Deseja estornar a venda inteira para Orçamento?")) {
+                if(await confirmDialog("Esta conta pertence a um Pedido de Venda. Deseja estornar a venda inteira para Orçamento?", { danger: true, confirmText: "Estornar venda" })) {
                     cancelSaleToQuote(id);
                 }
             } else {
-                if(!confirm("Excluir esta Receita pendente permanentemente?")) return;
+                if(!await confirmDialog("Excluir esta Receita pendente permanentemente?", { danger: true, confirmText: "Excluir" })) return;
                 showLoading(true);
                 const {error} = await sb.from('logs').delete().eq('id', id).eq('tipo', 'receita');
                 if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
@@ -3006,7 +3004,7 @@ function printStockCountSheet() {
                     const exp = STATE.expenses.find(e => String(e.id) === String(id));
                     if (exp && (Number(exp.valorPago) || 0) > 0) {
                         showLoading(false);
-                        if (!confirm("Não há um registro de pagamento (log) para estornar. Deseja apenas reabrir esta despesa, voltando-a para PENDENTE?")) return;
+                        if (!await confirmDialog("Não há um registro de pagamento (log) para estornar. Deseja apenas reabrir esta despesa, voltando-a para PENDENTE?")) return;
                         showLoading(true);
                         await sb.from('despesas').update({ valor_pago: 0, desconto_total: 0, acrescimo_total: 0, status: 'PENDENTE' }).eq('id', id);
                         showToast("Despesa reaberta!");
@@ -3017,7 +3015,7 @@ function printStockCountSheet() {
                     return showToast("Nenhum pagamento para estornar", true);
                 }
 
-                if (!confirm("Estornar o último pagamento desta despesa? Ela voltará a ficar pendente.")) {
+                if (!await confirmDialog("Estornar o último pagamento desta despesa? Ela voltará a ficar pendente.", { danger: true, confirmText: "Estornar" })) {
                     showLoading(false);
                     return;
                 }
@@ -3046,7 +3044,7 @@ function printStockCountSheet() {
         }
 
         async function excluirDespesa(id) {
-            if (!confirm("Excluir esta despesa permanentemente? Esta ação não pode ser desfeita.")) return;
+            if (!await confirmDialog("Excluir esta despesa permanentemente? Esta ação não pode ser desfeita.", { danger: true, confirmText: "Excluir" })) return;
             showLoading(true);
             const { error } = await sb.from('despesas').delete().eq('id', id);
             if (error) {
@@ -3058,7 +3056,7 @@ function printStockCountSheet() {
         }
 
         async function estornarEntregaLog(uid) {
-            if(!confirm("Estornar esta entrega? Os itens devolvidos voltarão como saldo pendente no pedido e o estoque físico será devolvido.")) return;
+            if(!await confirmDialog("Estornar esta entrega? Os itens devolvidos voltarão como saldo pendente no pedido e o estoque físico será devolvido.", { danger: true, confirmText: "Estornar" })) return;
             showLoading(true);
             try {
                 const entregaLog = STATE.logs.find(l => l.uid === uid && l.type === 'entrega');
@@ -3664,7 +3662,7 @@ function printStockCountSheet() {
         async function duplicarDespesa(id) {
             const exp = STATE.expenses.find(e => String(e.id) === String(id));
             if (!exp) return showToast("Despesa não encontrada", true);
-            if (!confirm(`Duplicar esta despesa (vencimento +30 dias)?`)) return;
+            if (!await confirmDialog(`Duplicar esta despesa (vencimento +30 dias)?`, { confirmText: "Duplicar" })) return;
             showLoading(true);
 
             const novaData = new Date();
@@ -5937,7 +5935,7 @@ function loadQuoteToCart(id) {
                     }
                     if (podeAdd === false) {
                         showLoading(false);
-                        return showToast("Limite de usuarios do plano atingido. Faca upgrade para adicionar mais.", true);
+                        return showToast("Seu plano atual permite apenas 1 usuario. Para adicionar mais pessoas a equipe, faca upgrade para o Profissional (ate 5 usuarios) ou Enterprise (ilimitado) em Empresa e Plano.", true, 8000);
                     }
                     // Login curto e unico em todo o sistema (usado na tela de login).
                     // Evita criar conta de Auth orfa quando o login ja existe.
@@ -6000,7 +5998,7 @@ function loadQuoteToCart(id) {
             if(dadosUsuario.nivel !== 'admin') return;
             const u = STATE.users.find(x => String(x.id) === String(id));
             if (!u || !u.email) return showToast("Usuário sem e-mail cadastrado.", true);
-            if (!confirm(`Enviar e-mail de redefinição de senha para ${u.email}?`)) return;
+            if (!await confirmDialog(`Enviar e-mail de redefinição de senha para ${u.email}?`, { confirmText: "Enviar" })) return;
             showLoading(true);
             try {
                 const redirectTo = new URL('nova-senha.html', window.location.href).href;
@@ -6538,7 +6536,7 @@ function loadQuoteToCart(id) {
 }
 
         async function duplicateQuote(id) {
-          if(!confirm("Deseja realmente duplicar este orçamento?")) return;
+          if(!await confirmDialog("Deseja realmente duplicar este orçamento?", { confirmText: "Duplicar" })) return;
           showLoading(true);
       
           const quoteToCopy = STATE.quotes.find(q => String(q.id) === String(id));
@@ -6593,7 +6591,7 @@ function loadQuoteToCart(id) {
       }
 
        async function duplicateSaleToQuote(saleId) {
-          if(!confirm("Deseja duplicar esta venda para um novo orçamento?")) return;
+          if(!await confirmDialog("Deseja duplicar esta venda para um novo orçamento?", { confirmText: "Duplicar" })) return;
           showLoading(true);
       
           const saleItems = STATE.logs.filter(l => String(l.id) === String(saleId) && l.type === 'venda');
@@ -7508,44 +7506,6 @@ function startInactivityMonitoring() {
         document.addEventListener(event, resetInactivityTimer);
     });
     resetInactivityTimer(); // inicia o timer imediatamente
-}
-
-const GAS_WEB_APP_URL = window.GAS_WEB_APP_URL || '';
-
-async function executarPixGAS() {
-    showLoading(true);
-    showToast('Processando Pix... Aguarde.', false);
-
-    try {
-        // Usa 'no-cors' para evitar bloqueio CORS
-        const response = await fetch(GAS_WEB_APP_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({})
-        });
-
-        // Com 'no-cors', a resposta é opaca, mas a requisição foi enviada.
-        // Damos um tempo para o processamento e atualizamos a lista.
-        showToast('Processamento iniciado. Atualizando lista...', false);
-
-        // Aguarda 3 segundos e recarrega os dados
-        setTimeout(async () => {
-            await loadData();
-            if (document.getElementById('view-fin').classList.contains('active-section')) {
-                renderFinance();
-            }
-            showLoading(false);
-            showToast('Lista atualizada!', false);
-        }, 3000);
-
-    } catch (error) {
-        showToast('Erro ao conectar com o GAS: ' + error.message, true);
-        console.error(error);
-        showLoading(false);
-    }
 }
 
   // ===== FUNÇÕES DE EDIÇÃO DE OBSERVAÇÃO NA EXPEDIÇÃO =====

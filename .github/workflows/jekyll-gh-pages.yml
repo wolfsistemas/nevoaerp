@@ -20,7 +20,6 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
       OCR_API_KEY: ${{ secrets.OCR_API_KEY }}
-      GAS_WEB_APP_URL: ${{ secrets.GAS_WEB_APP_URL }}
     outputs:
       upload_path: ${{ steps.set-path.outputs.upload_path }}
     steps:
@@ -85,7 +84,6 @@ jobs:
               }
             }
             setVarOptional("OCR_API_KEY", process.env.OCR_API_KEY);
-            setVarOptional("GAS_WEB_APP_URL", process.env.GAS_WEB_APP_URL);
             fs.writeFileSync(p, s);
             console.log("config.js atualizado.");
           '

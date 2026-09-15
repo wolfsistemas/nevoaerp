@@ -32,7 +32,7 @@ CONCLUIDO nos documentos: usam `company.logoUrl` (campo `empresas.logo_url`) com
 
 ## 4. Integracoes especificas da RV
 
-- `GAS_WEB_APP_URL` (Pix via Google Apps Script da RV) — remover ou virar plugin por empresa.
+- `GAS_WEB_APP_URL` (Pix via Google Apps Script da RV) — REMOVIDO (funcao `executarPixGAS` excluida).
 - `OCR_API_KEY` — usar chave do produto (nova) ou tornar config por empresa.
 - Mensagens de WhatsApp ("aqui e da RV Portal") — usar nome da empresa.
 

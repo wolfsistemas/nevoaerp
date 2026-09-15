@@ -21,13 +21,16 @@
     expedicao: 'Expedicao',
     orcamentos: 'Orcamentos',
     mdf: 'Modulo MDF',
-    equipe: 'Equipe',
+    equipe: 'Aba RH / Equipe',
     clientes: 'Clientes',
     produtos: 'Produtos',
     financeiro: 'Financeiro',
     relatorios: 'Relatorios',
-    gerencial: 'Gerencial'
+    gerencial: 'Aba Gerencial'
   };
+
+  // Recursos de gestao destacados nos cartoes de plano (o que diferencia o Pro).
+  var RECURSOS_GESTAO = ['equipe', 'relatorios', 'gerencial', 'mdf'];
 
   var STATUS_INFO = {
     trial: { label: 'Em teste', cls: 'bg-amber-100 text-amber-700' },
@@ -88,10 +91,31 @@
     return money(base) + (ciclo === 'anual' ? '/ano' : '/mes');
   }
 
+  function usuariosPlano(p) {
+    var m = p ? p.max_usuarios : null;
+    if (m == null) return 'Usuarios ilimitados';
+    return m + (m === 1 ? ' usuario' : ' usuarios');
+  }
+
+  // Lista os recursos do plano e marca em cinza os de gestao que ficam de fora
+  // (RH/Equipe, Gerencial, Relatorios e MDF) para deixar clara a diferenca do Pro.
+  function listaRecursosPlano(p) {
+    var inc = (p && p.recursos) ? p.recursos : [];
+    var linhas = inc.map(function (r) {
+      return '<li class="flex gap-1.5 items-start"><i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0"></i><span>' + esc(NOMES_RECURSO[r] || r) + '</span></li>';
+    });
+    RECURSOS_GESTAO.forEach(function (r) {
+      if (inc.indexOf(r) === -1) {
+        linhas.push('<li class="flex gap-1.5 items-start text-slate-400"><i data-lucide="x" class="w-3.5 h-3.5 mt-0.5 shrink-0"></i><span>' + esc(NOMES_RECURSO[r] || r) + '</span></li>');
+      }
+    });
+    return linhas.join('');
+  }
+
   async function carregarPlanos() {
     if (PLANOS_CACHE) return PLANOS_CACHE;
     var res = await sb.from('planos')
-      .select('codigo,nome,preco_mensal,preco_anual,destaque,ordem')
+      .select('codigo,nome,preco_mensal,preco_anual,destaque,ordem,recursos,max_usuarios,descricao')
       .eq('ativo', true)
       .order('ordem');
     PLANOS_CACHE = (res && !res.error && res.data) ? res.data : [];
@@ -301,9 +325,11 @@
                   : '<div class="grid grid-cols-1 md:grid-cols-3 gap-3">'
                     + planos.map(function (p) {
                         var atual = p.codigo === a.plano_codigo;
-                        return '<div class="border rounded-xl p-4 ' + (atual ? 'border-emerald-400 bg-emerald-50/40' : 'border-slate-200') + '">'
+                        return '<div class="border rounded-xl p-4 flex flex-col ' + (atual ? 'border-emerald-400 bg-emerald-50/40' : 'border-slate-200') + '">'
                           + '<div class="font-bold text-slate-800">' + esc(p.nome) + (atual ? ' <span class="text-[10px] uppercase text-emerald-600 font-bold">atual</span>' : '') + '</div>'
                           + '<div class="text-lg font-bold text-slate-700 mt-1" data-preco="' + esc(p.codigo) + '">' + precoHTML(p, a.ciclo) + '</div>'
+                          + '<div class="text-[11px] font-semibold text-slate-500 mt-1">' + esc(usuariosPlano(p)) + '</div>'
+                          + '<ul class="mt-3 space-y-1 text-[11px] text-slate-600 flex-1">' + listaRecursosPlano(p) + '</ul>'
                           + '<button type="button" onclick="iniciarCheckout(\'' + esc(p.codigo) + '\', this)" class="mt-3 w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg font-bold shadow">' + (atual ? 'Renovar' : 'Assinar') + '</button>'
                           + '</div>';
                       }).join('')

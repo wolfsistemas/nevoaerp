@@ -38,11 +38,11 @@ Frontend estatico (HTML + JS vanilla + Tailwind + Supabase + three.js/pdfmake/Te
 ## Segredos / configuracao
 
 `config.js` tem apenas placeholders (`__SUPABASE_URL__`, `__SUPABASE_ANON_KEY__`,
-`__OCR_API_KEY__`, `__GAS_WEB_APP_URL__`). O workflow do GitHub Pages injeta os valores
+`__OCR_API_KEY__`). O workflow do GitHub Pages injeta os valores
 a partir de **repository secrets**:
 
 - `SUPABASE_URL` e `SUPABASE_ANON_KEY` (obrigatorios)
-- `OCR_API_KEY` e `GAS_WEB_APP_URL` (opcionais)
+- `OCR_API_KEY` (opcional)
 
 Nenhuma chave real fica no codigo.
 

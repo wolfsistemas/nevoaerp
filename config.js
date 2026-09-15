@@ -12,4 +12,3 @@
 window.SUPABASE_URL = "__SUPABASE_URL__";
 window.SUPABASE_ANON_KEY = "__SUPABASE_ANON_KEY__";
 window.OCR_API_KEY = "__OCR_API_KEY__";
-window.GAS_WEB_APP_URL = "__GAS_WEB_APP_URL__";

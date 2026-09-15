@@ -22,10 +22,15 @@
     } catch (e) { return false; }
   }
 
+  // Notificacao padronizada: usa o toast do sistema (com fallback para o modal
+  // de aviso) evitando os dialogos nativos do navegador.
+  function notificar(msg, isError) {
+    if (typeof showToast === 'function') showToast(msg, !!isError);
+    else if (typeof window.uiAlert === 'function') window.uiAlert(msg, !!isError);
+  }
+
   function negarFolha() {
-    const msg = 'Apenas administradores podem gerenciar a folha de pagamento.';
-    if (typeof showToast === 'function') showToast(msg, true);
-    else alert(msg);
+    notificar('Apenas administradores podem gerenciar a folha de pagamento.', true);
   }
 
   let subAbaAtiva = 'lancamentos'; // 'lancamentos' | 'cadastro'
@@ -337,16 +342,16 @@
 
     if (folhas.length === 0) {
       showLoading(false);
-      alert('Nenhuma folha nova para salvar (todos os funcionários já possuem folha neste mês).');
+      notificar('Nenhuma folha nova para salvar (todos os funcionários já possuem folha neste mês).', true);
       return;
     }
 
     const { error } = await sb.from('folhas').insert(folhas);
-    if (error) { showLoading(false); alert('Erro ao salvar folha: ' + error.message); return; }
+    if (error) { showLoading(false); notificar('Erro ao salvar folha: ' + error.message, true); return; }
 
     document.getElementById('modal-folha')?.remove();
     showLoading(false);
-    alert('Folha criada com sucesso!');
+    notificar('Folha criada com sucesso!');
     carregarLancamentos();
   }
 
@@ -393,7 +398,7 @@
     const funcId = document.getElementById('vale-funcionario')?.value;
     const valor = parseFloat(document.getElementById('vale-valor')?.value);
     const mes = document.getElementById('vale-mes')?.value;
-    if (!funcId || isNaN(valor) || valor <= 0 || !mes) return alert('Preencha todos os campos corretamente.');
+    if (!funcId || isNaN(valor) || valor <= 0 || !mes) return notificar('Preencha todos os campos corretamente.', true);
 
     const { error } = await sb.from('vales').insert([{
       equipe_id: funcId,
@@ -401,14 +406,14 @@
       mes_referencia: mes,
       data: new Date().toISOString()
     }]);
-    if (error) return alert('Erro: ' + error.message);
+    if (error) return notificar('Erro: ' + error.message, true);
 
     // Se já existir uma folha PENDENTE deste funcionário nesse mês, atualiza o total de vales
     // e o líquido dela automaticamente, para que o recibo/folha final sempre reflita o vale lançado.
     await sincronizarFolhaComVale(funcId, mes, valor);
 
     document.getElementById('modal-vale')?.remove();
-    alert('Vale lançado!');
+    notificar('Vale lançado!');
     carregarLancamentos();
   }
 
@@ -431,7 +436,7 @@
     if (mesFiltro) query = query.eq('mes_referencia', mesFiltro);
 
     const { data: folhas, error } = await query;
-    if (error) return alert('Erro ao carregar folhas.');
+    if (error) return notificar('Erro ao carregar folhas.', true);
 
     const tbody = document.getElementById('eq-lista-folhas');
     if (!folhas || folhas.length === 0) {
@@ -461,7 +466,7 @@
     let queryVales = sb.from('vales').select('*, equipe(nome)').order('data', { ascending: false });
     if (mesFiltro) queryVales = queryVales.eq('mes_referencia', mesFiltro);
     const { data: vales, error: errVales } = await queryVales;
-    if (errVales) return alert('Erro ao carregar vales.');
+    if (errVales) return notificar('Erro ao carregar vales.', true);
     preencherTabelaVales(vales || []);
 
     lucide.createIcons();
@@ -489,7 +494,7 @@
   // ========== AÇÕES ==========
  window.baixarFolha = async function(id) {
     if (!podeGerenciarFolha()) return negarFolha();
-    if (!confirm('Confirmar pagamento desta folha? Isso lançará uma despesa no financeiro.')) return;
+    if (!await confirmDialog('Confirmar pagamento desta folha? Isso lançará uma despesa no financeiro.', { confirmText: 'Pagar folha' })) return;
 
     // Buscar a folha com dados da equipe
     const { data: folha, error: errFolha } = await sb.from('folhas')
@@ -497,14 +502,14 @@
         .eq('id', id)
         .single();
 
-    if (errFolha || !folha) return alert('Folha não encontrada.');
+    if (errFolha || !folha) return notificar('Folha não encontrada.', true);
 
     // Obter referências globais (garantir que existem)
     if (typeof STATE === 'undefined' || !STATE.expenses || !STATE.logs) {
-        return alert('Erro: dados do sistema não carregados. Recarregue a página.');
+        return notificar('Erro: dados do sistema não carregados. Recarregue a página.', true);
     }
     if (typeof getNextId !== 'function') {
-        return alert('Erro: função getNextId não disponível.');
+        return notificar('Erro: função getNextId não disponível.', true);
     }
 
     //const descricao = `Salário ${esc(folha.equipe?.nome)} (${folha.mes_referencia})`;
@@ -531,7 +536,7 @@
 
     if (errDesp) {
         console.error('Erro ao inserir despesa:', errDesp);
-        return alert('Erro ao lançar despesa: ' + errDesp.message);
+        return notificar('Erro ao lançar despesa: ' + errDesp.message, true);
     }
 
     // 2. Atualizar a folha para PAGO e vincular a despesa
@@ -560,9 +565,9 @@
     if (errLog) {
         console.error('Erro ao gerar log financeiro:', errLog);
         // Não desfaz a despesa, apenas avisa
-        alert('Despesa registrada, mas houve erro ao gerar o log financeiro. Atualize a página.');
+        notificar('Despesa registrada, mas houve erro ao gerar o log financeiro. Atualize a página.', true);
     } else {
-        alert('Pagamento registrado com sucesso!');
+        notificar('Pagamento registrado com sucesso!');
     }
 
     // Recarregar a lista de folhas
@@ -580,25 +585,25 @@
     if (!folha) return;
 
     if (folha.status === 'PAGO' && folha.despesa_id) {
-      if (!confirm('Esta folha já foi paga. Deseja estorná-la? A despesa será removida.')) return;
+      if (!await confirmDialog('Esta folha já foi paga. Deseja estorná-la? A despesa será removida.', { danger: true, confirmText: 'Estornar' })) return;
       // Remover despesa e log vinculados (log achado pelo 'Ref Despesa #id',
       // sem depender do nome do funcionário digitado na época)
       await sb.from('despesas').delete().eq('id', folha.despesa_id);
       await sb.from('logs').delete().like('observacao', '%Ref Despesa #' + folha.despesa_id + '%').eq('tipo', 'despesa');
     } else if (folha.status === 'PAGO') {
-      if (!confirm('Esta folha está marcada como PAGA, mas não possui vínculo de despesa. Deseja excluí-la mesmo assim?')) return;
+      if (!await confirmDialog('Esta folha está marcada como PAGA, mas não possui vínculo de despesa. Deseja excluí-la mesmo assim?', { danger: true, confirmText: 'Excluir' })) return;
     } else {
-      if (!confirm('Deseja excluir esta folha pendente?')) return;
+      if (!await confirmDialog('Deseja excluir esta folha pendente?', { danger: true, confirmText: 'Excluir' })) return;
     }
 
     await sb.from('folhas').delete().eq('id', id);
-    alert('Folha excluída/estornada com sucesso!');
+    notificar('Folha excluída/estornada com sucesso!');
     loadData();
   };
 
   window.excluirVale = async function(id) {
     if (!podeGerenciarFolha()) return negarFolha();
-    if (!confirm('Excluir este vale?')) return;
+    if (!await confirmDialog('Excluir este vale?', { danger: true, confirmText: 'Excluir' })) return;
 
     const { data: vale } = await sb.from('vales').select('*').eq('id', id).single();
     await sb.from('vales').delete().eq('id', id);
@@ -606,7 +611,7 @@
     // Devolve o valor do vale para o líquido de eventual folha PENDENTE já criada nesse mês
     if (vale) await sincronizarFolhaComVale(vale.equipe_id, vale.mes_referencia, -vale.valor);
 
-    alert('Vale excluído.');
+    notificar('Vale excluído.');
     carregarLancamentos();
   };
 
@@ -674,13 +679,13 @@
   window.imprimirFolhaGeral = async function() {
     const mesRef = document.getElementById('eq-filtro-mes')?.value;
     if (!mesRef) {
-      alert('Selecione um mês de referência para imprimir a folha.');
+      notificar('Selecione um mês de referência para imprimir a folha.', true);
       return;
     }
 
     const { data: folhas } = await sb.from('folhas').select('*, equipe(*)').eq('mes_referencia', mesRef).order('equipe(nome)');
     if (!folhas || folhas.length === 0) {
-      alert('Nenhuma folha encontrada para este mês.');
+      notificar('Nenhuma folha encontrada para este mês.', true);
       return;
     }
 
@@ -762,14 +767,14 @@
     window.imprimirValesGeral = async function() {
       const mesRef = document.getElementById('eq-filtro-mes')?.value;
       if (!mesRef) {
-        alert('Selecione um mês de referência para imprimir os vales.');
+        notificar('Selecione um mês de referência para imprimir os vales.', true);
         return;
       }
   
       const { data: vales } = await sb.from('vales').select('*, equipe(nome)')
         .eq('mes_referencia', mesRef).order('equipe(nome)');
       if (!vales || vales.length === 0) {
-        alert('Nenhum vale encontrado para este mês.');
+        notificar('Nenhum vale encontrado para este mês.', true);
         return;
       }
   
@@ -833,7 +838,7 @@
   // ========== IMPRIMIR RECIBO INDIVIDUAL DE VALE ==========
     window.imprimirReciboVale = async function(id) {
       const { data: vale, error } = await sb.from('vales').select('*, equipe(*)').eq('id', id).single();
-      if (error || !vale) return alert('Vale não encontrado.');
+      if (error || !vale) return notificar('Vale não encontrado.', true);
   
       const dataVale = vale.data ? new Date(vale.data).toLocaleDateString('pt-BR') : '–';
   
@@ -894,7 +899,7 @@
     if (tipoFiltro) query = query.eq('tipo', tipoFiltro);
 
     const { data, error } = await query;
-    if (error) return alert('Erro ao carregar equipe.');
+    if (error) return notificar('Erro ao carregar equipe.', true);
 
     const tbody = document.getElementById('eq-lista-funcionarios');
     if (!data || data.length === 0) {
@@ -994,7 +999,7 @@
     const valorDiaria = parseFloat(document.getElementById('func-valor-diaria')?.value) || 0;
     const pix = document.getElementById('func-pix')?.value.trim();
 
-    if (!nome) return alert('Nome obrigatório.');
+    if (!nome) return notificar('Nome obrigatório.', true);
 
     const payload = {
       nome,
@@ -1014,7 +1019,7 @@
       error = err;
     }
 
-    if (error) return alert('Erro ao salvar: ' + error.message);
+    if (error) return notificar('Erro ao salvar: ' + error.message, true);
     document.getElementById('modal-func')?.remove();
     carregarCadastro();
   };
