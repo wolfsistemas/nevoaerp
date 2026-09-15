@@ -207,6 +207,9 @@ Deno.serve(async (req) => {
     const campos: Record<string, unknown> = {
       mp_status: 'pending',
       mp_atualizado_em: agora,
+      // Guarda o ciclo contratado: sem isso o ano nao e registrado e a
+      // ativacao/renovacao usa "mensal" (vencimento +1 mes em vez de +12).
+      ciclo,
       // Aplicado quando o preapproval for autorizado (mp_aplicar_assinatura).
       plano_intencao: plano,
       valor_normal: valorNormal,
