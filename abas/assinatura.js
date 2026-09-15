@@ -188,6 +188,8 @@
     });
     var nota = document.getElementById('assinatura-metodo-nota');
     if (nota) nota.innerHTML = notaPagamento(ciclo);
+    var banner = document.getElementById('assinatura-promo-banner');
+    if (banner) banner.style.display = ciclo === 'anual' ? 'none' : '';
   }
 
   window.iniciarCheckout = iniciarCheckout;
@@ -334,7 +336,7 @@
                 + ' pagos). Depois ' + money(a.valor_normal || a.preco_mensal) + '/mes.</div></div>'
               : '')
       +     (a.promo_elegivel && a.promo_disponivel
-              ? '<div class="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg p-3 text-sm mb-3 flex items-start gap-2">'
+              ? '<div id="assinatura-promo-banner" class="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg p-3 text-sm mb-3 flex items-start gap-2"' + (a.ciclo === 'anual' ? ' style="display:none"' : '') + '>'
                 + '<i data-lucide="tag" class="w-4 h-4 mt-0.5 shrink-0"></i>'
                 + '<div><b>Oferta novo CNPJ:</b> assine o Profissional por '
                 + money(a.promo_disponivel.valor) + '/mes nos '
