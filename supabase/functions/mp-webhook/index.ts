@@ -99,7 +99,9 @@ Deno.serve(async (req) => {
     const sig = parseSignature(req.headers.get('x-signature'));
     const ts = sig.ts || url.searchParams.get('ts') || '';
     const provided = sig.v1 || '';
-    const manifest = `id:${resourceId};request-id:${requestId};ts:${ts};`;
+    // Doc do MP: no manifesto, o data.id vai em minusculas.
+    const manifestId = String(resourceId || '').toLowerCase();
+    const manifest = `id:${manifestId};request-id:${requestId};ts:${ts};`;
     const expected = await hmacHex(WEBHOOK_SECRET, manifest);
     if (!provided || !timingSafeEqual(expected, provided)) {
       return json({ error: 'assinatura invalida' }, 401);
