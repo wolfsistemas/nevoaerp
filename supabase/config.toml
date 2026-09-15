@@ -1,10 +1,14 @@
 # Configuracao das Edge Functions.
 #
 # verify_jwt:
-#   mp-checkout -> true  (usuario autenticado no app)
-#   mp-webhook  -> false (chamado pelo Mercado Pago, sem JWT do Supabase)
+#   mp-checkout  -> true  (usuario autenticado no app)
+#   mp-anual-pix -> true  (usuario autenticado no app)
+#   mp-webhook   -> false (chamado pelo Mercado Pago, sem JWT do Supabase)
 
 [functions.mp-checkout]
+verify_jwt = true
+
+[functions.mp-anual-pix]
 verify_jwt = true
 
 [functions.mp-webhook]

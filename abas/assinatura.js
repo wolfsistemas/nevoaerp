@@ -135,17 +135,20 @@
     }
   }
 
-  // Chama a Edge Function mp-checkout e redireciona para o Mercado Pago.
+  // Chama a Edge Function de checkout e redireciona para o Mercado Pago.
+  // Mensal: assinatura recorrente no cartao (mp-checkout).
+  // Anual: pagamento unico via Pix (mp-anual-pix), sem renovacao automatica.
   async function iniciarCheckout(plano, btn) {
     var sel = document.getElementById('assinatura-ciclo');
     var ciclo = sel ? sel.value : 'mensal';
+    var fn = ciclo === 'anual' ? 'mp-anual-pix' : 'mp-checkout';
     if (btn) {
       btn.disabled = true;
       btn.setAttribute('data-label', btn.textContent);
       btn.textContent = 'Redirecionando...';
     }
     try {
-      var res = await sb.functions.invoke('mp-checkout', { body: { plano: plano, ciclo: ciclo } });
+      var res = await sb.functions.invoke(fn, { body: { plano: plano, ciclo: ciclo } });
       if (res.error) {
         var msg = 'Nao foi possivel iniciar o pagamento.';
         try {
@@ -170,6 +173,12 @@
     }
   }
 
+  function notaPagamento(ciclo) {
+    return ciclo === 'anual'
+      ? 'Plano anual pago a vista via <b>Pix</b> no Mercado Pago. Nao renova automaticamente - renove ao vencer. A oferta novo CNPJ vale somente no mensal.'
+      : 'Assinatura recorrente no <b>cartao de credito</b> via Mercado Pago. A oferta novo CNPJ (Profissional) vale apenas no ciclo mensal.';
+  }
+
   function atualizarPrecosCheckout() {
     var sel = document.getElementById('assinatura-ciclo');
     var ciclo = sel ? sel.value : 'mensal';
@@ -177,6 +186,8 @@
       var el = document.querySelector('[data-preco="' + p.codigo + '"]');
       if (el) el.innerHTML = precoHTML(p, ciclo);
     });
+    var nota = document.getElementById('assinatura-metodo-nota');
+    if (nota) nota.innerHTML = notaPagamento(ciclo);
   }
 
   window.iniciarCheckout = iniciarCheckout;
@@ -305,12 +316,12 @@
       +     '<div class="flex items-center justify-between flex-wrap gap-3 mb-4">'
       +       '<div>'
       +         '<h3 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="credit-card" class="w-5 h-5 text-emerald-600"></i> Pagamento da assinatura</h3>'
-      +         '<p class="text-sm text-slate-500">Cobranca recorrente via Mercado Pago.</p>'
+      +         '<p class="text-sm text-slate-500" id="assinatura-metodo-nota">' + notaPagamento(a.ciclo) + '</p>'
       +       '</div>'
       +       '<label class="text-xs font-bold text-slate-500 flex items-center gap-2">Ciclo '
       +         '<select id="assinatura-ciclo" onchange="atualizarPrecosCheckout()" class="border rounded-lg px-3 py-2 text-sm font-bold text-slate-700">'
       +           '<option value="mensal"' + (a.ciclo !== 'anual' ? ' selected' : '') + '>Mensal</option>'
-      +           '<option value="anual"' + (a.ciclo === 'anual' ? ' selected' : '') + '>Anual</option>'
+      +           '<option value="anual"' + (a.ciclo === 'anual' ? ' selected' : '') + '>Anual (Pix)</option>'
       +         '</select>'
       +       '</label>'
       +     '</div>'

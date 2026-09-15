@@ -150,10 +150,40 @@ Deno.serve(async (req) => {
     } else if (tipo.includes('payment')) {
       const r = await mpGet(MP_API, MP_ACCESS_TOKEN, `/payments/${resourceId}`);
       if (r.ok) {
-        preapprovalId = r.data?.metadata?.preapproval_id
-          || r.data?.preapproval_id
+        const pag = r.data || {};
+        const meta = pag?.metadata || {};
+        preapprovalId = meta.preapproval_id
+          || pag.preapproval_id
           || null;
         if (preapprovalId) preapprovalId = String(preapprovalId);
+
+        // Plano anual pago a vista via Pix (Checkout Pro): sem preapproval.
+        // Ao aprovar, estende o vencimento em 12 meses (RPC idempotente).
+        if (!preapprovalId && String(meta.tipo || '') === 'anual_pix') {
+          const stPag = String(pag.status || '').toLowerCase();
+          if (stPag !== 'approved') {
+            return await finalizar('ignorado', null, {
+              ignorado: 'pagamento_nao_aprovado', status: stPag,
+            });
+          }
+          const empRef = String(pag.external_reference || meta.empresa_id || '');
+          if (!/^[0-9a-f-]{36}$/i.test(empRef)) {
+            return await finalizar('erro', 'empresa_id ausente no pagamento anual');
+          }
+          const { data: rpcAnual, error: errAnual } = await admin.rpc(
+            'mp_aplicar_pagamento_anual',
+            {
+              p_empresa_id: empRef,
+              p_payment_id: String(pag.id || resourceId),
+              p_plano: meta.plano ? String(meta.plano) : null,
+              p_valor: pag.transaction_amount ?? null,
+            },
+          );
+          if (errAnual) return await finalizar('erro', errAnual.message);
+          return await finalizar('processado', null, {
+            tipo: 'anual_pix', resultado: rpcAnual,
+          });
+        }
       }
     }
 
