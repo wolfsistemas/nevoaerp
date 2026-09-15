@@ -141,6 +141,23 @@ Deno.serve(async (req) => {
 
   const agora = new Date().toISOString();
 
+  // Assinatura recorrente (cartao) apenas pendente: cancela no Mercado Pago
+  // antes de trocar para o Pix, para nao deixar cobranca orfa.
+  const preapprovalPendente = assinatura?.mp_preapproval_id
+    && String(assinatura.mp_status || '').toLowerCase() !== 'authorized'
+    ? String(assinatura.mp_preapproval_id)
+    : null;
+  if (preapprovalPendente) {
+    await fetch(`${MP_API}/preapproval/${preapprovalPendente}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: 'cancelled' }),
+    });
+  }
+
   const campos: Record<string, unknown> = {
     ciclo: 'anual',
     plano_intencao: plano,
@@ -149,6 +166,9 @@ Deno.serve(async (req) => {
     mp_pix_valor: valor,
     mp_pix_em: agora,
     mp_atualizado_em: agora,
+    // Pix a vista substitui a assinatura recorrente pendente (se houver).
+    mp_preapproval_id: null,
+    mp_payer_id: null,
     // Anual a vista nao usa promocao mensal.
     promo_codigo: null,
     promo_valor: null,

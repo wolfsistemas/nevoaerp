@@ -213,6 +213,10 @@ Deno.serve(async (req) => {
       // Aplicado quando o preapproval for autorizado (mp_aplicar_assinatura).
       plano_intencao: plano,
       valor_normal: valorNormal,
+      // Checkout no cartao: descarta o link Pix pendente anterior (o
+      // historico do pagamento Pix, mp_pix_payment_id, e preservado).
+      mp_pix_preference_id: null,
+      mp_pix_init_point: null,
     };
     if (p) {
       campos.promo_codigo = p.codigo;
