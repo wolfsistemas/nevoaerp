@@ -28,6 +28,22 @@ function json(body, status = 200) {
   });
 }
 
+// O init_point de preapproval do Mercado Pago vem com "&activation=true" para
+// algumas contas, mas essa URL renderiza a pagina "Esta pagina nao existe"
+// (HTTP 202, empty-state). Remover o parametro faz o checkout real carregar
+// (HTTP 200, "Mercado Pago - Checkout") sem afetar os demais parametros.
+function sanitizeInitPoint(url) {
+  if (!url || typeof url !== 'string') return url;
+  try {
+    const u = new URL(url);
+    u.searchParams.delete('activation');
+    return u.toString();
+  } catch {
+    return url.replace(/([?&])activation=true(&|$)/i, (_m, p1, p2) => (p2 ? p1 : ''))
+              .replace(/[?&]$/, '');
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ error: 'metodo_nao_permitido' }, 405);
@@ -251,8 +267,8 @@ Deno.serve(async (req) => {
             reaproveitado: true,
             preapproval_id: pendenteId,
             status: 'pending',
-            init_point: reuso,
-            sandbox_init_point: atual.sandbox_init_point || null,
+            init_point: sanitizeInitPoint(reuso),
+            sandbox_init_point: sanitizeInitPoint(atual.sandbox_init_point) || null,
             plano,
             ciclo,
             valor,
@@ -341,8 +357,8 @@ Deno.serve(async (req) => {
     ok: true,
     preapproval_id: preapprovalId,
     status: mpJson.status || 'pending',
-    init_point: initPoint,
-    sandbox_init_point: mpJson.sandbox_init_point || null,
+    init_point: sanitizeInitPoint(initPoint),
+    sandbox_init_point: sanitizeInitPoint(mpJson.sandbox_init_point) || null,
     plano,
     ciclo,
     valor,

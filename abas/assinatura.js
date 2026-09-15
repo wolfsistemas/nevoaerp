@@ -122,6 +122,19 @@
     return PLANOS_CACHE;
   }
 
+  // O Mercado Pago as vezes devolve o init_point com "activation=true", que
+  // renderiza "Esta pagina nao existe". Remove o parametro antes de redirecionar.
+  function limparInitPoint(url) {
+    if (!url) return url;
+    try {
+      var u = new URL(url, window.location.origin);
+      u.searchParams.delete('activation');
+      return u.toString();
+    } catch (e) {
+      return String(url).replace(/([?&])activation=true(&|$)/i, function (_m, p1, p2) { return p2 ? p1 : ''; });
+    }
+  }
+
   // Chama a Edge Function mp-checkout e redireciona para o Mercado Pago.
   async function iniciarCheckout(plano, btn) {
     var sel = document.getElementById('assinatura-ciclo');
@@ -147,7 +160,7 @@
       }
       var d = res.data || {};
       if (!d.init_point) throw new Error('Checkout sem link de pagamento.');
-      window.location.href = d.init_point;
+      window.location.href = limparInitPoint(d.init_point);
     } catch (e) {
       if (btn) {
         btn.disabled = false;
