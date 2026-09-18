@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
   const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const MP_API = Deno.env.get('MP_API_BASE') || 'https://api.mercadopago.com';
-  const APP_BASE_URL = (Deno.env.get('APP_BASE_URL') || '').replace(/\/+$/, '');
+  const APP_BASE_URL = (Deno.env.get('APP_BASE_URL') || 'https://wolfssas.com.br/nevoaerp').replace(/\/+$/, '');
   const sandbox = String(Deno.env.get('MP_SANDBOX') || '').toLowerCase() === 'true';
 
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {

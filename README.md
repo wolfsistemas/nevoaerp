@@ -3,6 +3,8 @@
 ERP de gestao para pequenas e medias empresas (PME).
 Frontend estatico (HTML + JS vanilla + Tailwind + Supabase + three.js/pdfmake/Tesseract).
 
+URL publica: `https://wolfssas.com.br/nevoaerp/`
+
 ## Contexto deste repositorio (importante)
 
 - **Base de teste**: `basedetestes` (`jcgkgvqrluvvglenxumb`).

@@ -7,7 +7,7 @@ e pronto para white-label (documentos com dados da empresa contratante).
 
 | Arquivo | Pontos |
 |---------|--------|
-| `manifest.json` | `name`, `short_name`, `start_url` (hoje `/rvportal/index.html`) |
+| `manifest.json` | `name`, `short_name`, `start_url` (hoje `./index.html`) |
 | `index.html` | `<title>`, metas `application-name`/`apple-mobile-web-app-title`, logo e `<h1>` |
 | `sistema.html` | `<title>`, metas e ~50 ocorrencias |
 | `mobile.html` | title, metas, logo, `<h1>`, recibos e PDFs |
