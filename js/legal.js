@@ -12,7 +12,7 @@ window.LEGAL = {
   emailPrivacidade: 'wolfsaasbr@gmail.com',
   encarregado: 'Wolf Sistemas Ltda',
   foro: 'Jataí - Goiás',
-  site: 'https://wolfssas.com.br',
+  site: 'https://wolfsaas.com.br',
   versaoTermos: '1.0',
   versaoPrivacidade: '1.0',
   atualizadoEm: '18/09/2026'
