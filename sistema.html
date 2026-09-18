@@ -2374,7 +2374,16 @@
           showToast(isProntaEntrega ? "Pronta Entrega Concluída!" : "Venda Registrada!");
           await loadData(); 
           
-          if (isProntaEntrega) { navigate('pos'); } else { navigate('expedition'); }
+          if (isProntaEntrega) {
+              navigate('pos');
+          } else if (typeof window.planoTemRecurso === 'function' && !window.planoTemRecurso('expedicao')) {
+              // Plano sem Expedicao (ex.: Essencial): a entrega continua sendo
+              // registrada nos logs, mas a aba nao fica acessivel.
+              navigate('pos');
+              showToast("Entrega registrada! A Expedição faz parte dos planos Profissional e Enterprise.", false);
+          } else {
+              navigate('expedition');
+          }
       }
 
 

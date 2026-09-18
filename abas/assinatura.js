@@ -372,5 +372,12 @@
     if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
   }
 
+  // Informa se o plano carregado libera um recurso. Sem assinatura carregada
+  // (RPC falhou/ainda carregando) retorna true para nao travar o app.
+  window.planoTemRecurso = function (recurso) {
+    if (!ASSINATURA_ATUAL) return true;
+    return (ASSINATURA_ATUAL.recursos || []).indexOf(recurso) !== -1;
+  };
+
   window.renderAssinatura = renderAssinatura;
 })();
