@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
+    <script src="js/legal.js"></script>
 
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="shortcut icon" type="image/png" href="logo.png">
@@ -106,6 +107,17 @@
                     </div>
                 </div>
 
+                <div class="flex items-start gap-2 pt-1">
+                    <input type="checkbox" id="aceite" required class="mt-1 w-4 h-4 accent-indigo-700 shrink-0">
+                    <label for="aceite" class="text-xs text-slate-600 leading-relaxed">
+                        Li e aceito os
+                        <a href="termos.html" target="_blank" rel="noopener" class="text-indigo-700 font-bold hover:underline">Termos de Uso</a>
+                        e a
+                        <a href="privacidade.html" target="_blank" rel="noopener" class="text-indigo-700 font-bold hover:underline">Política de Privacidade</a>,
+                        e declaro ter poderes para representar a empresa contratante.
+                    </label>
+                </div>
+
                 <button type="submit" id="btn-criar" class="w-full py-3 bg-indigo-700 hover:bg-indigo-800 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-2">
                     <span>Criar conta e entrar</span>
                     <i data-lucide="arrow-right" class="w-5 h-5"></i>
@@ -179,6 +191,7 @@
             const senha    = document.getElementById('senha').value;
             const senha2   = document.getElementById('senha2').value;
             const plano    = document.getElementById('plano').value;
+            const aceite   = document.getElementById('aceite').checked;
 
             const btn = document.getElementById('btn-criar');
             const load = document.getElementById('loading');
@@ -194,6 +207,7 @@
                 if (!email || !email.includes('@')) throw new Error('Informe um e-mail válido.');
                 if ((senha || '').length < 6) throw new Error('A senha deve ter ao menos 6 caracteres.');
                 if (senha !== senha2) throw new Error('As senhas não conferem.');
+                if (!aceite) throw new Error('É necessário aceitar os Termos de Uso e a Política de Privacidade.');
 
                 const { data: su, error: suErr } = await sb.auth.signUp({ email, password: senha });
                 if (suErr) throw suErr;
@@ -208,7 +222,9 @@
                     p_cnpj: cnpj || null,
                     p_telefone: telefone || null,
                     p_endereco: endereco || null,
-                    p_plano: plano
+                    p_plano: plano,
+                    p_termos_versao: (window.LEGAL && window.LEGAL.versaoTermos) || null,
+                    p_privacidade_versao: (window.LEGAL && window.LEGAL.versaoPrivacidade) || null
                 });
                 if (rpcErr) {
                     await sb.auth.signOut();
