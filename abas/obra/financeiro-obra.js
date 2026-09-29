@@ -72,6 +72,21 @@
     var o = OFIN.obras.find(function (x) { return String(x.id) === String(id); });
     return o ? o.nome : '';
   }
+  function isEst(l) {
+    if (!l) return false;
+    var st = String(l.status || '').toUpperCase();
+    var sf = String(l.status_financeiro || '').toUpperCase();
+    return st === 'CANCELADO' || st === 'ESTORNADO' || sf === 'CANCELADO' || sf === 'ESTORNADO';
+  }
+  function saldoDespesa(e) {
+    return Number(e.custo || 0) + Number(e.acrescimo_total || 0) - Number(e.desconto_total || 0) - Number(e.valor_pago || 0);
+  }
+  function onlyObraLogs(arr, obraId) {
+    return (arr || []).filter(function (l) { return String(l.obra_id) === String(obraId); });
+  }
+  function onlyObraDesp(arr, obraId) {
+    return (arr || []).filter(function (e) { return String(e.obra_id) === String(obraId); });
+  }
 
   // ---------- modal base ----------
   function abrirModal(id) { var m = el(id); if (m) m.classList.remove('hidden'); }
@@ -95,11 +110,12 @@
     }
     var sel = el('ofin-obra');
     if (sel) {
-      sel.innerHTML = OFIN.obras.length
-        ? OFIN.obras.map(function (o) { return '<option value="' + esc(o.id) + '">' + esc(o.nome) + '</option>'; }).join('')
-        : '<option value="">Nenhuma obra cadastrada</option>';
+      sel.innerHTML = '<option value="__all__">Todas as obras (visao geral)</option>'
+        + (OFIN.obras.length
+          ? OFIN.obras.map(function (o) { return '<option value="' + esc(o.id) + '">' + esc(o.nome) + (o.ativo === false ? ' (finalizada)' : '') + '</option>'; }).join('')
+          : '');
     }
-    OFIN.obraId = OFIN.obras.length ? OFIN.obras[0].id : '';
+    OFIN.obraId = '__all__';
     await ofinCarregar();
   }
 
@@ -108,24 +124,28 @@
       + '<div class="space-y-4 p-2">'
       +   '<div class="flex flex-wrap justify-between items-center gap-3">'
       +     '<div><h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="wallet" class="text-emerald-600"></i> Financeiro da obra</h2>'
-      +     '<p class="text-sm text-slate-500">Contas a receber e a pagar da obra selecionada. Exclusivo do segmento Obra.</p></div>'
+      +     '<p class="text-sm text-slate-500">Visao de caixa geral ou por obra. Contas a receber e a pagar exclusivas do segmento Obra.</p></div>'
       +     '<div class="flex items-center gap-2 flex-wrap">'
-      +       '<select id="ofin-obra" onchange="ofinTrocaObra()" class="p-2.5 border rounded-lg text-sm font-bold bg-white min-w-[200px]"></select>'
+      +       '<select id="ofin-obra" onchange="ofinTrocaObra()" class="p-2.5 border rounded-lg text-sm font-bold bg-white min-w-[220px]"></select>'
       +       '<button onclick="ofinToggleCards()" id="ofin-eye-btn" class="bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm flex items-center gap-1" title="Mostrar/Ocultar"><i data-lucide="eye-off" class="w-4 h-4"></i></button>'
       +       '<button onclick="ofinOpenReceipt()" class="bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm flex items-center gap-1"><i data-lucide="file-text" class="w-4 h-4"></i> Recibo Avulso</button>'
       +     '</div>'
       +   '</div>'
-      +   '<div class="grid grid-cols-1 md:grid-cols-3 gap-4">'
-      +     '<div class="bg-green-50 p-4 rounded-xl border border-green-100 shadow-sm"><p class="text-green-800 text-xs font-bold uppercase">Receitas (Recebidas)</p><h3 id="ofin-income" class="text-2xl font-bold text-green-600 mt-1">R$ 0,00</h3></div>'
-      +     '<div class="bg-red-50 p-4 rounded-xl border border-red-100 shadow-sm"><p class="text-red-800 text-xs font-bold uppercase">Saídas (Pagas)</p><h3 id="ofin-expenses" class="text-2xl font-bold text-red-600 mt-1">R$ 0,00</h3></div>'
-      +     '<div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 shadow-sm"><p class="text-indigo-800 text-xs font-bold uppercase">Saldo da Obra</p><h3 id="ofin-balance" class="text-2xl font-bold text-indigo-600 mt-1">R$ 0,00</h3></div>'
+      +   '<div class="grid grid-cols-1 md:grid-cols-4 gap-4">'
+      +     '<div class="bg-green-50 p-4 rounded-xl border border-green-100 shadow-sm"><p class="text-green-800 text-xs font-bold uppercase">Recebido</p><h3 id="ofin-income" class="text-2xl font-bold text-green-600 mt-1">R$ 0,00</h3></div>'
+      +     '<div class="bg-red-50 p-4 rounded-xl border border-red-100 shadow-sm"><p class="text-red-800 text-xs font-bold uppercase">Pago</p><h3 id="ofin-expenses" class="text-2xl font-bold text-red-600 mt-1">R$ 0,00</h3></div>'
+      +     '<div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 shadow-sm"><p class="text-indigo-800 text-xs font-bold uppercase">Saldo de caixa</p><h3 id="ofin-balance" class="text-2xl font-bold text-indigo-600 mt-1">R$ 0,00</h3></div>'
+      +     '<div class="bg-amber-50 p-4 rounded-xl border border-amber-100 shadow-sm"><p class="text-amber-800 text-xs font-bold uppercase">Em aberto</p><h3 id="ofin-open" class="text-2xl font-bold text-amber-600 mt-1">R$ 0,00</h3><p class="text-[10px] text-amber-700 mt-0.5">a receber - a pagar</p></div>'
       +   '</div>'
-      +   '<div class="mb-2 border-b border-slate-200">'
-      +     '<button id="ofin-tab-receber-btn" onclick="ofinSwitchTab(\'receber\')" class="px-4 py-2 text-sm font-bold rounded-t-lg transition-all bg-indigo-600 text-white shadow">📋 Contas a Receber</button>'
-      +     '<button id="ofin-tab-pagar-btn" onclick="ofinSwitchTab(\'pagar\')" class="px-4 py-2 text-sm font-bold rounded-t-lg transition-all bg-slate-200 text-slate-700 hover:bg-slate-300">💰 Contas a Pagar</button>'
+      +   '<div id="ofin-overview" class="hidden"></div>'
+      +   '<div id="ofin-detail">'
+      +     '<div class="mb-2 border-b border-slate-200">'
+      +       '<button id="ofin-tab-receber-btn" onclick="ofinSwitchTab(\'receber\')" class="px-4 py-2 text-sm font-bold rounded-t-lg transition-all bg-indigo-600 text-white shadow">📋 Contas a Receber</button>'
+      +       '<button id="ofin-tab-pagar-btn" onclick="ofinSwitchTab(\'pagar\')" class="px-4 py-2 text-sm font-bold rounded-t-lg transition-all bg-slate-200 text-slate-700 hover:bg-slate-300">💰 Contas a Pagar</button>'
+      +     '</div>'
+      +     '<div id="ofin-receber" class="bg-white rounded-xl border shadow-sm flex flex-col h-[680px]">' + receberSection() + '</div>'
+      +     '<div id="ofin-pagar" class="bg-white rounded-xl border shadow-sm flex flex-col h-[680px] hidden">' + pagarSection() + '</div>'
       +   '</div>'
-      +   '<div id="ofin-receber" class="bg-white rounded-xl border shadow-sm flex flex-col h-[680px]">' + receberSection() + '</div>'
-      +   '<div id="ofin-pagar" class="bg-white rounded-xl border shadow-sm flex flex-col h-[680px] hidden">' + pagarSection() + '</div>'
       + '</div>';
   }
 
@@ -187,32 +207,53 @@
   }
 
   // ---------- dados ----------
+  function allMode() { return OFIN.obraId === '__all__'; }
+  function scopedLogs() { return allMode() ? OFIN.logs : onlyObraLogs(OFIN.logs, OFIN.obraId); }
+  function scopedDespesas() { return allMode() ? OFIN.despesas : onlyObraDesp(OFIN.despesas, OFIN.obraId); }
+
   async function ofinCarregar() {
-    var body = el('ofin-receivables-list');
+    var recvBody = el('ofin-receivables-list');
+    var pagBody = el('ofin-expenses-list');
     if (!OFIN.obraId) {
-      if (body) body.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400">Selecione uma obra.</td></tr>';
-      var pb = el('ofin-expenses-list');
-      if (pb) pb.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400">Selecione uma obra.</td></tr>';
+      if (recvBody) recvBody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400">Selecione uma obra.</td></tr>';
+      if (pagBody) pagBody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400">Selecione uma obra.</td></tr>';
       renderCards();
       return;
     }
-    if (body) body.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400">Carregando...</td></tr>';
+    if (recvBody) recvBody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400">Carregando...</td></tr>';
+    if (pagBody) pagBody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400">Carregando...</td></tr>';
     try {
-      var r = await Promise.all([
-        sb.from('logs').select('*').eq('obra_id', OFIN.obraId),
-        sb.from('despesas').select('*').eq('obra_id', OFIN.obraId)
-      ]);
+      var lq = sb.from('logs').select('*');
+      var dq = sb.from('despesas').select('*');
+      if (allMode()) {
+        lq = lq.not('obra_id', 'is', null);
+        dq = dq.not('obra_id', 'is', null);
+      } else {
+        lq = lq.eq('obra_id', OFIN.obraId);
+        dq = dq.eq('obra_id', OFIN.obraId);
+      }
+      var r = await Promise.all([lq, dq]);
       if (r[0].error) throw r[0].error;
       if (r[1].error) throw r[1].error;
       OFIN.logs = r[0].data || [];
       OFIN.despesas = r[1].data || [];
     } catch (e) {
-      if (body) body.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-red-600">' + esc(e.message || e) + '</td></tr>';
+      if (recvBody) recvBody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-red-600">' + esc(e.message || e) + '</td></tr>';
       return;
     }
     renderCards();
-    ofinRenderReceber();
-    ofinRenderPagar();
+    var ov = el('ofin-overview');
+    var det = el('ofin-detail');
+    if (allMode()) {
+      renderOverview();
+      if (ov) ov.classList.remove('hidden');
+      if (det) det.classList.add('hidden');
+    } else {
+      if (ov) ov.classList.add('hidden');
+      if (det) det.classList.remove('hidden');
+      ofinRenderReceber();
+      ofinRenderPagar();
+    }
   }
 
   function ofinTrocaObra() {
@@ -248,28 +289,106 @@
   function renderCards() {
     var income = ofinTotalRecebido();
     var expenses = ofinTotalPago();
-    var iEl = el('ofin-income'), eEl = el('ofin-expenses'), bEl = el('ofin-balance');
+    var aReceber = openARFrom(scopedLogs());
+    var aPagar = scopedDespesas().filter(function (e) {
+      return !isEst(e) && String(e.status || '').toUpperCase() !== 'PAGO';
+    }).reduce(function (s, e) { return s + Math.max(0, saldoDespesa(e)); }, 0);
+    var iEl = el('ofin-income'), eEl = el('ofin-expenses'), bEl = el('ofin-balance'), oEl = el('ofin-open');
     if (iEl) iEl.textContent = fmtCard(income);
     if (eEl) eEl.textContent = fmtCard(expenses);
     if (bEl) bEl.textContent = fmtCard(income - expenses);
+    if (oEl) oEl.textContent = fmtCard(aReceber - aPagar);
   }
 
   function ofinTotalRecebido() {
-    return OFIN.logs.filter(function (l) { return l.tipo === 'recebimento' && l.status !== 'CANCELADO'; })
+    return scopedLogs().filter(function (l) { return l.tipo === 'recebimento' && !isEst(l); })
       .reduce(function (s, l) { return s + Number(l.valor_total || 0); }, 0);
   }
   function ofinTotalPago() {
-    return OFIN.logs.filter(function (l) { return l.tipo === 'despesa' && l.status !== 'CANCELADO'; })
+    return scopedLogs().filter(function (l) { return l.tipo === 'despesa' && !isEst(l); })
       .reduce(function (s, l) { return s + Number(l.valor_total || 0); }, 0);
   }
 
-  // ---------- titulo (a receber) ----------
-  function calcTituloObra(parentId) {
-    var rows = OFIN.logs.filter(function (l) {
-      return String(l.id) === String(parentId) && (l.tipo === 'venda' || l.tipo === 'receita') && l.status !== 'CANCELADO';
+  function openARFrom(logs) {
+    var ids = {};
+    (logs || []).forEach(function (l) {
+      if ((l.tipo === 'venda' || l.tipo === 'receita') && !isEst(l) && String(l.status_financeiro || '').toUpperCase() !== 'PARCELADO') ids[l.id] = true;
     });
-    var baixas = OFIN.logs.filter(function (l) {
-      return l.tipo === 'recebimento' && l.status !== 'CANCELADO' && /#(\d+)/.test(l.observacao || '') && String((l.observacao.match(/#(\d+)/) || [])[1]) === String(parentId);
+    var total = 0;
+    Object.keys(ids).forEach(function (id) {
+      var c = calcTituloFrom(logs, id);
+      if (c.saldo > 0.005) total += c.saldo;
+    });
+    return total;
+  }
+
+  function resumoObra(obraId) {
+    var logs = onlyObraLogs(OFIN.logs, obraId);
+    var desps = onlyObraDesp(OFIN.despesas, obraId);
+    var recebido = logs.filter(function (l) { return l.tipo === 'recebimento' && !isEst(l); })
+      .reduce(function (s, l) { return s + Number(l.valor_total || 0); }, 0);
+    var pago = logs.filter(function (l) { return l.tipo === 'despesa' && !isEst(l); })
+      .reduce(function (s, l) { return s + Number(l.valor_total || 0); }, 0);
+    var aReceber = openARFrom(logs);
+    var aPagar = desps.filter(function (e) { return !isEst(e) && String(e.status || '').toUpperCase() !== 'PAGO'; })
+      .reduce(function (s, e) { return s + Math.max(0, saldoDespesa(e)); }, 0);
+    return { recebido: recebido, pago: pago, saldo: recebido - pago, aReceber: aReceber, aPagar: aPagar, emAberto: aReceber - aPagar };
+  }
+
+  function renderOverview() {
+    var box = el('ofin-overview');
+    if (!box) return;
+    var tot = { recebido: 0, pago: 0, saldo: 0, aReceber: 0, aPagar: 0, emAberto: 0 };
+    var rows = OFIN.obras.map(function (o) {
+      var r = resumoObra(o.id);
+      tot.recebido += r.recebido; tot.pago += r.pago; tot.saldo += r.saldo;
+      tot.aReceber += r.aReceber; tot.aPagar += r.aPagar; tot.emAberto += r.emAberto;
+      var saldoCls = r.saldo >= 0 ? 'text-indigo-700' : 'text-red-600';
+      return '<tr class="border-t hover:bg-slate-50">'
+        + '<td class="p-3 font-bold text-slate-800">' + esc(o.nome) + (o.ativo === false ? ' <span class="text-[9px] font-bold text-slate-400">(finalizada)</span>' : '') + '</td>'
+        + '<td class="p-3 text-right text-green-700">' + money(r.recebido) + '</td>'
+        + '<td class="p-3 text-right text-red-600">' + money(r.pago) + '</td>'
+        + '<td class="p-3 text-right font-bold ' + saldoCls + '">' + money(r.saldo) + '</td>'
+        + '<td class="p-3 text-right text-amber-700">' + money(r.aReceber) + '</td>'
+        + '<td class="p-3 text-right text-orange-600">' + money(r.aPagar) + '</td>'
+        + '<td class="p-3 text-right"><button onclick="ofinAbrirObra(\'' + esc(o.id) + '\')" class="text-xs font-bold text-indigo-600 border border-indigo-200 rounded px-2 py-1">Abrir</button></td>'
+        + '</tr>';
+    }).join('');
+    box.innerHTML = ''
+      + '<div class="bg-white rounded-xl border shadow-sm overflow-hidden">'
+      +   '<div class="p-4 border-b bg-slate-50 flex items-center justify-between"><h3 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="layout-dashboard" class="w-5 h-5 text-emerald-600"></i> Visao geral de caixa (todas as obras)</h3>'
+      +   '<button onclick="ofinPrintOverview()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm flex items-center gap-1"><i data-lucide="printer" class="w-4 h-4"></i> Imprimir</button></div>'
+      +   '<div class="overflow-x-auto"><table class="w-full text-sm text-left">'
+      +     '<thead class="bg-slate-100 text-slate-600"><tr>'
+      +       '<th class="p-3">Obra</th><th class="p-3 text-right">Recebido</th><th class="p-3 text-right">Pago</th>'
+      +       '<th class="p-3 text-right">Saldo caixa</th><th class="p-3 text-right">A receber</th><th class="p-3 text-right">A pagar</th><th class="p-3"></th>'
+      +     '</tr></thead><tbody>'
+      +     (rows || '<tr><td colspan="7" class="p-6 text-center text-slate-400">Nenhuma obra cadastrada.</td></tr>')
+      +     '<tr class="bg-slate-100 font-black text-slate-800"><td class="p-3" colspan="1">TOTAL GERAL</td>'
+      +       '<td class="p-3 text-right text-green-700">' + money(tot.recebido) + '</td>'
+      +       '<td class="p-3 text-right text-red-600">' + money(tot.pago) + '</td>'
+      +       '<td class="p-3 text-right text-indigo-700">' + money(tot.saldo) + '</td>'
+      +       '<td class="p-3 text-right text-amber-700">' + money(tot.aReceber) + '</td>'
+      +       '<td class="p-3 text-right text-orange-600">' + money(tot.aPagar) + '</td><td></td></tr>'
+      +     '</tbody></table></div>'
+      + '</div>';
+    icons();
+  }
+
+  function ofinAbrirObra(id) {
+    OFIN.obraId = id;
+    var sel = el('ofin-obra');
+    if (sel) sel.value = id;
+    ofinCarregar();
+  }
+
+  // ---------- titulo (a receber) ----------
+  function calcTituloFrom(logs, parentId) {
+    var rows = (logs || []).filter(function (l) {
+      return String(l.id) === String(parentId) && (l.tipo === 'venda' || l.tipo === 'receita') && !isEst(l);
+    });
+    var baixas = (logs || []).filter(function (l) {
+      return l.tipo === 'recebimento' && !isEst(l) && /#(\d+)/.test(l.observacao || '') && String((l.observacao.match(/#(\d+)/) || [])[1]) === String(parentId);
     });
     var total = rows.reduce(function (a, r) { return a + Number(r.valor_total || 0); }, 0);
     var pago = baixas.reduce(function (a, l) { return a + Number(l.valor_total || 0); }, 0);
@@ -279,6 +398,8 @@
     var status = saldo <= 0.005 ? 'PAGO' : (pago > 0 ? 'PARCIAL' : 'PENDENTE');
     return { rows: rows, baixas: baixas, total: total, pago: pago, disc: disc, jur: jur, saldo: saldo, status: status };
   }
+
+  function calcTituloObra(parentId) { return calcTituloFrom(OFIN.logs, parentId); }
 
   function ofinRenderReceber() {
     var body = el('ofin-receivables-list');
@@ -291,7 +412,7 @@
 
     var ids = {};
     OFIN.logs.forEach(function (l) {
-      if ((l.tipo === 'venda' || l.tipo === 'receita') && l.status !== 'CANCELADO' && l.status_financeiro !== 'PARCELADO') ids[l.id] = true;
+      if ((l.tipo === 'venda' || l.tipo === 'receita') && !isEst(l) && String(l.status_financeiro || '').toUpperCase() !== 'PARCELADO') ids[l.id] = true;
     });
     var lista = Object.keys(ids).map(function (id) {
       var c = calcTituloObra(id);
@@ -364,6 +485,7 @@
 
     var lista = OFIN.despesas.slice().filter(function (e) {
       var dt = String(e.data || '').split('T')[0];
+      if (isEst(e)) return false;
       if (cat && String(e.item) !== cat) return false;
       if (term && normalizeSearch((e.fornecedor || '') + ' ' + (e.item || '') + ' ' + (e.observacao || '') + ' ' + e.id).indexOf(term) < 0) return false;
       if (st === 'PAGO' && e.status !== 'PAGO') return false;
@@ -676,7 +798,7 @@
 
   async function ofinEstornarRecebimento(id) {
     var baixas = OFIN.logs.filter(function (l) {
-      return l.tipo === 'recebimento' && l.status !== 'CANCELADO' && /#(\d+)/.test(l.observacao || '') && String((l.observacao.match(/#(\d+)/) || [])[1]) === String(id);
+      return l.tipo === 'recebimento' && !isEst(l) && /#(\d+)/.test(l.observacao || '') && String((l.observacao.match(/#(\d+)/) || [])[1]) === String(id);
     });
     var porUid = OFIN.logs.find(function (l) { return l.tipo === 'recebimento' && String(l.uid) === String(id); });
     var alvo = porUid ? [porUid] : (function () {
@@ -690,7 +812,7 @@
     loading(true);
     try {
       var parentId = String((alvo[0].observacao.match(/#(\d+)/) || [])[1]);
-      for (var i = 0; i < alvo.length; i++) { await sb.from('logs').update({ status: 'CANCELADO' }).eq('uid', alvo[i].uid); }
+      for (var i = 0; i < alvo.length; i++) { await sb.from('logs').update({ status: 'ESTORNADO', status_financeiro: 'ESTORNADO' }).eq('uid', alvo[i].uid); }
       var st = calcTituloObra(parentId);
       for (var j = 0; j < st.rows.length; j++) {
         await sb.from('logs').update({ valor_pago: st.pago, status_financeiro: st.status }).eq('uid', st.rows[j].uid);
@@ -934,7 +1056,7 @@
 
   async function ofinEstornarDespesa(id) {
     var baixas = OFIN.logs.filter(function (l) {
-      return l.tipo === 'despesa' && l.status !== 'CANCELADO' && /#(\d+)/.test(l.observacao || '') && String((l.observacao.match(/#(\d+)/) || [])[1]) === String(id);
+      return l.tipo === 'despesa' && !isEst(l) && /#(\d+)/.test(l.observacao || '') && String((l.observacao.match(/#(\d+)/) || [])[1]) === String(id);
     });
     var porUid = OFIN.logs.find(function (l) { return l.tipo === 'despesa' && String(l.uid) === String(id); });
     var alvo = porUid ? [porUid] : (function () {
@@ -947,7 +1069,7 @@
     if (!ok) return;
     loading(true);
     try {
-      for (var i = 0; i < alvo.length; i++) { await sb.from('logs').update({ status: 'CANCELADO' }).eq('uid', alvo[i].uid); }
+      for (var i = 0; i < alvo.length; i++) { await sb.from('logs').update({ status: 'ESTORNADO', status_financeiro: 'ESTORNADO' }).eq('uid', alvo[i].uid); }
       var restantes = baixas.filter(function (l) { return !alvo.some(function (a) { return String(a.uid) === String(l.uid); }); });
       var e = OFIN.despesas.find(function (x) { return String(x.id) === String(id); });
       var pago = restantes.reduce(function (a, l) { return a + Number(l.valor_total || 0); }, 0);
@@ -1014,6 +1136,8 @@
     abrirModal('ofin-modal-receipt');
   }
 
+  function scopeLabel() { return allMode() ? 'Todas as obras' : (nomeObra(OFIN.obraId) || '-'); }
+
   function ofinPrintReceipt() {
     var c = val('ofin-receipt-client').trim();
     var v = parseFloat(val('ofin-receipt-amount')) || 0;
@@ -1021,62 +1145,91 @@
     var desc = val('ofin-receipt-desc').trim();
     var pg = val('ofin-receipt-payment');
     if (!c || !v) return toast('Informe cliente e valor.', true);
-    var emp = (typeof getCompany === 'function') ? (getCompany() || {}) : {};
-    var html = '<div style="font-family:Arial;padding:30px;border:2px solid #1e293b;border-radius:8px;max-width:640px">'
-      + '<h1 style="font-size:22px;margin:0 0 6px">' + esc(emp.nome || 'NÉVOA') + '</h1>'
-      + (nomeObra(OFIN.obraId) ? '<p style="margin:0 0 14px;color:#475569">Obra: ' + esc(nomeObra(OFIN.obraId)) + '</p>' : '')
-      + '<h2 style="font-size:18px;margin:0 0 14px">RECIBO</h2>'
-      + '<p style="font-size:15px;line-height:1.6">Recebi de <b>' + esc(c) + '</b> a importancia de <b>' + money(v) + '</b>'
-      + (desc ? ', referente a <b>' + esc(desc) + '</b>' : '') + (pg ? ', pago via <b>' + esc(pg) + '</b>' : '') + '.</p>'
-      + '<p style="margin-top:50px;border-top:1px solid #000;width:60%;padding-top:8px">' + esc(nomeObra(OFIN.obraId) || 'Névoa') + '</p>'
-      + '<p style="color:#64748b;font-size:12px">' + dataBR(d) + '</p></div>';
-    printHtml(html);
+    var P = window.obraPrint;
+    var body = ''
+      + '<div style="border:1px solid #000;border-top:none;padding:24px;font-size:15px;line-height:1.8;">'
+      +   '<h2 style="margin:0 0 16px;font-size:18px;text-transform:uppercase;">Recibo</h2>'
+      +   '<p style="margin:0 0 12px;">Recebi de <b>' + esc(c) + '</b> a importancia de <b>' + money(v) + '</b>'
+      +     (desc ? ', referente a <b>' + esc(desc) + '</b>' : '') + (pg ? ', pago via <b>' + esc(pg) + '</b>' : '') + '.</p>'
+      +   (!allMode() ? '<p style="margin:0 0 12px;color:#475569;">Obra: <b>' + esc(nomeObra(OFIN.obraId)) + '</b></p>' : '')
+      +   '<p style="margin:0;color:#64748b;font-size:12px;">Valor: ' + money(v) + ' &middot; Data: ' + dataBR(d) + '</p>'
+      +   '<div style="margin-top:70px;text-align:center;">'
+      +     '<div style="border-top:1px solid #000;width:60%;margin:0 auto 6px;"></div>'
+      +     '<div style="font-size:11px;font-weight:bold;text-transform:uppercase;">' + esc(nomeObra(OFIN.obraId) || 'Névoa') + '</div>'
+      +     '<div style="font-size:10px;color:#64748b;">' + esc((window.getCompany ? (getCompany().nome || getCompany().name) : 'NÉVOA')) + '</div>'
+      +   '</div>'
+      + '</div>';
+    printHtml(P ? P.doc({ title: 'Recibo', meta: dataBR(d), body: body }) : body);
     fecharModal('ofin-modal-receipt');
   }
 
   function printHtml(html) {
+    if (window.obraPrint && typeof window.obraPrint.print === 'function') return window.obraPrint.print(html);
     var p = el('print-area');
     if (p) { p.innerHTML = html; setTimeout(function () { window.print(); }, 300); }
   }
 
+  function docTotalRow(label, value) {
+    return '<div style="display:flex;justify-content:space-between;border:1px solid #000;border-top:none;padding:10px;background:#f0fdf4;font-weight:bold;font-size:13px;">'
+      + '<span>' + esc(label) + '</span><span>' + money(value) + '</span></div>';
+  }
+
   function ofinPrintReceber() {
-    var body = el('ofin-receivables-list');
-    if (!body) return;
-    var html = '<div style="font-family:Arial;padding:20px"><h1 style="font-size:20px;margin:0 0 4px">Contas a Receber</h1>'
-      + '<p style="color:#475569;margin:0 0 14px">Obra: ' + esc(nomeObra(OFIN.obraId) || '-') + ' · ' + dataBR(getHojeLocalStr()) + '</p>'
-      + '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#f1f5f9">'
-      + '<th style="text-align:left;padding:6px;border:1px solid #cbd5e1">Vencimento</th><th style="text-align:left;padding:6px;border:1px solid #cbd5e1">Cliente/Ref</th>'
-      + '<th style="text-align:right;padding:6px;border:1px solid #cbd5e1">Valor</th></tr></thead><tbody id="ofin-print-rec-body"></tbody></table></div>';
-    printHtml(html);
-    var tb = el('ofin-print-rec-body');
-    if (tb) {
-      var ids = {};
-      OFIN.logs.forEach(function (l) { if ((l.tipo === 'venda' || l.tipo === 'receita') && l.status !== 'CANCELADO' && l.status_financeiro !== 'PARCELADO') ids[l.id] = true; });
-      tb.innerHTML = Object.keys(ids).map(function (id) {
-        var c = calcTituloObra(id); var r0 = c.rows[0] || {};
-        return '<tr><td style="padding:6px;border:1px solid #cbd5e1">' + dataBR(r0.vencimento) + '</td>'
-          + '<td style="padding:6px;border:1px solid #cbd5e1">' + esc(r0.cliente_nome || '') + ' - ' + esc(r0.produto_nome || '') + '</td>'
-          + '<td style="padding:6px;border:1px solid #cbd5e1;text-align:right">' + money(c.saldo) + '</td></tr>';
-      }).join('');
-    }
+    var P = window.obraPrint;
+    if (!P) return;
+    var hoje = getHojeLocalStr();
+    var ids = {};
+    OFIN.logs.forEach(function (l) { if ((l.tipo === 'venda' || l.tipo === 'receita') && !isEst(l) && String(l.status_financeiro || '').toUpperCase() !== 'PARCELADO') ids[l.id] = true; });
+    var lista = Object.keys(ids).map(function (id) {
+      var c = calcTituloObra(id); var r0 = c.rows[0] || {};
+      var dv = String(r0.vencimento || '').split('T')[0];
+      var sit = c.status === 'PAGO' ? 'PAGO' : (dv && dv < hoje ? 'VENCIDO' : 'ABERTO');
+      return { venc: r0.vencimento, nome: (r0.cliente_nome || 'Consumidor Final') + ' - ' + (r0.produto_nome || ('#' + id)), sit: sit, valor: c.saldo };
+    }).sort(function (a, b) { return String(a.venc || '').localeCompare(String(b.venc || '')); });
+    if (!lista.length) return toast('Nenhum registro para imprimir.', true);
+    var total = lista.reduce(function (s, r) { return s + Number(r.valor || 0); }, 0);
+    var rows = lista.map(function (r) { return [P.dataBR(r.venc), esc(r.nome), r.sit, P.money(r.valor > 0 ? r.valor : 0)]; });
+    var body = P.table(
+      [{ label: 'Vencimento' }, { label: 'Cliente / Referencia' }, { label: 'Situacao', align: 'center' }, { label: 'Saldo', align: 'right' }],
+      rows
+    ) + docTotalRow('TOTAL A RECEBER', total);
+    printHtml(P.doc({ title: 'Contas a Receber', meta: dataBR(hoje), subtitle: 'Obra: <b>' + esc(scopeLabel()) + '</b>', body: body }));
   }
 
   function ofinPrintPagar() {
-    var html = '<div style="font-family:Arial;padding:20px"><h1 style="font-size:20px;margin:0 0 4px">Contas a Pagar</h1>'
-      + '<p style="color:#475569;margin:0 0 14px">Obra: ' + esc(nomeObra(OFIN.obraId) || '-') + ' · ' + dataBR(getHojeLocalStr()) + '</p>'
-      + '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#f1f5f9">'
-      + '<th style="text-align:left;padding:6px;border:1px solid #cbd5e1">Vencimento</th><th style="text-align:left;padding:6px;border:1px solid #cbd5e1">Fornecedor/Item</th>'
-      + '<th style="text-align:right;padding:6px;border:1px solid #cbd5e1">Valor</th></tr></thead><tbody id="ofin-print-pag-body"></tbody></table></div>';
-    printHtml(html);
-    var tb = el('ofin-print-pag-body');
-    if (tb) {
-      tb.innerHTML = OFIN.despesas.slice().sort(function (a, b) { return String(a.data || '').localeCompare(String(b.data || '')); }).map(function (e) {
-        var saldo = Number(e.custo || 0) + Number(e.acrescimo_total || 0) - Number(e.desconto_total || 0) - Number(e.valor_pago || 0);
-        return '<tr><td style="padding:6px;border:1px solid #cbd5e1">' + dataBR(e.data) + '</td>'
-          + '<td style="padding:6px;border:1px solid #cbd5e1">' + esc(e.fornecedor || '') + ' - ' + esc(e.item || '') + '</td>'
-          + '<td style="padding:6px;border:1px solid #cbd5e1;text-align:right">' + money(saldo > 0 ? saldo : 0) + '</td></tr>';
-      }).join('');
-    }
+    var P = window.obraPrint;
+    if (!P) return;
+    var hoje = getHojeLocalStr();
+    var lista = OFIN.despesas.filter(function (e) { return !isEst(e); })
+      .sort(function (a, b) { return String(a.data || '').localeCompare(String(b.data || '')); });
+    if (!lista.length) return toast('Nenhum registro para imprimir.', true);
+    var total = lista.reduce(function (s, e) { return s + Math.max(0, saldoDespesa(e)); }, 0);
+    var rows = lista.map(function (e) {
+      var dv = String(e.data || '').split('T')[0];
+      var sit = String(e.status || '').toUpperCase() === 'PAGO' ? 'PAGO' : (dv && dv < hoje ? 'VENCIDO' : 'PENDENTE');
+      return [P.dataBR(e.data), esc((e.fornecedor || '-') + ' - ' + (e.item || '')), sit, P.money(Math.max(0, saldoDespesa(e)))];
+    });
+    var body = P.table(
+      [{ label: 'Vencimento' }, { label: 'Fornecedor / Item' }, { label: 'Situacao', align: 'center' }, { label: 'Saldo', align: 'right' }],
+      rows
+    ) + docTotalRow('TOTAL A PAGAR', total);
+    printHtml(P.doc({ title: 'Contas a Pagar', meta: dataBR(hoje), subtitle: 'Obra: <b>' + esc(scopeLabel()) + '</b>', body: body }));
+  }
+
+  function ofinPrintOverview() {
+    var P = window.obraPrint;
+    if (!P) return;
+    var tot = { recebido: 0, pago: 0, saldo: 0, aReceber: 0, aPagar: 0 };
+    var rows = OFIN.obras.map(function (o) {
+      var r = resumoObra(o.id);
+      tot.recebido += r.recebido; tot.pago += r.pago; tot.saldo += r.saldo; tot.aReceber += r.aReceber; tot.aPagar += r.aPagar;
+      return [esc(o.nome), P.money(r.recebido), P.money(r.pago), P.money(r.saldo), P.money(r.aReceber), P.money(r.aPagar)];
+    });
+    var body = P.table(
+      [{ label: 'Obra' }, { label: 'Recebido', align: 'right' }, { label: 'Pago', align: 'right' }, { label: 'Saldo', align: 'right' }, { label: 'A receber', align: 'right' }, { label: 'A pagar', align: 'right' }],
+      rows
+    ) + docTotalRow('SALDO GERAL DE CAIXA', tot.saldo);
+    printHtml(P.doc({ title: 'Caixa Geral - Obras', meta: dataBR(getHojeLocalStr()), subtitle: 'Consolidado de todas as obras', body: body }));
   }
 
   // ---------- exports ----------
@@ -1117,4 +1270,6 @@
   window.ofinPrintReceipt = ofinPrintReceipt;
   window.ofinPrintReceber = ofinPrintReceber;
   window.ofinPrintPagar = ofinPrintPagar;
+  window.ofinPrintOverview = ofinPrintOverview;
+  window.ofinAbrirObra = ofinAbrirObra;
 })();

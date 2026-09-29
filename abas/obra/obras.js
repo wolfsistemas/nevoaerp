@@ -39,6 +39,9 @@
             + '<td class="p-3 text-center"><div class="flex gap-2 justify-center">'
             +   '<button onclick="obraOpenForm(\'' + o.id + '\')" class="text-indigo-600 border p-1.5 rounded" title="Editar"><i data-lucide="pencil" class="w-4 h-4"></i></button>'
             +   '<button onclick="obraOpenFases(\'' + o.id + '\')" class="text-emerald-600 border p-1.5 rounded" title="Fases"><i data-lucide="layers" class="w-4 h-4"></i></button>'
+            +   (o.ativo && o.status !== 'CONCLUIDA'
+                  ? '<button onclick="obraFinalizar(\'' + o.id + '\')" class="text-amber-600 border p-1.5 rounded" title="Finalizar obra"><i data-lucide="flag" class="w-4 h-4"></i></button>'
+                  : '<button onclick="obraReabrir(\'' + o.id + '\')" class="text-emerald-600 border p-1.5 rounded" title="Reabrir obra"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>')
             + '</div></td></tr>';
         }).join('') : '<tr><td colspan="6" class="p-6 text-center text-slate-400">Nenhuma obra cadastrada.</td></tr>')
         +     '</tbody></table></div></div>';
@@ -178,11 +181,36 @@
     if (el) el.remove();
   }
 
+  async function obraFinalizar(id) {
+    var ok = await A().confirmar('Finalizar esta obra? Ela fica CONCLUIDA e inativa, mas permanece em todos os registros (financeiro, equipe, historico).', { confirmText: 'Finalizar' });
+    if (!ok) return;
+    var res = await sb.from('obras').update({
+      status: 'CONCLUIDA',
+      ativo: false,
+      data_termino: new Date().toISOString().slice(0, 10),
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+    if (res.error) return A().toast(res.error.message, true);
+    A().toast('Obra finalizada.');
+    renderObras();
+  }
+
+  async function obraReabrir(id) {
+    var ok = await A().confirmar('Reabrir esta obra? Ela volta a ficar ATIVA.', { confirmText: 'Reabrir' });
+    if (!ok) return;
+    var res = await sb.from('obras').update({ status: 'ATIVA', ativo: true, updated_at: new Date().toISOString() }).eq('id', id);
+    if (res.error) return A().toast(res.error.message, true);
+    A().toast('Obra reaberta.');
+    renderObras();
+  }
+
   window.renderObras = renderObras;
   window.obraOpenForm = obraOpenForm;
   window.obraSalvar = obraSalvar;
   window.obraOpenFases = obraOpenFases;
   window.obraSalvarFase = obraSalvarFase;
   window.obraExcluirFase = obraExcluirFase;
+  window.obraFinalizar = obraFinalizar;
+  window.obraReabrir = obraReabrir;
   window.obraFecharModal = obraFecharModal;
 })();

@@ -19,7 +19,6 @@
     'nav-obra-equipe': 'equipe',
     'nav-obra-fornecedores': 'fornecedores',
     'nav-obra-oc': 'oc',
-    'nav-obra-precos': 'precos',
     'nav-obra-fin': 'financeiro',
     'nav-obra-gerencial': 'gerencial'
   };
