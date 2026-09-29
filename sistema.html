@@ -334,7 +334,6 @@
         <button onclick="navigate('obra-obras')" id="nav-obra-obras" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="building"></i> <span class="font-medium text-sm">Obras</span></button>
         <button onclick="navigate('obra-equipe')" id="nav-obra-equipe" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="hard-hat"></i> <span class="font-medium text-sm">Equipe</span></button>
         <button onclick="navigate('obra-fornecedores')" id="nav-obra-fornecedores" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="truck"></i> <span class="font-medium text-sm">Fornecedores</span></button>
-        <button onclick="navigate('obra-oc')" id="nav-obra-oc" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="clipboard-list"></i> <span class="font-medium text-sm">Ordens de compra</span></button>
         <button onclick="navigate('obra-precos')" id="nav-obra-precos" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="trending-up"></i> <span class="font-medium text-sm">Preços</span></button>
         <div class="border-t border-slate-700 my-2 pt-2"></div>
         <button onclick="navigate('obra-fin')" id="nav-obra-fin" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="bar-chart-3"></i> <span class="font-medium text-sm">Financeiro</span></button>
@@ -1971,8 +1970,10 @@
 
         STATE.logs = [];
         const quotesMap = {};
-        
-        (resLog.data || []).forEach(l => {
+
+        // Financeiro por obra e exclusivo do segmento Obra: registros com
+        // obra_id NAO entram no Financeiro geral do ERP.
+        (resLog.data || []).filter(l => !l.obra_id).forEach(l => {
             if (l.tipo === 'orcamento') {
                 const qId = String(l.id);
                 if(!quotesMap[qId]) {
@@ -2019,7 +2020,7 @@
             return q; 
         });
 
-        STATE.expenses = (resDesp.data || []).map(e => ({
+        STATE.expenses = (resDesp.data || []).filter(e => !e.obra_id).map(e => ({
             id: e.id, item: e.item, quantity: Number(e.quantidade), unit: e.unidade,
             cost: Number(e.custo), date: e.data, note: e.observacao,
             // Despesa de salário: nome ATUAL do funcionário pelo equipe_id;
@@ -7654,6 +7655,7 @@ function startInactivityMonitoring() {
     <script src="abas/obra/oc.js"></script>
     <script src="abas/obra/precos.js"></script>
     <script src="abas/obra/gerencial-obra.js"></script>
+    <script src="abas/obra/financeiro-obra.js"></script>
     
     
    

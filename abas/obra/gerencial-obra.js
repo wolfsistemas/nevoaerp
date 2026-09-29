@@ -73,47 +73,5 @@
     }).join('') + '</ul>';
   }
 
-  async function renderFinObra() {
-    var c = document.getElementById('view-obra-fin');
-    if (!c) return;
-    var obras = await A().listObras(true);
-    c.innerHTML = ''
-      + '<div class="space-y-4 p-4">'
-      +   '<h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="wallet" class="text-emerald-600"></i> Financeiro de obra</h2>'
-      +   '<p class="text-sm text-slate-500">Extrato por obra a partir de despesas e logs com obra_id. Estorno nunca apaga.</p>'
-      +   '<div class="flex gap-3"><select id="fin-obra" class="p-2.5 border rounded-lg flex-1">' + A().optionsObras(obras) + '</select>'
-      +   '<button onclick="finObraFiltrar()" class="bg-slate-800 text-white px-4 rounded-lg font-bold">Filtrar</button></div>'
-      +   '<div id="fin-obra-body" class="bg-white rounded-xl border p-4 text-slate-400">Selecione uma obra.</div>'
-      + '</div>';
-    A().icons();
-  }
-
-  async function finObraFiltrar() {
-    var id = document.getElementById('fin-obra').value;
-    var body = document.getElementById('fin-obra-body');
-    if (!id) { body.innerHTML = 'Selecione uma obra.'; return; }
-    var desp = await sb.from('despesas').select('*').eq('obra_id', id).order('data', { ascending: false });
-    var logs = await sb.from('logs').select('*').eq('obra_id', id).order('data', { ascending: false });
-    var d = desp.data || [];
-    var l = logs.data || [];
-    var totalD = d.filter(function (x) { return String(x.status || '').toUpperCase() !== 'ESTORNADO'; })
-      .reduce(function (s, x) { return s + Number(x.custo || 0); }, 0);
-    var totalL = l.filter(function (x) { return x.status !== 'ESTORNADO' && x.status_financeiro !== 'ESTORNADO'; })
-      .reduce(function (s, x) { return s + Number(x.valor_total || 0); }, 0);
-    body.innerHTML = '<div class="font-bold mb-3">Despesas ' + A().money(totalD) + ' · Movimentos ' + A().money(totalL) + ' (estornos fora do total)</div>'
-      + '<table class="w-full text-sm"><thead><tr class="text-left text-slate-500"><th class="py-1">Tipo</th><th>Item</th><th class="text-right">Valor</th><th>Status</th></tr></thead><tbody>'
-      + d.map(function (x) {
-        var est = String(x.status || '').toUpperCase() === 'ESTORNADO';
-        return '<tr class="border-t' + (est ? ' opacity-50' : '') + '"><td>despesa</td><td>' + A().esc(x.item) + '</td><td class="text-right">' + A().money(x.custo) + '</td><td>' + A().esc(x.status) + '</td></tr>';
-      }).join('')
-      + l.map(function (x) {
-        var est = x.status === 'ESTORNADO' || x.status_financeiro === 'ESTORNADO';
-        return '<tr class="border-t' + (est ? ' opacity-50' : '') + '"><td>' + A().esc(x.tipo) + '</td><td>' + A().esc(x.produto_nome) + '</td><td class="text-right">' + A().money(x.valor_total) + '</td><td>' + A().esc(x.status_financeiro || x.status) + '</td></tr>';
-      }).join('')
-      + '</tbody></table>';
-  }
-
   window.renderGerencialObra = renderGerencialObra;
-  window.renderFinObra = renderFinObra;
-  window.finObraFiltrar = finObraFiltrar;
 })();

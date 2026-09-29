@@ -1273,7 +1273,9 @@
                         return nomeGravado;
                     };
 
-                    (resLog.data || []).forEach(l => {
+                    // Financeiro por obra e exclusivo do segmento Obra (desktop):
+                    // registros com obra_id nao entram no Financeiro geral do ERP.
+                    (resLog.data || []).filter(l => !l.obra_id).forEach(l => {
                         if (l.tipo === 'orcamento') {
                             const qId = String(l.id);
                             if(!quotesMap[qId]) {
@@ -1348,7 +1350,7 @@
                         return s; 
                     });
                     
-                    STATE.expenses = (resDesp.data || []).map(e => ({
+                    STATE.expenses = (resDesp.data || []).filter(e => !e.obra_id).map(e => ({
                         id: e.id, item: e.item, quantity: Number(e.quantidade), cost: Number(e.custo), 
                         date: e.data, note: e.observacao, status: e.status || 'PENDENTE',
                         valorPago: Number(e.valor_pago || 0),
