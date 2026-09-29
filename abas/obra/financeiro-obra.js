@@ -305,7 +305,7 @@
       .reduce(function (s, l) { return s + Number(l.valor_total || 0); }, 0);
   }
   function ofinTotalPago() {
-    return scopedLogs().filter(function (l) { return l.tipo === 'despesa' && !isEst(l); })
+    return scopedLogs().filter(function (l) { return l.tipo === 'despesa' && !isEst(l) && String(l.status_financeiro || '').toUpperCase() === 'PAGO'; })
       .reduce(function (s, l) { return s + Number(l.valor_total || 0); }, 0);
   }
 
@@ -327,7 +327,7 @@
     var desps = onlyObraDesp(OFIN.despesas, obraId);
     var recebido = logs.filter(function (l) { return l.tipo === 'recebimento' && !isEst(l); })
       .reduce(function (s, l) { return s + Number(l.valor_total || 0); }, 0);
-    var pago = logs.filter(function (l) { return l.tipo === 'despesa' && !isEst(l); })
+    var pago = logs.filter(function (l) { return l.tipo === 'despesa' && !isEst(l) && String(l.status_financeiro || '').toUpperCase() === 'PAGO'; })
       .reduce(function (s, l) { return s + Number(l.valor_total || 0); }, 0);
     var aReceber = openARFrom(logs);
     var aPagar = desps.filter(function (e) { return !isEst(e) && String(e.status || '').toUpperCase() !== 'PAGO'; })
@@ -1056,7 +1056,7 @@
 
   async function ofinEstornarDespesa(id) {
     var baixas = OFIN.logs.filter(function (l) {
-      return l.tipo === 'despesa' && !isEst(l) && /#(\d+)/.test(l.observacao || '') && String((l.observacao.match(/#(\d+)/) || [])[1]) === String(id);
+      return l.tipo === 'despesa' && !isEst(l) && String(l.status_financeiro || '').toUpperCase() === 'PAGO' && /#(\d+)/.test(l.observacao || '') && String((l.observacao.match(/#(\d+)/) || [])[1]) === String(id);
     });
     var porUid = OFIN.logs.find(function (l) { return l.tipo === 'despesa' && String(l.uid) === String(id); });
     var alvo = porUid ? [porUid] : (function () {
