@@ -6,7 +6,7 @@
 
   // Modulos que o vendedor pode acessar. Os ids sao iguais no desktop
   // (sistema.html) e no mobile (mobile.html) para pos/orcamentos/clientes/produtos.
-  var MODULOS_VENDEDOR = ['pos', 'quotes', 'clients', 'prod'];
+  var MODULOS_VENDEDOR = ['pos', 'quotes', 'clients', 'prod', 'obra-obras', 'obra-equipe', 'obra-terc', 'obra-fornecedores', 'obra-oc', 'obra-precos', 'obra-ponto', 'obra-medicao'];
 
   // Itens de navegacao exclusivos do admin (nao entram no RECURSOS_NAV de plano).
   var NAV_ADMIN_ONLY = ['nav-users', 'nav-config'];

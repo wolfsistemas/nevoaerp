@@ -13,7 +13,16 @@
     'nav-prod': 'produtos',
     'nav-fin': 'financeiro',
     'nav-production': 'relatorios',
-    'nav-gerencial': 'gerencial'
+    'nav-gerencial': 'gerencial',
+    'nav-obra-obras': 'obras',
+    'nav-obra-fases': 'fases',
+    'nav-obra-equipe': 'equipe',
+    'nav-obra-terc': 'terceiros',
+    'nav-obra-fornecedores': 'fornecedores',
+    'nav-obra-oc': 'oc',
+    'nav-obra-precos': 'precos',
+    'nav-obra-fin': 'financeiro',
+    'nav-obra-gerencial': 'gerencial'
   };
 
   var NOMES_RECURSO = {
@@ -26,7 +35,16 @@
     produtos: 'Produtos',
     financeiro: 'Financeiro',
     relatorios: 'Relatorios',
-    gerencial: 'Aba Gerencial'
+    gerencial: 'Aba Gerencial',
+    obras: 'Obras',
+    fases: 'Fases',
+    terceiros: 'Terceirizados',
+    fornecedores: 'Fornecedores',
+    oc: 'Ordens de compra',
+    precos: 'Historico de precos',
+    financeiro_obra: 'Financeiro de obra',
+    gerencial_obra: 'Gerencial de obra',
+    equipe_obra: 'Equipe de obra'
   };
 
   // Recursos de gestao destacados nos cartoes de plano (o que diferencia o Pro).
@@ -115,7 +133,7 @@
   async function carregarPlanos() {
     if (PLANOS_CACHE) return PLANOS_CACHE;
     var res = await sb.from('planos')
-      .select('codigo,nome,preco_mensal,preco_anual,destaque,ordem,recursos,max_usuarios,descricao')
+      .select('codigo,nome,preco_mensal,preco_anual,destaque,ordem,recursos,max_usuarios,descricao,segmento')
       .eq('ativo', true)
       .order('ordem');
     PLANOS_CACHE = (res && !res.error && res.data) ? res.data : [];
@@ -195,11 +213,40 @@
   window.iniciarCheckout = iniciarCheckout;
   window.atualizarPrecosCheckout = atualizarPrecosCheckout;
 
+  function segmentoAtual() {
+    if (ASSINATURA_ATUAL && ASSINATURA_ATUAL.segmento) return ASSINATURA_ATUAL.segmento;
+    return window.SEGMENTO_ATUAL || 'erp';
+  }
+
+  function aplicarSegmento() {
+    var seg = (ASSINATURA_ATUAL && ASSINATURA_ATUAL.segmento) || 'erp';
+    window.SEGMENTO_ATUAL = seg;
+    document.querySelectorAll('[data-segmento]').forEach(function (el) {
+      var alvo = el.getAttribute('data-segmento');
+      var visivel = (seg === 'ambos') || (alvo === seg);
+      el.classList.toggle('hidden', !visivel);
+      if (el.tagName === 'BUTTON' || el.classList.contains('nav-btn')) {
+        if (!visivel) el.classList.add('hidden');
+      }
+    });
+  }
+
   window.addEventListener('load', function () {
     var originalNavigate = window.navigate;
     window.navigate = function (viewId) {
-      // Bloqueia acesso direto a modulos fora do plano (o banco tambem bloqueia os dados).
       var rec = RECURSOS_NAV['nav-' + viewId];
+      var seg = segmentoAtual();
+      var isObra = viewId.indexOf('obra-') === 0;
+      if (seg !== 'ambos') {
+        if (isObra && seg !== 'obra') {
+          if (typeof showToast === 'function') showToast('Modulo de obra indisponivel neste plano.', true);
+          return;
+        }
+        if (!isObra && seg === 'obra' && rec && ['pdv','expedicao','orcamentos','mdf'].indexOf(rec) !== -1) {
+          if (typeof showToast === 'function') showToast('Modulo de ERP indisponivel neste plano.', true);
+          return;
+        }
+      }
       if (rec && ASSINATURA_ATUAL && ASSINATURA_ATUAL.tem_assinatura
           && (ASSINATURA_ATUAL.recursos || []).indexOf(rec) === -1) {
         if (typeof showToast === 'function') {
@@ -209,6 +256,15 @@
       }
       originalNavigate(viewId);
       if (viewId === 'config') renderAssinatura();
+      if (viewId === 'obra-obras' && typeof renderObras === 'function') renderObras();
+      if (viewId === 'obra-fases' && typeof renderObras === 'function') renderObras();
+      if (viewId === 'obra-equipe' && typeof renderEquipeObra === 'function') renderEquipeObra();
+      if (viewId === 'obra-terc' && typeof renderTerceirizados === 'function') renderTerceirizados();
+      if (viewId === 'obra-fornecedores' && typeof renderFornecedoresObra === 'function') renderFornecedoresObra();
+      if (viewId === 'obra-oc' && typeof renderOC === 'function') renderOC();
+      if (viewId === 'obra-precos' && typeof renderPrecosObra === 'function') renderPrecosObra();
+      if (viewId === 'obra-fin' && typeof renderFinObra === 'function') renderFinObra();
+      if (viewId === 'obra-gerencial' && typeof renderGerencialObra === 'function') renderGerencialObra();
     };
     aplicarPapel();
     aplicarPlano();
@@ -242,8 +298,14 @@
   async function aplicarPlano() {
     try {
       var res = await sb.rpc('minha_assinatura');
-      if (res.error || !res.data || !res.data.tem_assinatura) return;
+      if (res.error || !res.data || !res.data.tem_assinatura) {
+        window.SEGMENTO_ATUAL = window.SEGMENTO_ATUAL || 'erp';
+        aplicarSegmento();
+        return;
+      }
       ASSINATURA_ATUAL = res.data;
+      if (!ASSINATURA_ATUAL.segmento) ASSINATURA_ATUAL.segmento = 'erp';
+      aplicarSegmento();
       var recursos = res.data.recursos || [];
       Object.keys(RECURSOS_NAV).forEach(function (navId) {
         var el = document.getElementById(navId);
@@ -253,6 +315,7 @@
         var liberado = recursos.indexOf(RECURSOS_NAV[navId]) !== -1 && papelOk;
         el.classList.toggle('hidden', !liberado);
       });
+      aplicarSegmento();
     } catch (e) { /* em caso de erro, mantem tudo visivel (nao travar o app) */ }
   }
 
@@ -295,7 +358,7 @@
       +       '<div>'
       +         '<div class="text-xs font-bold text-slate-400 uppercase">Plano</div>'
       +         '<div class="text-2xl font-bold text-slate-800">' + esc(a.plano_nome) + '</div>'
-      +         '<div class="text-sm text-slate-500">Ciclo ' + (a.ciclo === 'anual' ? 'anual' : 'mensal') + ' &middot; ' + money(a.valor) + '</div>'
+      +         '<div class="text-sm text-slate-500">Segmento ' + esc((a.segmento || 'erp').toUpperCase()) + ' &middot; Ciclo ' + (a.ciclo === 'anual' ? 'anual' : 'mensal') + ' &middot; ' + money(a.valor) + '</div>'
       +       '</div>'
       +       '<span class="text-xs font-bold uppercase px-3 py-1.5 rounded-lg ' + st.cls + '">' + esc(st.label) + '</span>'
       +     '</div>'
@@ -346,10 +409,13 @@
               : '')
       +     (mpAtiva
               ? '<div class="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg p-4 text-sm font-medium flex items-center gap-2"><i data-lucide="check-circle" class="w-5 h-5"></i> Assinatura ativa no Mercado Pago. Para trocar de plano ou cancelar, gerencie por la.</div>'
-              : (planos.length === 0
+                  : (planos.length === 0
                   ? '<div class="text-sm text-slate-500">Nao foi possivel carregar os planos.</div>'
                   : '<div class="grid grid-cols-1 md:grid-cols-3 gap-3">'
-                    + planos.map(function (p) {
+                    + planos.filter(function (p) {
+                        var seg = a.segmento || 'erp';
+                        return !p.segmento || p.segmento === seg || p.segmento === 'ambos';
+                      }).map(function (p) {
                         var atual = p.codigo === a.plano_codigo;
                         return '<div class="border rounded-xl p-4 flex flex-col ' + (atual ? 'border-emerald-400 bg-emerald-50/40' : 'border-slate-200') + '">'
                           + '<div class="font-bold text-slate-800">' + esc(p.nome) + (atual ? ' <span class="text-[10px] uppercase text-emerald-600 font-bold">atual</span>' : '') + '</div>'
@@ -380,4 +446,6 @@
   };
 
   window.renderAssinatura = renderAssinatura;
+  window.aplicarSegmento = aplicarSegmento;
+  window.SEGMENTO_ATUAL = window.SEGMENTO_ATUAL || 'erp';
 })();

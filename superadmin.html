@@ -64,6 +64,7 @@
                             <tr>
                                 <th class="p-3">Empresa</th>
                                 <th class="p-3">Plano</th>
+                                <th class="p-3">Segmento</th>
                                 <th class="p-3">Assinatura</th>
                                 <th class="p-3 text-center">Usuarios</th>
                                 <th class="p-3 text-center">Status</th>
@@ -302,7 +303,7 @@
                 !termo || (e.nome || '').toLowerCase().includes(termo) || (e.slug || '').toLowerCase().includes(termo));
             const tbody = document.getElementById('empresas-list');
             if (!lista.length) {
-                tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Nenhuma empresa encontrada.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">Nenhuma empresa encontrada.</td></tr>';
                 return;
             }
             tbody.innerHTML = lista.map(e => `
@@ -315,6 +316,7 @@
                         <div class="text-xs font-bold uppercase text-slate-700">${esc(e.plano || '-')}</div>
                         <div class="text-[10px] text-slate-400">${esc(e.assinatura_ciclo || 'mensal')}</div>
                     </td>
+                    <td class="p-3"><span class="text-[10px] font-bold uppercase px-2 py-1 rounded ${e.segmento === 'obra' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}">${esc(e.segmento || 'erp')}</span></td>
                     <td class="p-3">${badgeAssinatura(e)}</td>
                     <td class="p-3 text-center">
                         <button onclick="abrirUsuarios('${e.id}')" class="text-emerald-700 font-bold hover:underline">${e.total_usuarios}</button>
@@ -346,7 +348,7 @@
             document.getElementById('modal-assinatura-titulo').textContent = 'Assinatura - ' + e.nome;
             const sel = document.getElementById('as-plano');
             sel.innerHTML = PLANOS.map(p =>
-                `<option value="${p.codigo}">${esc(p.nome)} - ${Number(p.preco_mensal).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/mes</option>`).join('');
+                `<option value="${p.codigo}">${esc(p.nome)} [${esc(p.segmento || 'erp')}] - ${Number(p.preco_mensal).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/mes</option>`).join('');
             sel.value = e.plano || (PLANOS[0] && PLANOS[0].codigo) || '';
             document.getElementById('as-ciclo').value = e.assinatura_ciclo || 'mensal';
             document.getElementById('as-status').value = e.assinatura_status || 'trial';

@@ -198,10 +198,15 @@
             <div class="text-center max-w-2xl mx-auto">
                 <p class="text-emerald-600 font-bold text-sm uppercase tracking-wide">Planos</p>
                 <h2 class="mt-2 text-3xl md:text-4xl font-extrabold text-slate-900">Escolha o plano do tamanho do seu negócio</h2>
-                <p class="mt-4 text-slate-600">Comece no Essencial e mude de plano quando quiser. Sem fidelidade e sem taxa de instalação.</p>
+                <p class="mt-4 text-slate-600">Dois segmentos: ERP para varejo e Obra para canteiro. Sem fidelidade e sem taxa de instalação.</p>
             </div>
 
-            <div class="mt-12 grid lg:grid-cols-3 gap-6 items-stretch">
+            <div class="mt-8 flex justify-center gap-2">
+                <button type="button" id="tab-planos-erp" onclick="mostrarPlanos('erp')" class="px-5 py-2 rounded-full font-bold bg-emerald-600 text-white">ERP</button>
+                <button type="button" id="tab-planos-obra" onclick="mostrarPlanos('obra')" class="px-5 py-2 rounded-full font-bold bg-slate-200 text-slate-700">Obra</button>
+            </div>
+
+            <div id="planos-erp" class="mt-12 grid lg:grid-cols-3 gap-6 items-stretch">
                 <div class="border border-slate-200 rounded-2xl p-7 flex flex-col">
                     <h3 class="font-extrabold text-xl text-slate-900">Essencial</h3>
                     <p class="mt-1 text-sm text-slate-500">Para começar a vender</p>
@@ -249,6 +254,48 @@
                         <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Suporte prioritário</li>
                     </ul>
                     <a href="cadastro.html?plano=enterprise" class="mt-7 text-center font-bold border border-slate-300 hover:border-slate-400 text-slate-800 py-3 rounded-xl transition">Falar com o time</a>
+                </div>
+            </div>
+
+            <div id="planos-obra" class="hidden mt-12 grid lg:grid-cols-3 gap-6 items-stretch">
+                <div class="border border-slate-200 rounded-2xl p-7 flex flex-col">
+                    <h3 class="font-extrabold text-xl text-slate-900">Obra Essencial</h3>
+                    <p class="mt-1 text-sm text-slate-500">Para começar no canteiro</p>
+                    <p class="mt-5"><span class="text-4xl font-extrabold text-slate-900">R$ 97</span><span class="text-slate-500">/mês</span></p>
+                    <p class="mt-1 text-xs font-semibold text-emerald-600">ou R$ 970/ano (2 meses grátis)</p>
+                    <ul class="mt-6 space-y-3 text-sm text-slate-600 flex-1">
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> 2 usuários</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Obras e fases</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Equipe com ponto diário</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Financeiro por obra</li>
+                    </ul>
+                    <a href="cadastro.html?plano=obra_essencial" class="mt-7 text-center font-bold border border-slate-300 hover:border-slate-400 text-slate-800 py-3 rounded-xl transition">Começar no Obra Essencial</a>
+                </div>
+                <div class="relative border-2 border-emerald-500 rounded-2xl p-7 flex flex-col shadow-xl shadow-emerald-100">
+                    <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full">Mais escolhido</span>
+                    <h3 class="font-extrabold text-xl text-slate-900">Obra Profissional</h3>
+                    <p class="mt-1 text-sm text-slate-500">Operação completa de obra</p>
+                    <p class="mt-5"><span class="text-4xl font-extrabold text-slate-900">R$ 297</span><span class="text-slate-500">/mês</span></p>
+                    <p class="mt-1 text-xs font-semibold text-emerald-600">ou R$ 2.970/ano (2 meses grátis)</p>
+                    <ul class="mt-6 space-y-3 text-sm text-slate-600 flex-1">
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Tudo do Essencial</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Até 5 usuários</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Terceirizados, OC e preços</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Gerencial por obra</li>
+                    </ul>
+                    <a href="cadastro.html?plano=obra_profissional" class="mt-7 text-center font-bold bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl shadow-lg transition">Começar no Obra Profissional</a>
+                </div>
+                <div class="border border-slate-200 rounded-2xl p-7 flex flex-col">
+                    <h3 class="font-extrabold text-xl text-slate-900">Obra Enterprise</h3>
+                    <p class="mt-1 text-sm text-slate-500">Para operações maiores</p>
+                    <p class="mt-5"><span class="text-4xl font-extrabold text-slate-900">R$ 597</span><span class="text-slate-500">/mês</span></p>
+                    <p class="mt-1 text-xs font-semibold text-emerald-600">ou R$ 5.970/ano (2 meses grátis)</p>
+                    <ul class="mt-6 space-y-3 text-sm text-slate-600 flex-1">
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Tudo do Profissional</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Usuários ilimitados</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i> Suporte prioritário</li>
+                    </ul>
+                    <a href="cadastro.html?plano=obra_enterprise" class="mt-7 text-center font-bold border border-slate-300 hover:border-slate-400 text-slate-800 py-3 rounded-xl transition">Começar no Obra Enterprise</a>
                 </div>
             </div>
 
@@ -324,6 +371,19 @@
     <script>
         lucide.createIcons();
         document.getElementById('ano').textContent = new Date().getFullYear();
+        function mostrarPlanos(seg) {
+            var erp = document.getElementById('planos-erp');
+            var obra = document.getElementById('planos-obra');
+            var tErp = document.getElementById('tab-planos-erp');
+            var tObra = document.getElementById('tab-planos-obra');
+            var isObra = seg === 'obra';
+            if (erp) erp.classList.toggle('hidden', isObra);
+            if (obra) obra.classList.toggle('hidden', !isObra);
+            if (tErp) tErp.className = 'px-5 py-2 rounded-full font-bold ' + (isObra ? 'bg-slate-200 text-slate-700' : 'bg-emerald-600 text-white');
+            if (tObra) tObra.className = 'px-5 py-2 rounded-full font-bold ' + (isObra ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700');
+        }
+        window.mostrarPlanos = mostrarPlanos;
+        if (location.hash === '#obra') mostrarPlanos('obra');
     </script>
 </body>
 </html>

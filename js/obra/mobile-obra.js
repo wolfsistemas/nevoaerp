@@ -1,0 +1,221 @@
+(function () {
+  'use strict';
+
+  var A = function () { return window.obraApi || {}; };
+
+  function toast(msg, err) {
+    if (typeof showToast === 'function') showToast(msg, !!err);
+    else A().toast(msg, err);
+  }
+
+  async function mobObraPonto() {
+    var body = document.getElementById('mob-ponto-body');
+    if (!body) return;
+    var funcs = await sb.from('equipe').select('*').eq('tipo', 'Diaria').eq('ativo', true).order('nome');
+    if (funcs.error) { body.innerHTML = '<div class="text-red-600">' + A().esc(funcs.error.message) + '</div>'; return; }
+    var lista = funcs.data || [];
+    var hoje = A().hojeISO();
+    body.innerHTML = ''
+      + '<div class="space-y-3">'
+      +   '<div><label class="text-[10px] font-bold text-slate-400 uppercase">Funcionario</label>'
+      +   '<select id="mob-ponto-func" class="w-full p-3 border rounded-xl bg-white font-bold" onchange="mobObraCarregarPonto()">'
+      +     lista.map(function (f) { return '<option value="' + f.id + '">' + A().esc(f.nome) + '</option>'; }).join('')
+      +   '</select></div>'
+      +   '<div class="grid grid-cols-2 gap-2">'
+      +     '<button onclick="mobObraBater(\'ENTRADA\')" class="bg-emerald-600 text-white py-3 rounded-xl font-black">Entrada</button>'
+      +     '<button onclick="mobObraBater(\'SAIDA\')" class="bg-slate-700 text-white py-3 rounded-xl font-black">Saida</button>'
+      +   '</div>'
+      +   '<button onclick="mobObraAjuste()" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold">Ajuste 0,5 / 1,0</button>'
+      +   '<div id="mob-ponto-resumo" class="text-sm text-slate-600 bg-white p-3 rounded-xl border"></div>'
+      +   '<div id="mob-ponto-lista" class="flex flex-col gap-2 pb-8"></div>'
+      + '</div>';
+    if (lista.length) mobObraCarregarPonto();
+    else body.innerHTML = '<p class="text-slate-400 text-center py-8">Nenhum diarista ativo.</p>';
+    A().icons();
+  }
+
+  async function mobObraCarregarPonto() {
+    var funcId = Number(document.getElementById('mob-ponto-func').value);
+    var hoje = A().hojeISO();
+    var iniMes = hoje.slice(0, 8) + '01';
+    var res = await sb.from('ponto_diario').select('*')
+      .eq('funcionario_id', funcId)
+      .gte('hora_registro', iniMes + 'T00:00:00')
+      .lte('hora_registro', hoje + 'T23:59:59')
+      .order('hora_registro', { ascending: false });
+    if (res.error) return toast(res.error.message, true);
+    var regs = (res.data || []).filter(function (r) { return r.status !== 'ESTORNADO'; });
+    var diarias = (typeof rvCalcularTotalDiarias === 'function') ? rvCalcularTotalDiarias(regs) : 0;
+    var func = (await sb.from('equipe').select('valor_diaria,nome').eq('id', funcId).single()).data || {};
+    var valor = diarias * Number(func.valor_diaria || 0);
+    var resumo = document.getElementById('mob-ponto-resumo');
+    if (resumo) resumo.innerHTML = 'Mes: <b>' + diarias.toFixed(2) + '</b> diarias · <b>' + A().money(valor) + '</b>';
+    var lista = document.getElementById('mob-ponto-lista');
+    if (!lista) return;
+    lista.innerHTML = regs.length ? regs.slice(0, 40).map(function (r) {
+      var pago = r.pago_em_fechamento;
+      return '<div class="bg-white border rounded-xl p-3 flex justify-between items-center">'
+        + '<div><p class="font-bold text-slate-800 text-sm">' + A().esc(r.tipo) + (pago ? ' · pago' : '') + '</p>'
+        + '<p class="text-[11px] text-slate-500">' + new Date(r.hora_registro).toLocaleString('pt-BR') + '</p></div>'
+        + '<div class="text-right">'
+        + '<span class="text-xs font-bold text-slate-500">' + (r.fracao_diaria != null ? r.fracao_diaria : '-') + '</span>'
+        + (!pago ? '<button onclick="mobObraEstornarBatida(\'' + r.id + '\')" class="block text-red-600 text-[10px] font-bold mt-1">Estornar</button>' : '')
+        + '</div></div>';
+    }).join('') : '<p class="text-center text-slate-400 py-4">Sem batidas neste mes.</p>';
+  }
+
+  async function mobObraBater(tipo) {
+    var funcId = Number(document.getElementById('mob-ponto-func').value);
+    if (!funcId) return toast('Selecione o funcionario.', true);
+    var eq = await sb.from('equipe').select('obra_atual_id').eq('id', funcId).single();
+    var res = await sb.from('ponto_diario').insert([{
+      funcionario_id: funcId,
+      obra_id: (eq.data && eq.data.obra_atual_id) || null,
+      tipo: tipo,
+      status: 'VALIDADO',
+      hora_registro: new Date().toISOString()
+    }]);
+    if (res.error) return toast(res.error.message, true);
+    toast('Batida ' + tipo.toLowerCase() + ' registrada.');
+    mobObraCarregarPonto();
+  }
+
+  async function mobObraAjuste() {
+    var fracao = window.prompt('Fracao da diaria (0.5 ou 1):', '0.5');
+    if (fracao == null) return;
+    fracao = Number(fracao);
+    if (fracao !== 0.5 && fracao !== 1) return toast('Use 0.5 ou 1.', true);
+    var funcId = Number(document.getElementById('mob-ponto-func').value);
+    if (!funcId) return toast('Selecione o funcionario.', true);
+    var eq = await sb.from('equipe').select('obra_atual_id').eq('id', funcId).single();
+    var res = await sb.from('ponto_diario').insert([{
+      funcionario_id: funcId,
+      obra_id: (eq.data && eq.data.obra_atual_id) || null,
+      tipo: 'AJUSTE_MANUAL',
+      status: 'VALIDADO',
+      fracao_diaria: fracao,
+      hora_registro: new Date().toISOString(),
+      observacao: 'Ajuste mobile'
+    }]);
+    if (res.error) return toast(res.error.message, true);
+    toast('Ajuste lancado.');
+    mobObraCarregarPonto();
+  }
+
+  async function mobObraEstornarBatida(id) {
+    var ok = window.confirm('Estornar esta batida? O registro permanece.');
+    if (!ok) return;
+    var row = (await sb.from('ponto_diario').select('*').eq('id', id).single()).data;
+    if (!row) return toast('Batida nao encontrada.', true);
+    if (row.pago_em_fechamento) return toast('Batida ja fechada. Estorne o fechamento no desktop.', true);
+    if (row.status === 'ESTORNADO') return toast('Ja estornada.', true);
+    var res = await sb.from('ponto_diario').update({ status: 'ESTORNADO' }).eq('id', id);
+    if (res.error) return toast(res.error.message, true);
+    toast('Batida estornada.');
+    mobObraCarregarPonto();
+  }
+
+  async function mobObraMedicao() {
+    var body = document.getElementById('mob-med-body');
+    if (!body) return;
+    var funcs = await sb.from('equipe').select('*').eq('tipo', 'Empreita').eq('ativo', true).order('nome');
+    if (funcs.error) { body.innerHTML = '<div class="text-red-600">' + A().esc(funcs.error.message) + '</div>'; return; }
+    var lista = funcs.data || [];
+    if (!lista.length) {
+      body.innerHTML = '<p class="text-slate-400 text-center py-8">Nenhum empreiteiro ativo.</p>';
+      return;
+    }
+    body.innerHTML = ''
+      + '<div class="space-y-3">'
+      +   '<div><label class="text-[10px] font-bold text-slate-400 uppercase">Empreiteiro</label>'
+      +   '<select id="mob-med-func" class="w-full p-3 border rounded-xl bg-white font-bold" onchange="mobObraCarregarMedicao()">'
+      +     lista.map(function (f) { return '<option value="' + f.id + '">' + A().esc(f.nome) + '</option>'; }).join('')
+      +   '</select></div>'
+      +   '<form onsubmit="mobObraLancarMedicao(event)" class="bg-white border rounded-xl p-3 space-y-2">'
+      +     '<input type="date" id="mob-med-data" required value="' + A().hojeISO() + '" class="w-full p-3 border rounded-xl">'
+      +     '<input type="number" step="0.01" id="mob-med-pct" required placeholder="% medido" class="w-full p-3 border rounded-xl">'
+      +     '<input type="text" id="mob-med-desc" placeholder="Descricao" class="w-full p-3 border rounded-xl">'
+      +     '<button class="w-full bg-emerald-600 text-white py-3 rounded-xl font-black">Lancar medicao</button>'
+      +   '</form>'
+      +   '<div id="mob-med-resumo" class="text-sm bg-white p-3 rounded-xl border"></div>'
+      +   '<div id="mob-med-lista" class="flex flex-col gap-2 pb-8"></div>'
+      + '</div>';
+    mobObraCarregarMedicao();
+    A().icons();
+  }
+
+  async function mobObraCarregarMedicao() {
+    var funcId = Number(document.getElementById('mob-med-func').value);
+    var func = (await sb.from('equipe').select('*').eq('id', funcId).single()).data;
+    var med = await sb.from('medicoes_empreita').select('*').eq('equipe_id', funcId).order('data_medicao', { ascending: false });
+    var rows = med.data || [];
+    var vigentes = rows.filter(function (m) { return m.status !== 'ESTORNADO'; });
+    var contrato = Number(func.valor_contrato || 0);
+    var pct = vigentes.reduce(function (s, m) { return s + Number(m.percentual || 0); }, 0);
+    var valor = vigentes.reduce(function (s, m) { return s + Number(m.valor || 0); }, 0);
+    var resumo = document.getElementById('mob-med-resumo');
+    if (resumo) resumo.innerHTML = 'Contrato <b>' + A().money(contrato) + '</b> · Medido <b>' + pct.toFixed(2) + '%</b> (' + A().money(valor) + ')';
+    var lista = document.getElementById('mob-med-lista');
+    if (!lista) return;
+    lista.innerHTML = rows.length ? rows.map(function (m) {
+      var est = m.status === 'ESTORNADO';
+      var acao = '';
+      if (m.status === 'PENDENTE') acao = '<button onclick="mobObraEstornarMedicao(\'' + m.id + '\')" class="text-red-600 text-[10px] font-bold">Estornar</button>';
+      return '<div class="bg-white border rounded-xl p-3 flex justify-between items-center' + (est ? ' opacity-50' : '') + '">'
+        + '<div><p class="font-bold text-sm">' + A().dataBR(m.data_medicao) + ' · ' + Number(m.percentual).toFixed(2) + '%</p>'
+        + '<p class="text-[11px] text-slate-500">' + A().money(m.valor) + ' · ' + A().esc(m.status) + '</p></div>'
+        + acao + '</div>';
+    }).join('') : '<p class="text-center text-slate-400 py-4">Sem medicoes.</p>';
+  }
+
+  async function mobObraLancarMedicao(ev) {
+    ev.preventDefault();
+    var funcId = Number(document.getElementById('mob-med-func').value);
+    var func = (await sb.from('equipe').select('*').eq('id', funcId).single()).data;
+    var pct = Number(document.getElementById('mob-med-pct').value) || 0;
+    if (pct <= 0) return toast('Informe o percentual.', true);
+    var med = await sb.from('medicoes_empreita').select('percentual,status').eq('equipe_id', funcId);
+    var ja = (med.data || []).filter(function (m) { return m.status !== 'ESTORNADO'; })
+      .reduce(function (s, m) { return s + Number(m.percentual || 0); }, 0);
+    if (ja + pct > 100.01) return toast('Percentual acumulado ultrapassa 100%.', true);
+    var valor = (Number(func.valor_contrato || 0) * pct) / 100;
+    var res = await sb.from('medicoes_empreita').insert([{
+      equipe_id: funcId,
+      obra_id: func.obra_atual_id || null,
+      data_medicao: document.getElementById('mob-med-data').value,
+      percentual: pct,
+      valor: valor,
+      descricao: document.getElementById('mob-med-desc').value.trim() || null,
+      status: 'PENDENTE'
+    }]);
+    if (res.error) return toast(res.error.message, true);
+    toast('Medicao lancada.');
+    document.getElementById('mob-med-pct').value = '';
+    document.getElementById('mob-med-desc').value = '';
+    mobObraCarregarMedicao();
+  }
+
+  async function mobObraEstornarMedicao(id) {
+    var ok = window.confirm('Estornar esta medicao? Nao apaga o historico.');
+    if (!ok) return;
+    var m = (await sb.from('medicoes_empreita').select('*').eq('id', id).single()).data;
+    if (!m || m.status === 'ESTORNADO') return;
+    if (m.status === 'PAGO' && m.fechamento_uid) {
+      return toast('Medicao paga. Estorne no desktop para reabrir a cadeia financeira.', true);
+    }
+    var upd = await sb.from('medicoes_empreita').update({ status: 'ESTORNADO' }).eq('id', id);
+    if (upd.error) return toast(upd.error.message, true);
+    toast('Medicao estornada.');
+    mobObraCarregarMedicao();
+  }
+
+  window.mobObraPonto = mobObraPonto;
+  window.mobObraCarregarPonto = mobObraCarregarPonto;
+  window.mobObraBater = mobObraBater;
+  window.mobObraAjuste = mobObraAjuste;
+  window.mobObraMedicao = mobObraMedicao;
+  window.mobObraCarregarMedicao = mobObraCarregarMedicao;
+  window.mobObraLancarMedicao = mobObraLancarMedicao;
+  window.mobObraEstornarBatida = mobObraEstornarBatida;
+  window.mobObraEstornarMedicao = mobObraEstornarMedicao;
+})();

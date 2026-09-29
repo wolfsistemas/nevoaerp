@@ -100,6 +100,7 @@
       +         '<input id="config-email" type="email" value="' + esc(info.email_contato || '') + '" placeholder="contato@empresa.com.br" class="w-full p-2.5 border rounded-lg outline-none focus:border-emerald-600" ' + (podeEditar ? '' : 'disabled') + '></div>'
       +     '</div>'
 
+      +     '<div class="bg-slate-50 rounded-lg p-3 text-sm text-slate-600" id="config-segmento-info">Plano: ' + esc(info.plano || '-') + (window.SEGMENTO_ATUAL ? ' · Segmento ' + esc(String(window.SEGMENTO_ATUAL).toUpperCase()) : '') + '</div>'
       +     '<div class="flex items-center justify-end border-t pt-4">'
       +       (podeEditar ? '<button type="submit" id="config-submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"><i data-lucide="save"></i> Salvar alteracoes</button>' : '')
       +     '</div>'

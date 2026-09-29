@@ -272,6 +272,16 @@
           <div id="fin-extrato-list" class="flex flex-col gap-3 pb-6"></div>
       </div>
 
+      <div id="view-obra-ponto" class="hidden-section">
+          <h2 class="text-xl font-black text-slate-800 flex items-center gap-2 mb-4"><i data-lucide="clock" class="text-emerald-600"></i> Ponto</h2>
+          <div id="mob-ponto-body" class="text-sm text-slate-500">Carregando...</div>
+      </div>
+
+      <div id="view-obra-medicao" class="hidden-section">
+          <h2 class="text-xl font-black text-slate-800 flex items-center gap-2 mb-4"><i data-lucide="percent" class="text-emerald-600"></i> Medicao</h2>
+          <div id="mob-med-body" class="text-sm text-slate-500">Carregando...</div>
+      </div>
+
     </main>
 
     <div id="view-pos" class="hidden fixed inset-0 bg-slate-50 z-[60] flex-col animate-[fadeIn_0.2s]">
@@ -644,26 +654,34 @@
         </div>
     </div>
 
-    <nav class="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)] z-40 flex justify-around items-center pb-safe" style="padding-bottom: env(safe-area-inset-bottom);">
-        <button onclick="navigate('quotes')" id="nav-quotes" class="flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
+    <nav class="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)] z-40 flex justify-around items-center overflow-x-auto pb-safe" style="padding-bottom: env(safe-area-inset-bottom);">
+        <button onclick="navigate('quotes')" id="nav-quotes" data-segmento="erp" class="flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
             <i data-lucide="folder-open" class="mb-1 w-6 h-6"></i>
             <span class="text-[10px] uppercase font-medium">Orçamentos</span>
         </button>
-        <button onclick="navigate('reports')" id="nav-reports" class="flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
+        <button onclick="navigate('reports')" id="nav-reports" data-segmento="erp" class="flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
             <i data-lucide="file-text" class="mb-1 w-6 h-6"></i>
             <span class="text-[10px] uppercase font-medium">Relatórios</span>
         </button>
-        <button onclick="navigate('fin')" id="nav-fin" class="flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
+        <button onclick="navigate('fin')" id="nav-fin" data-segmento="erp" class="flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
             <i data-lucide="wallet" class="mb-1 w-6 h-6"></i>
             <span class="text-[10px] uppercase font-medium">Caixa</span>
         </button>
-        <button onclick="navigate('prod')" id="nav-prod" class="flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
+        <button onclick="navigate('prod')" id="nav-prod" data-segmento="erp" class="flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
             <i data-lucide="package" class="mb-1 w-6 h-6"></i>
             <span class="text-[10px] uppercase font-medium">Produtos</span>
         </button>
-        <button onclick="navigate('clients')" id="nav-clients" class="flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
+        <button onclick="navigate('clients')" id="nav-clients" data-segmento="erp" class="flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
             <i data-lucide="users" class="mb-1 w-6 h-6"></i>
             <span class="text-[10px] uppercase font-medium">Clientes</span>
+        </button>
+        <button onclick="navigate('obra-ponto')" id="nav-obra-ponto" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
+            <i data-lucide="clock" class="mb-1 w-6 h-6"></i>
+            <span class="text-[10px] uppercase font-medium">Ponto</span>
+        </button>
+        <button onclick="navigate('obra-medicao')" id="nav-obra-medicao" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
+            <i data-lucide="percent" class="mb-1 w-6 h-6"></i>
+            <span class="text-[10px] uppercase font-medium">Medicao</span>
         </button>
     </nav>
 
@@ -926,7 +944,7 @@
 
         // Assinatura/plano da empresa (gating de modulos no mobile)
         let ASSINATURA_ATUAL = null;
-        const RECURSOS_MOBILE = { quotes: 'orcamentos', reports: 'relatorios', fin: 'financeiro', prod: 'produtos', clients: 'clientes', pos: 'pdv' };
+        const RECURSOS_MOBILE = { quotes: 'orcamentos', reports: 'relatorios', fin: 'financeiro', prod: 'produtos', clients: 'clientes', pos: 'pdv', 'obra-ponto': 'equipe', 'obra-medicao': 'equipe' };
 
         function recursoLiberado(recurso) {
             if (!ASSINATURA_ATUAL) return true;
@@ -950,12 +968,25 @@
         }
 
         function aplicarGatingMobile() {
+            const seg = (ASSINATURA_ATUAL && ASSINATURA_ATUAL.segmento) || 'erp';
+            window.SEGMENTO_ATUAL = seg;
+            document.querySelectorAll('[data-segmento]').forEach(function (el) {
+                const alvo = el.getAttribute('data-segmento');
+                const visivel = (seg === 'ambos') || (alvo === seg);
+                el.classList.toggle('hidden', !visivel);
+                if (!visivel) el.style.display = 'none';
+                else el.style.display = '';
+            });
             Object.keys(RECURSOS_MOBILE).forEach(view => {
-                const liberado = podeAcessarMobile(view);
                 const navBtn = document.getElementById('nav-' + view);
+                const alvoSeg = navBtn && navBtn.getAttribute('data-segmento');
+                const segOk = !alvoSeg || seg === 'ambos' || alvoSeg === seg;
+                const liberado = segOk && podeAcessarMobile(view);
                 if (navBtn) navBtn.style.display = liberado ? '' : 'none';
                 const viewEl = document.getElementById('view-' + view);
-                if (!liberado && viewEl && viewEl.classList.contains('active-section')) navigate('quotes');
+                if (!liberado && viewEl && viewEl.classList.contains('active-section')) {
+                    navigate(seg === 'obra' ? 'obra-ponto' : 'quotes');
+                }
             });
             if (ASSINATURA_ATUAL && ASSINATURA_ATUAL.bloqueada && !document.getElementById('billing-aviso-mobile')) {
                 const aviso = document.createElement('div');
@@ -1100,6 +1131,8 @@
             if(viewId === 'prod') renderProducts();
             if(viewId === 'clients') renderClients();
             if(viewId === 'fin') renderFinance();
+            if(viewId === 'obra-ponto' && typeof mobObraPonto === 'function') mobObraPonto();
+            if(viewId === 'obra-medicao' && typeof mobObraMedicao === 'function') mobObraMedicao();
             
             lucide.createIcons();
             window.scrollTo(0, 0); 
@@ -4149,5 +4182,8 @@ function showFilteredExpenses() {
             window.location.replace('index.html');
         }
     </script>
+    <script src="js/obra/equipe-core.js"></script>
+    <script src="js/obra/api.js"></script>
+    <script src="js/obra/mobile-obra.js"></script>
   </body>
 </html>

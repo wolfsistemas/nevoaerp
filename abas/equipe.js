@@ -35,12 +35,12 @@
 
   let subAbaAtiva = 'lancamentos'; // 'lancamentos' | 'cadastro'
 
-  // Aguarda carregamento do sistema principal
   window.addEventListener('load', function () {
     const originalNavigate = window.navigate;
     window.navigate = function (viewId) {
       originalNavigate(viewId);
       if (viewId === 'equipe') renderEquipe();
+      if (viewId === 'obra-equipe' && typeof renderEquipeObra === 'function') renderEquipeObra();
     };
   });
 
@@ -49,8 +49,15 @@
     if (typeof fn === 'function') fn();
   }
 
-  // ========== RENDERIZAÇÃO PRINCIPAL ==========
- function renderEquipe() {
+  function renderEquipe() {
+    var seg = window.SEGMENTO_ATUAL || 'erp';
+    if (seg === 'obra' && typeof renderEquipeObra === 'function') {
+      return renderEquipeObra();
+    }
+    return renderEquipeERP();
+  }
+
+  function renderEquipeERP() {
   const container = document.getElementById('view-equipe');
   if (!container) return;
 
@@ -1055,7 +1062,9 @@
   // ========== ALTERNAR SUB‑ABA ==========
 function alternarSubAbaEquipe(aba) {
   subAbaAtiva = aba;
-  renderEquipe(); // recarrega toda a view com a aba ativa
+  renderEquipeERP();
 }
 window.alternarSubAbaEquipe = alternarSubAbaEquipe;
+window.renderEquipe = renderEquipe;
+window.renderEquipeERP = renderEquipeERP;
 })();
