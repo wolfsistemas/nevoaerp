@@ -67,20 +67,44 @@
       var o = await sb.from('obras').select('*').eq('id', e.obra_atual_id).single();
       obra = o.data;
     }
-    var empresa = (typeof getCompany === 'function') ? getCompany() : { name: 'NEVOA', cnpj: '', address: '' };
+    var cp = (typeof obraPrint !== 'undefined') ? obraPrint : null;
+    var esc = cp ? cp.esc : function (v) { return String(v == null ? '' : v); };
+    var moneyFmt = cp ? cp.money : function (v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); };
+    var empresa = cp ? cp.company() : ((typeof getCompany === 'function') ? getCompany() : {});
     var valor = e.tipo === 'Empreita' ? Number(e.valor_contrato || 0) : (e.tipo === 'Terceirizado' ? Number(e.valor_metro || 0) : Number(e.valor_diaria || 0));
-    var rotuloValor = e.tipo === 'Empreita' ? 'valor do contrato' : (e.tipo === 'Terceirizado' ? 'valor por metro' : 'valor da diaria');
-    var money = (typeof formatMoney === 'function') ? formatMoney(valor) : Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    var enderecoObra = obra ? (obra.endereco || obra.nome) : 'Obra nao definida';
-    var html = '<html><head><title>Contrato</title><style>body{font-family:Georgia,serif;padding:32px;line-height:1.5;color:#111}h1{font-size:16px;text-align:center}p{text-align:justify}</style></head><body>'
-      + '<h1>CONTRATO DE PRESTACAO DE SERVICOS — ' + (e.tipo || '').toUpperCase() + '</h1>'
-      + '<p><b>CONTRATANTE:</b> ' + (empresa.name || empresa.nome) + (empresa.cnpj ? ', CNPJ ' + empresa.cnpj : '') + (empresa.address ? ', ' + empresa.address : '') + '.</p>'
-      + '<p><b>CONTRATADO:</b> ' + (e.nome || '').toUpperCase() + (e.cpf ? ', CPF ' + e.cpf : '') + (e.endereco ? ', residente em ' + e.endereco : '') + '.</p>'
-      + '<p>O presente contrato tem por objeto a prestacao de servicos na modalidade <b>' + (e.tipo || '') + '</b> na obra <b>' + enderecoObra + '</b>, pelo ' + rotuloValor + ' de <b>' + money + ' (' + numeroPorExtenso(valor) + ')</b>.</p>'
-      + '<p>O CONTRATADO declara atuar com autonomia, sem vinculo empregatício, responsabilizando-se por tributos, EPIs e qualidade dos servicos.</p>'
-      + '<p>Jatai, ' + new Date().toLocaleDateString('pt-BR') + '.</p>'
-      + '<br><br><p>_________________________________<br>CONTRATANTE</p>'
-      + '<br><p>_________________________________<br>CONTRATADO — ' + (e.nome || '') + '</p>'
+    var rotuloValor = e.tipo === 'Empreita' ? 'valor do contrato' : (e.tipo === 'Terceirizado' ? 'valor por metro' : 'valor da diária');
+    var money = moneyFmt(valor);
+    var enderecoObra = obra ? (obra.endereco || obra.nome) : 'Obra não definida';
+    var hoje = cp ? cp.dataBR(cp.hojeISO()) : new Date().toLocaleDateString('pt-BR');
+    var contratante = (empresa.nome || empresa.name || 'NÉVOA')
+      + (empresa.cnpj ? ', CNPJ ' + empresa.cnpj : '')
+      + ((empresa.endereco || empresa.address) ? ', ' + (empresa.endereco || empresa.address) : '');
+    var contratado = (e.nome || '')
+      + (e.cpf ? ', CPF ' + e.cpf : '')
+      + (e.endereco ? ', residente em ' + e.endereco : '');
+
+    var corpo = '<div style="padding:12px 4px;font-family:Georgia,serif;font-size:13px;line-height:1.6;color:#111;">'
+      + '<p style="text-align:justify;"><b>CONTRATANTE:</b> ' + esc(contratante) + '.</p>'
+      + '<p style="text-align:justify;"><b>CONTRATADO:</b> ' + esc(contratado) + '.</p>'
+      + '<p style="text-align:justify;">O presente contrato tem por objeto a prestação de serviços na modalidade <b>' + esc(e.tipo || '') + '</b> na obra <b>' + esc(enderecoObra) + '</b>, pelo ' + esc(rotuloValor) + ' de <b>' + esc(money) + ' (' + esc(numeroPorExtenso(valor)) + ')</b>.</p>'
+      + '<p style="text-align:justify;">O CONTRATADO declara atuar com autonomia, sem vínculo empregatício, responsabilizando-se por tributos, EPIs e qualidade dos serviços.</p>'
+      + '<p style="text-align:justify;">Jataí, ' + esc(hoje) + '.</p>'
+      + '<div style="display:flex;gap:24px;margin-top:56px;">'
+      +   '<div style="flex:1;text-align:center;"><div style="border-top:1px solid #111;padding-top:6px;">CONTRATANTE</div></div>'
+      +   '<div style="flex:1;text-align:center;"><div style="border-top:1px solid #111;padding-top:6px;">CONTRATADO — ' + esc(e.nome || '') + '</div></div>'
+      + '</div>'
+      + '</div>';
+
+    var subtitulo = 'Modalidade: <b>' + esc(e.tipo || '-') + '</b> &nbsp;|&nbsp; Obra: <b>' + esc((obra && obra.nome) ? obra.nome : enderecoObra) + '</b>';
+
+    if (cp) {
+      cp.print(cp.doc({ title: 'Contrato de Prestação de Serviços', meta: hoje, subtitle: subtitulo, body: corpo }));
+      return;
+    }
+
+    var html = '<html><head><title>Contrato</title><style>body{font-family:Georgia,serif;padding:32px;line-height:1.5;color:#111}p{text-align:justify}</style></head><body>'
+      + '<h1 style="font-size:16px;text-align:center;">CONTRATO DE PRESTAÇÃO DE SERVIÇOS — ' + esc((e.tipo || '').toUpperCase()) + '</h1>'
+      + corpo
       + '</body></html>';
     var w = window.open('', '_blank');
     if (!w) return;
