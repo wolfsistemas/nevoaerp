@@ -1,339 +1,436 @@
+// equipe-obra.js - Equipe unificada do segmento Obra (padrao RV).
+// Lista unica: Diaria (Pedreiro/Servente), Empreita e Terceirizado (metro).
+// Cadastro, CALCULAR (fechamento/estorno), Checagem e Folha+PIX.
+// Estorno nunca apaga: grava ESTORNADO e desfaz a cadeia financeira.
 (function () {
   'use strict';
 
   var A = function () { return window.obraApi || {}; };
-  var subAba = 'ponto';
+  var CACHE = { equipe: [], terc: [], obras: [], ponto: [], producao: [], medicoes: [] };
+  var MODAL = 'eqobra-modal';
 
-  function tiposObra() { return ['Diaria', 'Empreita', 'Terceirizado']; }
-  function eid(v) { return A().equipeId ? A().equipeId(v) : (v ? Number(v) : null); }
-  function okConfirm(msg, opts) {
-    return A().confirmar ? A().confirmar(msg, opts) : (typeof confirmDialog === 'function' ? confirmDialog(msg, opts) : Promise.resolve(window.confirm(msg)));
+  function esc(v) { return A().esc(v); }
+  function money(v) { return A().money(v); }
+  function dataBR(v) { return A().dataBR(v); }
+  function hojeISO() { return A().hojeISO(); }
+  function toast(m, e) { A().toast(m, e); }
+  function icons() { A().icons(); }
+  function confirmar(m, o) {
+    if (A().confirmar) return A().confirmar(m, o);
+    return Promise.resolve(window.confirm(m));
+  }
+  function loading(on) { if (typeof showLoading === 'function') showLoading(!!on); }
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function novoUid() {
+    if (window.crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+  }
+  function firstDay() { var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-01'; }
+  function lastDay() {
+    var d = new Date();
+    var ult = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(ult);
+  }
+  function janFirst() { return new Date().getFullYear() + '-01-01'; }
+  function el(id) { return document.getElementById(id); }
+  function val(id) { var e = el(id); return e ? e.value : ''; }
+  function num(id) { return Number(val(id)) || 0; }
+  function escAttr(v) { return esc(v).replace(/`/g, ''); }
+
+  // ---------- Dados ----------
+  async function carregarDados() {
+    var res = await Promise.all([
+      sb.from('equipe').select('*').in('tipo', ['Diaria', 'Empreita']).order('nome'),
+      sb.from('terceirizados').select('*').order('nome'),
+      sb.from('obras').select('*').order('nome'),
+      sb.from('ponto_diario').select('*').order('hora_registro', { ascending: false }),
+      sb.from('producao_terc').select('*').order('data_registro', { ascending: false }),
+      sb.from('medicoes_empreita').select('*').order('data_medicao', { ascending: false })
+    ]);
+    var erro = res.find(function (r) { return r && r.error; });
+    if (erro) throw erro.error;
+    CACHE.equipe = res[0].data || [];
+    CACHE.terc = res[1].data || [];
+    CACHE.obras = res[2].data || [];
+    CACHE.ponto = res[3].data || [];
+    CACHE.producao = res[4].data || [];
+    CACHE.medicoes = res[5].data || [];
   }
 
+  function colaboradores() {
+    var lista = CACHE.equipe.map(function (e) {
+      var isEmp = (e.categoria === 'Empreita') || (e.tipo === 'Empreita');
+      return {
+        id: e.id,
+        origem: 'equipe',
+        tipo: isEmp ? 'empreita' : 'diaria',
+        nome: e.nome || '',
+        categoria: e.categoria || (isEmp ? 'Empreita' : 'Diaria'),
+        valor_base: Number(e.valor_diaria || 0),
+        valor_contrato: Number(e.valor_contrato || 0),
+        telefone: e.telefone || '',
+        cpf: e.cpf || '',
+        rg: e.rg || '',
+        endereco: e.endereco || '',
+        chave_pix: e.chave_pix || '',
+        obra_atual_id: e.obra_atual_id,
+        ativo: e.ativo !== false,
+        data_contrato: e.data_contrato,
+        contrato_assinado: !!e.contrato_assinado
+      };
+    });
+    CACHE.terc.forEach(function (t) {
+      lista.push({
+        id: t.id,
+        origem: 'terceirizado',
+        tipo: 'metro',
+        nome: t.nome || '',
+        categoria: 'Terceirizado (Metro)',
+        valor_base: Number(t.valor_metro || 0),
+        valor_contrato: 0,
+        telefone: t.telefone || '',
+        cpf: t.cpf_cnpj || '',
+        rg: t.rg || '',
+        endereco: t.endereco || '',
+        chave_pix: t.chave_pix || '',
+        obra_atual_id: t.obra_atual_id,
+        ativo: t.ativo !== false,
+        data_contrato: t.data_contrato,
+        contrato_assinado: !!t.contrato_assinado
+      });
+    });
+    return lista;
+  }
+
+  // ---------- Calculos ----------
+  function calcDiaria(funcId, ini, fim) {
+    var regs = CACHE.ponto.filter(function (r) {
+      return String(r.funcionario_id) === String(funcId) &&
+        String(r.status || '').toUpperCase() === 'VALIDADO' &&
+        !r.pago_em_fechamento;
+    });
+    if (ini) regs = regs.filter(function (r) { return String(r.hora_registro) >= ini + 'T00:00:00'; });
+    if (fim) regs = regs.filter(function (r) { return String(r.hora_registro) <= fim + 'T23:59:59'; });
+    var diarias = (typeof rvCalcularTotalDiarias === 'function') ? rvCalcularTotalDiarias(regs) : 0;
+    return { diarias: diarias, registros: regs };
+  }
+
+  function calcMetros(tercId, ini, fim) {
+    var regs = CACHE.producao.filter(function (p) {
+      return String(p.terceirizado_id) === String(tercId) && String(p.status) !== 'ESTORNADO';
+    });
+    if (ini) regs = regs.filter(function (p) { return p.data_registro >= ini; });
+    if (fim) regs = regs.filter(function (p) { return p.data_registro <= fim; });
+    var pend = regs.filter(function (p) { return p.status !== 'PAGO'; }).reduce(function (s, p) { return s + Number(p.metros || 0); }, 0);
+    var pago = regs.filter(function (p) { return p.status === 'PAGO'; }).reduce(function (s, p) { return s + Number(p.metros || 0); }, 0);
+    return { pend: pend, pago: pago, registros: regs };
+  }
+
+  function calcEmpreita(eqId, ini, fim) {
+    var eq = CACHE.equipe.find(function (e) { return String(e.id) === String(eqId); }) || {};
+    var contrato = Number(eq.valor_contrato || 0);
+    var meds = CACHE.medicoes.filter(function (m) {
+      return String(m.equipe_id) === String(eqId) && String(m.status) !== 'ESTORNADO';
+    });
+    var medsPer = meds.filter(function (m) {
+      return (!ini || m.data_medicao >= ini) && (!fim || m.data_medicao <= fim);
+    });
+    var pend = meds.filter(function (m) { return m.status !== 'PAGO'; }).reduce(function (s, m) { return s + Number(m.valor || 0); }, 0);
+    var pago = meds.filter(function (m) { return m.status === 'PAGO'; }).reduce(function (s, m) { return s + Number(m.valor || 0); }, 0);
+    var pctPend = medsPer.filter(function (m) { return m.status !== 'PAGO'; }).reduce(function (s, m) { return s + Number(m.percentual || 0); }, 0);
+    var pctExec = meds.reduce(function (s, m) { return s + Number(m.percentual || 0); }, 0);
+    return {
+      contrato: contrato, pend: pend, pago: pago, pctPend: pctPend, pctExec: pctExec,
+      saldo: Math.max(0, contrato - pago - pend), medicoes: medsPer, todas: meds
+    };
+  }
+
+  function producaoTxt(c, ini, fim) {
+    if (c.tipo === 'diaria') {
+      var d = calcDiaria(c.id, ini, fim);
+      c._pend = d.diarias * c.valor_base;
+      c.status_pagamento = d.diarias > 0 ? 'PENDENTE' : 'EM DIA';
+      return d.diarias.toFixed(2) + ' dias';
+    }
+    if (c.tipo === 'empreita') {
+      var r = calcEmpreita(c.id, ini, fim);
+      c._pend = r.pend;
+      c.status_pagamento = r.pend > 0 ? 'PENDENTE' : 'EM DIA';
+      return r.pctPend.toFixed(1) + '% medido';
+    }
+    var m = calcMetros(c.id, ini, fim);
+    c._pend = m.pend * c.valor_base;
+    c.status_pagamento = m.pend > 0 ? 'PENDENTE' : 'EM DIA';
+    return m.pend.toFixed(2) + ' m';
+  }
+
+  // ---------- Render principal ----------
   async function renderEquipeObra() {
     var c = document.getElementById('view-obra-equipe') || document.getElementById('view-equipe');
     if (!c) return;
     c.innerHTML = ''
       + '<div class="space-y-4 p-4">'
       +   '<div class="flex items-center justify-between flex-wrap gap-3">'
-      +     '<div><h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="hard-hat" class="text-emerald-600"></i> Equipe de obra</h2>'
-      +     '<p class="text-sm text-slate-500">Ponto diario, medições de empreita e cadastro (Diaria / Empreita / Terceirizado).</p></div>'
-      +     '<button onclick="eqObraOpenForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-bold shadow flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Colaborador</button>'
+      +     '<div><h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="hard-hat" class="text-emerald-600"></i> Equipe</h2>'
+      +     '<p class="text-sm text-slate-500">Diaria, empreita e terceirizado (metro) em um so lugar. CALCULAR fecha o pagamento e gera a despesa.</p></div>'
+      +     '<div class="flex gap-2 flex-wrap">'
+      +       '<button onclick="eqObraChecagem()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2.5 rounded-xl font-bold shadow flex items-center gap-2"><i data-lucide="clipboard-check" class="w-4 h-4"></i> Checagem</button>'
+      +       '<button onclick="eqObraFolhaAbrir()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl font-bold shadow flex items-center gap-2"><i data-lucide="printer" class="w-4 h-4"></i> Imprimir Folha</button>'
+      +       '<button onclick="eqObraOpenForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2.5 rounded-xl font-bold shadow flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Cadastrar Membro</button>'
+      +     '</div>'
       +   '</div>'
-      +   '<div class="flex bg-white rounded-xl shadow-sm border p-1 gap-1 w-fit">'
-      +     tabBtn('ponto', 'Ponto') + tabBtn('medicao', 'Empreita') + tabBtn('cadastro', 'Cadastro')
-      +   '</div>'
-      +   '<div id="eq-obra-body" class="bg-white rounded-xl border shadow-sm p-4">Carregando...</div>'
+      +   '<div id="eqobra-filtros" class="bg-white p-4 rounded-xl shadow-sm border grid grid-cols-1 md:grid-cols-6 gap-3"></div>'
+      +   '<div id="eqobra-total" class="text-right text-xs text-slate-500 font-medium pr-2"></div>'
+      +   '<div class="bg-white rounded-xl border shadow-sm overflow-hidden"><div class="overflow-x-auto">'
+      +     '<table class="w-full text-sm text-left whitespace-nowrap"><thead class="bg-slate-100 text-slate-700 border-b"><tr>'
+      +       '<th class="p-3">Colaborador / Categoria</th><th class="p-3">Obra</th><th class="p-3 text-center">Valor</th>'
+      +       '<th class="p-3 text-center">Producao</th><th class="p-3 text-right">Total a Pagar</th>'
+      +       '<th class="p-3 text-center">Status</th><th class="p-3 text-center">Acoes</th>'
+      +     '</tr></thead><tbody id="eqobra-list" class="divide-y"><tr><td colspan="7" class="p-6 text-center text-slate-400">Carregando...</td></tr></tbody></table>'
+      +   '</div></div>'
       + '</div>';
-    A().icons();
-    await eqObraCarregarAba();
-  }
-
-  function tabBtn(id, label) {
-    var on = subAba === id;
-    return '<button onclick="eqObraAba(\'' + id + '\')" class="px-5 py-2.5 rounded-lg text-sm font-bold ' + (on ? 'bg-emerald-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100') + '">' + label + '</button>';
-  }
-
-  window.eqObraAba = function (id) {
-    subAba = id;
-    renderEquipeObra();
-  };
-
-  async function eqObraCarregarAba() {
-    if (subAba === 'cadastro') return eqObraCadastro();
-    if (subAba === 'medicao') return eqObraMedicao();
-    return eqObraPonto();
-  }
-
-  async function eqObraCadastro() {
-    var body = document.getElementById('eq-obra-body');
-    var res = await sb.from('equipe').select('*, obras:obra_atual_id(nome)').in('tipo', tiposObra()).order('nome');
-    if (res.error) { body.innerHTML = '<div class="text-red-600">' + A().esc(res.error.message) + '</div>'; return; }
-    var lista = res.data || [];
-    body.innerHTML = '<table class="w-full text-sm"><thead class="bg-slate-50"><tr>'
-      + '<th class="p-3 text-left">Nome</th><th class="p-3">Tipo</th><th class="p-3 text-right">Valor</th><th class="p-3">Obra</th><th class="p-3">Status</th><th class="p-3"></th>'
-      + '</tr></thead><tbody>'
-      + (lista.length ? lista.map(function (e) {
-        var valor = e.tipo === 'Empreita' ? A().money(e.valor_contrato) : (e.tipo === 'Terceirizado' ? A().money(e.valor_metro) + '/m' : A().money(e.valor_diaria) + '/dia');
-        return '<tr class="border-t">'
-          + '<td class="p-3 font-bold">' + A().esc(e.nome) + '</td>'
-          + '<td class="p-3">' + A().esc(e.tipo) + '</td>'
-          + '<td class="p-3 text-right">' + valor + '</td>'
-          + '<td class="p-3 text-sm">' + A().esc((e.obras && e.obras.nome) || '-') + '</td>'
-          + '<td class="p-3">' + (e.ativo ? 'Ativo' : 'Inativo') + '</td>'
-          + '<td class="p-3 text-right"><button onclick="eqObraOpenForm(' + e.id + ')" class="text-indigo-600 border p-1.5 rounded"><i data-lucide="pencil" class="w-4 h-4"></i></button>'
-          + ' <button onclick="eqObraContrato(' + e.id + ')" class="text-slate-600 border p-1.5 rounded" title="Contrato"><i data-lucide="file-text" class="w-4 h-4"></i></button></td></tr>';
-      }).join('') : '<tr><td colspan="6" class="p-6 text-center text-slate-400">Nenhum colaborador de obra.</td></tr>')
-      + '</tbody></table>';
-    A().icons();
-  }
-
-  async function eqObraOpenForm(id) {
-    var obras = await A().listObras(true);
-    var e = { nome: '', tipo: 'Diaria', valor_diaria: 0, valor_contrato: 0, valor_metro: 0, chave_pix: '', cpf: '', telefone: '', endereco: '', obra_atual_id: '', ativo: true };
-    if (id) {
-      var res = await sb.from('equipe').select('*').eq('id', id).single();
-      if (res.error) return A().toast(res.error.message, true);
-      e = res.data;
+    montarFiltros();
+    icons();
+    try {
+      await carregarDados();
+    } catch (e) {
+      var body = el('eqobra-list');
+      if (body) body.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-red-600">' + esc(e.message || e) + '</td></tr>';
+      return;
     }
-    var html = ''
-      + '<form onsubmit="eqObraSalvar(event)" class="space-y-3">'
-      +   '<input type="hidden" id="eqo-id" value="' + A().esc(e.id || '') + '">'
-      +   '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nome *</label>'
-      +   '<input id="eqo-nome" required value="' + A().esc(e.nome) + '" class="w-full p-2.5 border rounded-lg"></div>'
-      +   '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Categoria</label>'
-      +   '<select id="eqo-tipo" onchange="eqObraOnCat()" class="w-full p-2.5 border rounded-lg">'
-      +     tiposObra().map(function (t) { return '<option' + (e.tipo === t ? ' selected' : '') + '>' + t + '</option>'; }).join('')
-      +   '</select></div>'
-      +   '<div id="eqo-campo-valor"></div>'
-      +   '<div class="grid grid-cols-2 gap-3">'
-      +     '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">CPF</label><input id="eqo-cpf" value="' + A().esc(e.cpf || '') + '" class="w-full p-2.5 border rounded-lg"></div>'
-      +     '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Telefone</label><input id="eqo-tel" value="' + A().esc(e.telefone || '') + '" class="w-full p-2.5 border rounded-lg"></div>'
-      +   '</div>'
-      +   '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">PIX</label><input id="eqo-pix" value="' + A().esc(e.chave_pix || '') + '" class="w-full p-2.5 border rounded-lg"></div>'
-      +   '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Endereco</label><input id="eqo-end" value="' + A().esc(e.endereco || '') + '" class="w-full p-2.5 border rounded-lg"></div>'
-      +   '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Obra atual</label>'
-      +   '<select id="eqo-obra" class="w-full p-2.5 border rounded-lg">' + A().optionsObras(obras, e.obra_atual_id) + '</select></div>'
-      +   '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data contrato</label>'
-      +   '<input id="eqo-data-contrato" type="date" value="' + A().esc((e.data_contrato || '').slice(0,10)) + '" class="w-full p-2.5 border rounded-lg"></div>'
-      +   '<label class="flex items-center gap-2"><input id="eqo-ativo" type="checkbox"' + (e.ativo !== false ? ' checked' : '') + '> Ativo</label>'
-      +   '<div class="flex justify-end gap-2"><button type="button" onclick="obraFecharModal()" class="px-4 py-2 border rounded-lg font-bold">Cancelar</button>'
-      +   '<button class="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold">Salvar</button></div></form>';
-    abrir(html, id ? 'Editar colaborador' : 'Novo colaborador');
-    window._eqoCache = e;
-    eqObraOnCat();
+    eqObraRenderLista();
   }
 
-  window.eqObraOnCat = function () {
-    var tipo = document.getElementById('eqo-tipo').value;
-    var e = window._eqoCache || {};
-    var box = document.getElementById('eqo-campo-valor');
+  function montarFiltros() {
+    var box = el('eqobra-filtros');
     if (!box) return;
-    if (tipo === 'Empreita') {
-      box.innerHTML = '<label class="block text-xs font-bold text-slate-500 uppercase mb-1">Valor do contrato</label><input id="eqo-valor" type="number" step="0.01" value="' + (e.valor_contrato || 0) + '" class="w-full p-2.5 border rounded-lg">';
-    } else if (tipo === 'Terceirizado') {
-      box.innerHTML = '<label class="block text-xs font-bold text-slate-500 uppercase mb-1">Valor por metro</label><input id="eqo-valor" type="number" step="0.01" value="' + (e.valor_metro || 0) + '" class="w-full p-2.5 border rounded-lg">';
-    } else {
-      box.innerHTML = '<label class="block text-xs font-bold text-slate-500 uppercase mb-1">Valor da diaria</label><input id="eqo-valor" type="number" step="0.01" value="' + (e.valor_diaria || 0) + '" class="w-full p-2.5 border rounded-lg">';
-    }
-  };
-
-  async function eqObraSalvar(ev) {
-    ev.preventDefault();
-    var id = document.getElementById('eqo-id').value;
-    var tipo = document.getElementById('eqo-tipo').value;
-    var valor = Number(document.getElementById('eqo-valor').value) || 0;
-    var rem = tipo === 'Empreita' ? 'empreita' : (tipo === 'Terceirizado' ? 'metro' : 'diaria');
-    var payload = {
-      nome: document.getElementById('eqo-nome').value.trim(),
-      tipo: tipo,
-      tipo_remuneracao: rem,
-      categoria: tipo,
-      valor_diaria: tipo === 'Diaria' ? valor : null,
-      valor_contrato: tipo === 'Empreita' ? valor : 0,
-      valor_metro: tipo === 'Terceirizado' ? valor : 0,
-      chave_pix: document.getElementById('eqo-pix').value.trim() || null,
-      cpf: document.getElementById('eqo-cpf').value.trim() || null,
-      telefone: document.getElementById('eqo-tel').value.trim() || null,
-      endereco: document.getElementById('eqo-end').value.trim() || null,
-      obra_atual_id: document.getElementById('eqo-obra').value || null,
-      data_contrato: document.getElementById('eqo-data-contrato').value || null,
-      ativo: document.getElementById('eqo-ativo').checked,
-      updated_at: new Date().toISOString()
-    };
-    var res = id
-      ? await sb.from('equipe').update(payload).eq('id', id)
-      : await sb.from('equipe').insert([payload]);
-    if (res.error) return A().toast(res.error.message, true);
-    A().toast('Colaborador salvo.');
-    if (typeof obraFecharModal === 'function') obraFecharModal();
-    renderEquipeObra();
+    box.innerHTML = ''
+      + selectFiltro('eqf-status', 'Status', [['true', 'Ativos'], ['false', 'Desativados'], ['todos', 'Todos']], 'true')
+      + selectFiltro('eqf-tipo', 'Tipo', [['todos', 'Todos'], ['diaria', 'Diaria'], ['empreita', 'Empreita'], ['metro', 'Metro']], 'todos')
+      + campoFiltro('eqf-ini', 'Inicio', 'date', '')
+      + campoFiltro('eqf-fim', 'Fim', 'date', '')
+      + '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Obra</label>'
+      +   '<select id="eqf-obra" onchange="eqObraRenderLista()" class="w-full p-2 border rounded-lg text-sm bg-slate-50">'
+      +     '<option value="">Todas</option>' + CACHE.obras.map(function (o) { return '<option value="' + esc(o.id) + '">' + esc(o.nome) + '</option>'; }).join('') + '</select></div>'
+      + campoFiltro('eqf-busca', 'Buscar', 'text', '', 'onkeyup="eqObraRenderLista()"');
   }
 
-  async function eqObraPonto() {
-    var body = document.getElementById('eq-obra-body');
-    var funcs = await sb.from('equipe').select('*').eq('tipo', 'Diaria').eq('ativo', true).order('nome');
-    if (funcs.error) { body.innerHTML = '<div class="text-red-600">' + A().esc(funcs.error.message) + '</div>'; return; }
-    var lista = funcs.data || [];
-    var hoje = A().hojeISO();
-    var iniMes = hoje.slice(0, 8) + '01';
-    body.innerHTML = ''
-      + '<div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">'
-      +   '<div><label class="text-xs font-bold text-slate-500 uppercase">Funcionario</label>'
-      +   '<select id="eqo-ponto-func" class="w-full p-2.5 border rounded-lg">' + lista.map(function (f) {
-        return '<option value="' + f.id + '">' + A().esc(f.nome) + '</option>';
-      }).join('') + '</select></div>'
-      +   '<div><label class="text-xs font-bold text-slate-500 uppercase">Inicio</label><input id="eqo-ini" type="date" value="' + iniMes + '" class="w-full p-2.5 border rounded-lg"></div>'
-      +   '<div><label class="text-xs font-bold text-slate-500 uppercase">Fim</label><input id="eqo-fim" type="date" value="' + hoje + '" class="w-full p-2.5 border rounded-lg"></div>'
-      +   '<div class="flex items-end"><button onclick="eqObraCarregarPonto()" class="w-full bg-slate-800 text-white py-2.5 rounded-lg font-bold">Filtrar</button></div>'
-      + '</div>'
-      + '<div class="flex flex-wrap gap-2 mb-4">'
-      +   '<button onclick="eqObraBater(\'ENTRADA\')" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold">Batida entrada</button>'
-      +   '<button onclick="eqObraBater(\'SAIDA\')" class="bg-slate-600 text-white px-4 py-2 rounded-lg font-bold">Batida saida</button>'
-      +   '<button onclick="eqObraAjuste()" class="bg-amber-500 text-white px-4 py-2 rounded-lg font-bold">Ajuste (0,5 / 1,0)</button>'
-      +   '<button onclick="eqObraImportCsv()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold">Importar CSV</button>'
-      +   '<button onclick="eqObraFecharPonto()" class="bg-red-600 text-white px-4 py-2 rounded-lg font-bold">Fechar periodo</button>'
-      + '</div>'
-      + '<input type="file" id="eqo-csv" accept=".csv,text/csv" class="hidden" onchange="eqObraLerCsv(event)">'
-      + '<div id="eqo-ponto-resumo" class="mb-3 text-sm text-slate-600"></div>'
-      + '<div id="eqo-ponto-lista" class="text-sm text-slate-400">Selecione e filtre.</div>';
-    if (lista.length) eqObraCarregarPonto();
+  function selectFiltro(id, label, opts, sel) {
+    return '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">' + label + '</label>'
+      + '<select id="' + id + '" onchange="eqObraRenderLista()" class="w-full p-2 border rounded-lg text-sm bg-slate-50">'
+      + opts.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === sel ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('')
+      + '</select></div>';
+  }
+  function campoFiltro(id, label, type, value, extra) {
+    return '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">' + label + '</label>'
+      + '<input id="' + id + '" type="' + type + '" value="' + esc(value) + '" ' + (extra || '') + ' class="w-full p-2 border rounded-lg text-sm bg-slate-50"></div>';
   }
 
-  async function eqObraCarregarPonto() {
-    var funcId = eid(document.getElementById('eqo-ponto-func').value);
-    var ini = document.getElementById('eqo-ini').value;
-    var fim = document.getElementById('eqo-fim').value;
-    if (!funcId) return;
-    var res = await sb.from('ponto_diario').select('*')
-      .eq('funcionario_id', funcId)
-      .gte('hora_registro', ini + 'T00:00:00')
-      .lte('hora_registro', fim + 'T23:59:59')
-      .order('hora_registro');
-    if (res.error) return A().toast(res.error.message, true);
-    var todos = res.data || [];
-    var ativos = todos.filter(function (r) { return r.status !== 'ESTORNADO'; });
-    var abertos = ativos.filter(function (r) { return !r.pago_em_fechamento; });
-    var diarias = (typeof rvCalcularTotalDiarias === 'function') ? rvCalcularTotalDiarias(abertos) : 0;
-    var func = (await sb.from('equipe').select('valor_diaria,nome').eq('id', funcId).single()).data || {};
-    var valor = diarias * Number(func.valor_diaria || 0);
-    var fechamentos = {};
-    ativos.forEach(function (r) {
-      if (r.pago_em_fechamento && r.fechamento_uid) fechamentos[r.fechamento_uid] = true;
+  function eqObraRenderLista() {
+    var body = el('eqobra-list');
+    if (!body) return;
+    var ini = val('eqf-ini');
+    var fim = val('eqf-fim');
+    var statusF = val('eqf-status') || 'true';
+    var tipoF = val('eqf-tipo') || 'todos';
+    var obraF = val('eqf-obra');
+    var busca = (val('eqf-busca') || '').toLowerCase();
+
+    var lista = colaboradores().filter(function (c) {
+      if (obraF && String(c.obra_atual_id || '') !== String(obraF)) return false;
+      if (statusF !== 'todos' && c.ativo !== (statusF === 'true')) return false;
+      if (tipoF !== 'todos' && c.tipo !== tipoF) return false;
+      if (busca && (c.nome + ' ' + c.categoria + ' ' + (c.cpf || '')).toLowerCase().indexOf(busca) < 0) return false;
+      return true;
     });
-    var btnsEstorno = Object.keys(fechamentos).map(function (uid) {
-      return '<button onclick="eqObraEstornarFechamento(\'' + uid + '\')" class="ml-2 text-red-600 font-bold text-xs">Estornar fechamento</button>';
-    }).join('');
-    document.getElementById('eqo-ponto-resumo').innerHTML = 'Aberto no periodo: <b>' + diarias.toFixed(2) + '</b> diarias · Valor: <b>' + A().money(valor) + '</b>' + btnsEstorno;
-    document.getElementById('eqo-ponto-lista').innerHTML = '<table class="w-full"><thead><tr class="text-left text-slate-500"><th class="py-1">Quando</th><th>Tipo</th><th>Fracao</th><th>Pago</th><th></th></tr></thead><tbody>'
-      + todos.map(function (r) {
-        var est = r.status === 'ESTORNADO';
-        return '<tr class="border-t' + (est ? ' opacity-50' : '') + '"><td class="py-1">' + new Date(r.hora_registro).toLocaleString('pt-BR') + '</td><td>' + A().esc(r.tipo) + '</td><td>' + (r.fracao_diaria != null ? r.fracao_diaria : '-') + '</td><td>' + (r.pago_em_fechamento ? 'sim' : 'nao') + (est ? ' · estornado' : '') + '</td><td>'
-          + (!est && !r.pago_em_fechamento ? '<button onclick="eqObraEstornarBatida(\'' + r.id + '\')" class="text-red-600 text-xs font-bold">Estornar</button>' : '')
-          + '</td></tr>';
-      }).join('') + '</tbody></table>';
+    lista.sort(function (a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
+
+    var soma = 0;
+    var html = '';
+    lista.forEach(function (c) {
+      var prodTxt = producaoTxt(c, ini, fim);
+      soma += c._pend || 0;
+      var valorTxt = c.tipo === 'empreita' ? money(c.valor_contrato || c.valor_base) : money(c.valor_base);
+      var obra = CACHE.obras.find(function (o) { return String(o.id) === String(c.obra_atual_id); });
+      var pend = c.status_pagamento === 'PENDENTE';
+      var wpp = (c.telefone || '').replace(/\D/g, '');
+      html += '<tr class="border-b hover:bg-slate-50' + (c.ativo ? '' : ' opacity-60') + '">'
+        + '<td class="p-3"><div class="font-bold text-slate-800 text-sm">' + esc(c.nome) + (c.ativo ? '' : ' <span class="text-[9px] text-red-500 font-bold">(DESATIVADO)</span>') + '</div>'
+        + '<div class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded uppercase font-bold inline-block mt-0.5">' + esc(c.categoria) + '</div></td>'
+        + '<td class="p-3 text-xs font-bold text-blue-700">' + esc(obra ? obra.nome : '-') + '</td>'
+        + '<td class="p-3 text-center text-xs font-bold text-slate-700">' + valorTxt + '</td>'
+        + '<td class="p-3 text-center text-xs font-black ' + (pend ? 'text-indigo-600' : 'text-slate-400') + '">' + prodTxt + '</td>'
+        + '<td class="p-3 text-right font-black text-sm ' + (pend ? 'text-green-700' : 'text-slate-400') + '">' + money(c._pend || 0) + '</td>'
+        + '<td class="p-3 text-center"><span class="px-2 py-1 rounded text-[9px] font-bold ' + (pend ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700') + '">' + c.status_pagamento + '</span></td>'
+        + '<td class="p-3"><div class="flex items-center justify-center gap-1">'
+        +   '<button onclick="eqObraSaldo(\'' + c.id + '\',\'' + c.origem + '\')" class="px-2 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="calculator" class="w-3 h-3"></i> CALCULAR</button>'
+        +   '<button onclick="eqObraContrato(\'' + c.id + '\',\'' + c.origem + '\')" class="p-1.5 bg-slate-800 text-white rounded" title="Contrato"><i data-lucide="file-signature" class="w-3.5 h-3.5"></i></button>'
+        +   '<button onclick="eqObraOpenForm(\'' + c.id + '\',\'' + c.origem + '\')" class="p-1.5 border border-blue-200 text-blue-600 rounded" title="Editar"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>'
+        +   '<button onclick="eqObraToggle(\'' + c.id + '\',\'' + c.origem + '\',' + (c.ativo ? 'true' : 'false') + ')" class="p-1.5 border ' + (c.ativo ? 'border-red-200 text-red-500' : 'border-green-200 text-green-600') + ' rounded" title="' + (c.ativo ? 'Desativar' : 'Reativar') + '"><i data-lucide="power" class="w-3.5 h-3.5"></i></button>'
+        +   (wpp ? '<a href="https://wa.me/55' + wpp + '" target="_blank" class="p-1.5 border border-green-200 text-green-600 bg-green-50/50 rounded" title="WhatsApp"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></a>' : '')
+        + '</div></td></tr>';
+    });
+    body.innerHTML = html || '<tr><td colspan="7" class="p-6 text-center text-slate-400">Nenhum colaborador.</td></tr>';
+    var total = el('eqobra-total');
+    if (total) total.innerHTML = 'Total geral (filtro): <span class="font-bold text-slate-700">' + money(soma) + '</span>';
+    icons();
   }
 
-  async function eqObraBater(tipo) {
-    var funcId = eid(document.getElementById('eqo-ponto-func').value);
-    if (!funcId) return A().toast('Selecione o funcionario.', true);
-    var eq = await sb.from('equipe').select('obra_atual_id').eq('id', funcId).single();
+  // ---------- Modal base ----------
+  function abrirModal(html, titulo, largura) {
+    var m = el(MODAL);
+    if (!m) { m = document.createElement('div'); m.id = MODAL; document.body.appendChild(m); }
+    m.className = 'fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4';
+    m.innerHTML = '<div class="bg-white rounded-2xl shadow-2xl w-full ' + (largura || 'max-w-2xl') + ' max-h-[95vh] flex flex-col overflow-hidden">'
+      + '<div class="p-4 border-b flex justify-between items-center shrink-0"><h3 class="font-bold text-slate-800">' + esc(titulo) + '</h3>'
+      + '<button onclick="eqObraFecharModal()" class="text-slate-400"><i data-lucide="x"></i></button></div>'
+      + '<div class="p-4 overflow-y-auto">' + html + '</div></div>';
+    icons();
+  }
+  function fecharModal() { var m = el(MODAL); if (m) m.remove(); }
+
+  // ---------- Saldo Diaria ----------
+  function eqObraSaldo(id, origem) {
+    if (origem === 'terceirizado') return eqObraSaldoMetros(id);
+    var c = colaboradores().find(function (x) { return String(x.id) === String(id) && x.origem === 'equipe'; });
+    if (!c) return toast('Colaborador nao encontrado.', true);
+    if (c.tipo === 'empreita') return eqObraSaldoEmpreita(id);
+    var html = ''
+      + '<input type="hidden" id="eqs-id" value="' + escAttr(c.id) + '">'
+      + '<div class="bg-slate-50 rounded-lg p-3 text-sm mb-3">' + esc(c.nome) + ' - Diaria: <b>' + money(c.valor_base) + '</b></div>'
+      + '<div class="flex flex-wrap gap-2 mb-3">'
+      +   '<button onclick="eqObraSaldoBatida(\'ENTRADA\')" class="bg-emerald-600 text-white px-3 py-2 rounded-lg font-bold text-xs">Batida entrada</button>'
+      +   '<button onclick="eqObraSaldoBatida(\'SAIDA\')" class="bg-slate-600 text-white px-3 py-2 rounded-lg font-bold text-xs">Batida saida</button>'
+      + '</div>'
+      + '<div class="grid grid-cols-3 gap-2 mb-3">'
+      +   '<div><label class="text-[10px] font-bold text-slate-500 uppercase">Inicio</label><input id="eqs-ini" type="date" value="' + janFirst() + '" onchange="eqObraSaldoRender()" class="w-full p-2 border rounded-lg text-sm"></div>'
+      +   '<div><label class="text-[10px] font-bold text-slate-500 uppercase">Fim</label><input id="eqs-fim" type="date" value="' + lastDay() + '" onchange="eqObraSaldoRender()" class="w-full p-2 border rounded-lg text-sm"></div>'
+      +   '<div><label class="text-[10px] font-bold text-slate-500 uppercase">Status</label><select id="eqs-status" onchange="eqObraSaldoRender()" class="w-full p-2 border rounded-lg text-sm"><option value="PENDENTE">Pendentes</option><option value="PAGO">Pagos</option><option value="TODOS">Todos</option></select></div>'
+      + '</div>'
+      + '<div id="eqs-lista" class="border rounded-lg overflow-hidden mb-3"></div>'
+      + '<div class="bg-slate-50 rounded-lg p-3 mb-3"><p class="text-xs font-bold text-slate-600 mb-2">Ajuste manual</p>'
+      +   '<div class="grid grid-cols-4 gap-2">'
+      +     '<input id="eqs-aj-data" type="date" value="' + hojeISO() + '" class="p-2 border rounded-lg text-xs">'
+      +     '<input id="eqs-aj-frac" type="number" step="0.01" min="0" placeholder="0.5" class="p-2 border rounded-lg text-xs">'
+      +     '<input id="eqs-aj-desc" type="text" placeholder="Justificativa" class="p-2 border rounded-lg text-xs">'
+      +     '<button onclick="eqObraSaldoAjuste()" class="bg-indigo-600 text-white rounded-lg font-bold text-xs">Lancar</button>'
+      +   '</div></div>'
+      + '<div class="flex items-center justify-between flex-wrap gap-2 border-t pt-3">'
+      +   '<div>Diarias: <b id="eqs-tot" class="text-indigo-700">0.00</b> - Valor: <b id="eqs-val" class="text-green-600">R$ 0,00</b></div>'
+      +   '<div class="flex gap-2">'
+      +     '<button onclick="eqObraSaldoRecibo()" class="bg-slate-700 text-white px-3 py-2 rounded-lg font-bold text-xs">Recibo</button>'
+      +     '<button onclick="eqObraSaldoEstornar()" class="bg-amber-600 text-white px-3 py-2 rounded-lg font-bold text-xs">Estornar ultimo</button>'
+      +     '<button onclick="eqObraSaldoFechar()" class="bg-blue-700 text-white px-3 py-2 rounded-lg font-bold text-xs">Conferido (fechar)</button>'
+      +   '</div></div>';
+    abrirModal(html, 'Saldo de Ponto', 'max-w-3xl');
+    eqObraSaldoRender();
+  }
+
+  function eqObraSaldoRender() {
+    var funcId = val('eqs-id');
+    var ini = val('eqs-ini');
+    var fim = val('eqs-fim');
+    var status = val('eqs-status') || 'PENDENTE';
+    var c = CACHE.equipe.find(function (e) { return String(e.id) === String(funcId); });
+    if (!c) return;
+    var regs = CACHE.ponto.filter(function (r) {
+      return String(r.funcionario_id) === String(funcId) && String(r.status).toUpperCase() === 'VALIDADO';
+    });
+    if (ini) regs = regs.filter(function (r) { return String(r.hora_registro) >= ini + 'T00:00:00'; });
+    if (fim) regs = regs.filter(function (r) { return String(r.hora_registro) <= fim + 'T23:59:59'; });
+    if (status === 'PENDENTE') regs = regs.filter(function (r) { return !r.pago_em_fechamento; });
+    else if (status === 'PAGO') regs = regs.filter(function (r) { return r.pago_em_fechamento; });
+
+    var porDia = {};
+    regs.forEach(function (r) {
+      var d = new Date(r.hora_registro);
+      var k = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      if (!porDia[k]) porDia[k] = [];
+      porDia[k].push(r);
+    });
+    var dias = Object.keys(porDia).sort();
+    var total = 0;
+    var linhas = dias.map(function (k) {
+      var frac = (typeof rvFracaoDiaria === 'function') ? rvFracaoDiaria(porDia[k]) : 0;
+      total += frac;
+      var horarios = porDia[k].map(function (r) { return r.tipo + ' ' + new Date(r.hora_registro).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }).join(' · ');
+      var pago = porDia[k][0].pago_em_fechamento;
+      return '<tr class="border-b"><td class="p-2 text-xs">' + dataBR(k) + '</td><td class="p-2 text-xs text-slate-500">' + esc(horarios) + '</td>'
+        + '<td class="p-2 text-center text-xs font-bold">' + frac.toFixed(2) + '</td>'
+        + '<td class="p-2 text-center"><span class="px-2 py-0.5 rounded text-[9px] font-bold ' + (pago ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700') + '">' + (pago ? 'PAGO' : 'PENDENTE') + '</span></td></tr>';
+    }).join('');
+    var lista = el('eqs-lista');
+    if (lista) lista.innerHTML = '<table class="w-full"><thead class="bg-slate-100"><tr class="text-left text-slate-500 text-[10px] uppercase"><th class="p-2">Dia</th><th class="p-2">Marcacoes</th><th class="p-2 text-center">Fracao</th><th class="p-2 text-center">Status</th></tr></thead><tbody>'
+      + (linhas || '<tr><td colspan="4" class="p-4 text-center text-slate-400 text-xs">Sem registros no periodo.</td></tr>') + '</tbody></table>';
+    if (el('eqs-tot')) el('eqs-tot').textContent = total.toFixed(2);
+    if (el('eqs-val')) el('eqs-val').textContent = money(total * Number(c.valor_diaria || 0));
+  }
+
+  async function eqObraSaldoBatida(tipo) {
+    var funcId = val('eqs-id');
+    if (!funcId) return;
+    var eq = CACHE.equipe.find(function (e) { return String(e.id) === String(funcId); });
     var res = await sb.from('ponto_diario').insert([{
       funcionario_id: funcId,
-      obra_id: (eq.data && eq.data.obra_atual_id) || null,
+      obra_id: (eq && eq.obra_atual_id) || null,
       tipo: tipo,
       status: 'VALIDADO',
       hora_registro: new Date().toISOString()
     }]);
-    if (res.error) return A().toast(res.error.message, true);
-    A().toast('Batida registrada.');
-    eqObraCarregarPonto();
+    if (res.error) return toast(res.error.message, true);
+    toast('Batida registrada.');
+    await carregarDados();
+    eqObraSaldoRender();
+    eqObraRenderLista();
   }
 
-  async function eqObraAjuste() {
-    var fracao = window.prompt('Fracao da diaria (0.5 ou 1):', '0.5');
-    if (fracao == null) return;
-    fracao = Number(fracao);
-    if (fracao !== 0.5 && fracao !== 1) return A().toast('Use 0.5 ou 1.', true);
-    var funcId = eid(document.getElementById('eqo-ponto-func').value);
-    if (!funcId) return A().toast('Selecione o funcionario.', true);
-    var eq = await sb.from('equipe').select('obra_atual_id').eq('id', funcId).single();
+  async function eqObraSaldoAjuste() {
+    var funcId = val('eqs-id');
+    var data = val('eqs-aj-data');
+    var frac = Number(val('eqs-aj-frac')) || 0;
+    if (!data || frac <= 0) return toast('Informe data e fracao.', true);
+    var eq = CACHE.equipe.find(function (e) { return String(e.id) === String(funcId); });
     var res = await sb.from('ponto_diario').insert([{
       funcionario_id: funcId,
-      obra_id: (eq.data && eq.data.obra_atual_id) || null,
+      obra_id: (eq && eq.obra_atual_id) || null,
       tipo: 'AJUSTE_MANUAL',
       status: 'VALIDADO',
-      fracao_diaria: fracao,
-      hora_registro: new Date().toISOString(),
-      observacao: 'Ajuste manual'
+      fracao_diaria: frac,
+      hora_registro: new Date(data + 'T12:00:00').toISOString(),
+      observacao: val('eqs-aj-desc') || 'Ajuste manual'
     }]);
-    if (res.error) return A().toast(res.error.message, true);
-    A().toast('Ajuste lancado.');
-    eqObraCarregarPonto();
+    if (res.error) return toast(res.error.message, true);
+    toast('Ajuste lancado.');
+    await carregarDados();
+    eqObraSaldoRender();
+    eqObraRenderLista();
   }
 
-  async function eqObraEstornarBatida(id) {
-    var ok = await okConfirm('Estornar esta batida? O registro permanece.', { danger: true, confirmText: 'Estornar' });
+  async function eqObraSaldoFechar() {
+    var funcId = val('eqs-id');
+    var ini = val('eqs-ini');
+    var fim = val('eqs-fim');
+    var c = CACHE.equipe.find(function (e) { return String(e.id) === String(funcId); });
+    if (!c) return;
+    var calc = calcDiaria(funcId, ini, fim);
+    if (calc.diarias <= 0) return toast('Nada a fechar neste periodo.', true);
+    var valor = calc.diarias * Number(c.valor_diaria || 0);
+    var per = dataBR(ini) + ' a ' + dataBR(fim);
+    var ok = await confirmar('Fechar ' + calc.diarias.toFixed(2) + ' diarias = ' + money(valor) + '? Gera despesa no financeiro.', { confirmText: 'Fechar' });
     if (!ok) return;
-    var row = (await sb.from('ponto_diario').select('*').eq('id', id).single()).data;
-    if (!row) return A().toast('Batida nao encontrada.', true);
-    if (row.pago_em_fechamento) return A().toast('Batida ja fechada. Estorne o fechamento.', true);
-    var res = await sb.from('ponto_diario').update({ status: 'ESTORNADO' }).eq('id', id);
-    if (res.error) return A().toast(res.error.message, true);
-    A().toast('Batida estornada.');
-    eqObraCarregarPonto();
-  }
-
-  function eqObraImportCsv() {
-    document.getElementById('eqo-csv').click();
-  }
-
-  async function eqObraLerCsv(ev) {
-    var file = ev.target.files && ev.target.files[0];
-    if (!file) return;
-    var text = await file.text();
-    var lines = text.split(/\r?\n/).filter(Boolean);
-    var funcId = eid(document.getElementById('eqo-ponto-func').value);
-    if (!funcId) return A().toast('Selecione o funcionario.', true);
-    var eq = await sb.from('equipe').select('obra_atual_id').eq('id', funcId).single();
-    var rows = [];
-    lines.forEach(function (line, i) {
-      if (i === 0 && /hora|data|tipo/i.test(line)) return;
-      var parts = line.split(/[;,]/);
-      if (parts.length < 2) return;
-      var dt = new Date(parts[0].trim());
-      if (isNaN(dt.getTime())) return;
-      var tipoRaw = (parts[1] || 'ENTRADA').trim().toUpperCase();
-      var tipo = tipoRaw.indexOf('SAI') >= 0 ? 'SAIDA' : (tipoRaw.indexOf('AJU') >= 0 ? 'AJUSTE_MANUAL' : 'ENTRADA');
-      rows.push({
-        funcionario_id: funcId,
-        obra_id: (eq.data && eq.data.obra_atual_id) || null,
-        tipo: tipo,
-        status: 'VALIDADO',
-        hora_registro: dt.toISOString()
-      });
-    });
-    ev.target.value = '';
-    if (!rows.length) return A().toast('CSV vazio ou invalido. Use: data_hora;tipo', true);
-    var res = await sb.from('ponto_diario').insert(rows);
-    if (res.error) return A().toast(res.error.message, true);
-    A().toast(rows.length + ' batidas importadas.');
-    eqObraCarregarPonto();
-  }
-
-  async function eqObraFecharPonto() {
-    var funcId = eid(document.getElementById('eqo-ponto-func').value);
-    var ini = document.getElementById('eqo-ini').value;
-    var fim = document.getElementById('eqo-fim').value;
-    if (!funcId) return A().toast('Selecione o funcionario.', true);
-    var ok = await okConfirm('Fechar ponto do periodo e gerar despesa no financeiro?', { confirmText: 'Fechar' });
-    if (!ok) return;
-    var res = await sb.from('ponto_diario').select('*')
-      .eq('funcionario_id', funcId)
-      .eq('pago_em_fechamento', false)
-      .neq('status', 'ESTORNADO')
-      .gte('hora_registro', ini + 'T00:00:00')
-      .lte('hora_registro', fim + 'T23:59:59');
-    if (res.error) return A().toast(res.error.message, true);
-    var regs = res.data || [];
-    var diarias = (typeof rvCalcularTotalDiarias === 'function') ? rvCalcularTotalDiarias(regs) : 0;
-    var func = (await sb.from('equipe').select('*').eq('id', funcId).single()).data;
-    if (!func) return A().toast('Funcionario nao encontrado.', true);
-    var valor = diarias * Number(func.valor_diaria || 0);
-    if (valor <= 0) return A().toast('Nada a fechar neste periodo.', true);
-    var obraId = (A().obraMaisFrequente && A().obraMaisFrequente(regs)) || func.obra_atual_id || null;
+    loading(true);
     try {
       var chain = await A().insertDespesaComLog({
         item: 'DIARIA OBRA',
-        equipe_id: funcId,
-        fornecedor: func.nome,
+        equipe_id: c.id,
+        fornecedor: c.nome,
         custo: valor,
-        observacao: 'Periodo ' + A().dataBR(ini) + ' a ' + A().dataBR(fim) + ' — ' + diarias.toFixed(2) + ' diarias',
+        observacao: 'Periodo ' + per + ' - ' + calc.diarias.toFixed(2) + ' diarias',
         status: 'PENDENTE',
-        obra_id: obraId,
+        obra_id: c.obra_atual_id || null,
         categoria: 'ponto'
       });
-      var ids = regs.map(function (r) { return r.id; });
+      var ids = calc.registros.map(function (r) { return r.id; });
       var upd = await sb.from('ponto_diario').update({
         pago_em_fechamento: true,
         fechamento_uid: chain.despesa.uid,
@@ -341,197 +438,744 @@
       }).in('id', ids);
       if (upd.error) {
         await A().estornarDespesaPorUid(chain.despesa.uid);
-        return A().toast('Fechamento desfeito: falha ao vincular batidas. ' + upd.error.message, true);
+        loading(false);
+        return toast('Fechamento desfeito: ' + upd.error.message, true);
       }
-      A().toast('Periodo fechado. Despesa e log gerados.');
-      eqObraCarregarPonto();
+      toast('Periodo fechado. Despesa e log gerados.');
+      await carregarDados();
+      eqObraSaldoRender();
+      eqObraRenderLista();
     } catch (e) {
-      A().toast(e.message || e, true);
-    }
+      toast(e.message || e, true);
+    } finally { loading(false); }
   }
 
-  async function eqObraEstornarFechamento(uid) {
-    var ok = await okConfirm('Estornar este fechamento? Batidas voltam a ficar abertas. Despesa e log ficam ESTORNADO (nao apaga).', { danger: true, confirmText: 'Estornar' });
+  async function eqObraSaldoEstornar() {
+    var funcId = val('eqs-id');
+    var c = CACHE.equipe.find(function (e) { return String(e.id) === String(funcId); });
+    if (!c) return;
+    var desp = await sb.from('despesas').select('uid,id,valor_pago,custo,status')
+      .eq('equipe_id', c.id).eq('categoria', 'ponto').neq('status', 'ESTORNADO')
+      .order('data', { ascending: false }).limit(1);
+    if (desp.error) return toast(desp.error.message, true);
+    var d = (desp.data || [])[0];
+    if (!d) return toast('Nenhum fechamento para estornar.', true);
+    var ok = await confirmar('Estornar este fechamento? As batidas voltam a ficar pendentes (nao apaga o historico).', { danger: true, confirmText: 'Estornar' });
     if (!ok) return;
+    loading(true);
     try {
-      await A().estornarDespesaPorUid(uid);
-      var upd = await sb.from('ponto_diario').update({
-        pago_em_fechamento: false,
-        fechamento_uid: null,
-        despesa_uid: null
-      }).eq('fechamento_uid', uid).neq('status', 'ESTORNADO');
+      await A().estornarDespesaPorUid(d.uid);
+      var upd = await sb.from('ponto_diario').update({ pago_em_fechamento: false, fechamento_uid: null, despesa_uid: null })
+        .eq('fechamento_uid', d.uid);
       if (upd.error) throw upd.error;
-      A().toast('Fechamento estornado. Batidas reabertas.');
-      eqObraCarregarPonto();
+      toast('Fechamento estornado. Batidas reabertas.');
+      await carregarDados();
+      eqObraSaldoRender();
+      eqObraRenderLista();
     } catch (e) {
-      A().toast(e.message || e, true);
-    }
+      toast(e.message || e, true);
+    } finally { loading(false); }
   }
 
-  async function eqObraMedicao() {
-    var body = document.getElementById('eq-obra-body');
-    var funcs = await sb.from('equipe').select('*').eq('tipo', 'Empreita').eq('ativo', true).order('nome');
-    if (funcs.error) { body.innerHTML = '<div class="text-red-600">' + A().esc(funcs.error.message) + '</div>'; return; }
-    var lista = funcs.data || [];
-    body.innerHTML = ''
-      + '<div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">'
-      +   '<div class="md:col-span-2"><label class="text-xs font-bold text-slate-500 uppercase">Empreiteiro</label>'
-      +   '<select id="eqo-emp-func" onchange="eqObraCarregarMedicao()" class="w-full p-2.5 border rounded-lg">' + lista.map(function (f) {
-        return '<option value="' + f.id + '">' + A().esc(f.nome) + ' (' + A().money(f.valor_contrato) + ')</option>';
-      }).join('') + '</select></div>'
+  function eqObraSaldoRecibo() {
+    var funcId = val('eqs-id');
+    var c = CACHE.equipe.find(function (e) { return String(e.id) === String(funcId); });
+    if (!c) return;
+    var total = val('eqs-tot') || '0';
+    var valor = el('eqs-val') ? el('eqs-val').textContent : '';
+    var emp = (typeof getCompany === 'function') ? getCompany() : { name: 'NEVOA' };
+    var html = '<div style="font-family:Arial;padding:30px;border:2px solid #1e293b;border-radius:8px">'
+      + '<h1 style="font-size:22px;margin:0 0 10px">RECIBO DE DIARIAS</h1>'
+      + '<p style="font-size:15px">Recebi de <b>' + esc(emp.name || 'NEVOA') + '</b> a importancia de <b>' + esc(valor) + '</b>, referente a <b>' + esc(total) + ' diarias</b>, com a diaria acordada em <b>' + money(c.valor_diaria || 0) + '</b>.</p>'
+      + '<p style="margin-top:60px;border-top:1px solid #000;width:60%;padding-top:8px"><b>' + esc((c.nome || '').toUpperCase()) + '</b><br>CPF: ' + esc(c.cpf || '____________') + '</p>'
+      + '</div>';
+    var p = el('print-area');
+    if (p) { p.innerHTML = html; setTimeout(function () { window.print(); }, 300); }
+  }
+
+  // ---------- Saldo Metros ----------
+  function eqObraSaldoMetros(tercId) {
+    var t = CACHE.terc.find(function (x) { return String(x.id) === String(tercId); });
+    if (!t) return toast('Terceirizado nao encontrado.', true);
+    var html = ''
+      + '<input type="hidden" id="eqm-id" value="' + escAttr(tercId) + '">'
+      + '<div class="bg-slate-50 rounded-lg p-3 text-sm mb-3">' + esc(t.nome) + ' - Metro: <b>' + money(t.valor_metro || 0) + '</b></div>'
+      + '<div class="grid grid-cols-3 gap-2 mb-3">'
+      +   '<div><label class="text-[10px] font-bold text-slate-500 uppercase">Inicio</label><input id="eqm-ini" type="date" value="' + janFirst() + '" onchange="eqObraSaldoMetrosRender()" class="w-full p-2 border rounded-lg text-sm"></div>'
+      +   '<div><label class="text-[10px] font-bold text-slate-500 uppercase">Fim</label><input id="eqm-fim" type="date" value="' + lastDay() + '" onchange="eqObraSaldoMetrosRender()" class="w-full p-2 border rounded-lg text-sm"></div>'
+      +   '<div><label class="text-[10px] font-bold text-slate-500 uppercase">Status</label><select id="eqm-status" onchange="eqObraSaldoMetrosRender()" class="w-full p-2 border rounded-lg text-sm"><option value="PENDENTE">Pendentes</option><option value="PAGO">Pagos</option><option value="TODOS">Todos</option></select></div>'
       + '</div>'
-      + '<form onsubmit="eqObraLancarMedicao(event)" class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">'
-      +   '<input type="date" id="eqo-med-data" required value="' + A().hojeISO() + '" class="p-2.5 border rounded-lg">'
-      +   '<input type="number" step="0.01" id="eqo-med-pct" required placeholder="% medido" class="p-2.5 border rounded-lg">'
-      +   '<input type="text" id="eqo-med-desc" placeholder="Descricao" class="p-2.5 border rounded-lg">'
-      +   '<button class="bg-emerald-600 text-white rounded-lg font-bold">Lancar medicao</button>'
-      + '</form>'
-      + '<div id="eqo-med-resumo" class="mb-3 text-sm"></div>'
-      + '<div id="eqo-med-lista"></div>';
-    if (lista.length) eqObraCarregarMedicao();
+      + '<div id="eqm-lista" class="border rounded-lg overflow-hidden mb-3"></div>'
+      + '<div class="bg-slate-50 rounded-lg p-3 mb-3"><p class="text-xs font-bold text-slate-600 mb-2">Lancar metros</p>'
+      +   '<div class="grid grid-cols-4 gap-2">'
+      +     '<input id="eqm-aj-data" type="date" value="' + hojeISO() + '" class="p-2 border rounded-lg text-xs">'
+      +     '<input id="eqm-aj-metros" type="number" step="0.01" min="0" placeholder="Metros" class="p-2 border rounded-lg text-xs">'
+      +     '<input id="eqm-aj-desc" type="text" placeholder="Justificativa" class="p-2 border rounded-lg text-xs">'
+      +     '<button onclick="eqObraSaldoMetrosLancar()" class="bg-indigo-600 text-white rounded-lg font-bold text-xs">Lancar</button>'
+      +   '</div></div>'
+      + '<div class="flex items-center justify-between flex-wrap gap-2 border-t pt-3">'
+      +   '<div>Metros: <b id="eqm-tot" class="text-indigo-700">0.00</b> - Valor: <b id="eqm-val" class="text-green-600">R$ 0,00</b></div>'
+      +   '<div class="flex gap-2">'
+      +     '<button onclick="eqObraSaldoMetrosRecibo()" class="bg-slate-700 text-white px-3 py-2 rounded-lg font-bold text-xs">Recibo</button>'
+      +     '<button onclick="eqObraSaldoMetrosEstornar()" class="bg-amber-600 text-white px-3 py-2 rounded-lg font-bold text-xs">Estornar ultimo</button>'
+      +     '<button onclick="eqObraSaldoMetrosFechar()" class="bg-blue-700 text-white px-3 py-2 rounded-lg font-bold text-xs">Conferido (fechar)</button>'
+      +   '</div></div>';
+    abrirModal(html, 'Saldo de Metros', 'max-w-3xl');
+    eqObraSaldoMetrosRender();
   }
 
-  function calcularResumoEmpreita(func, medicoes, ini, fim) {
-    var contrato = Number(func.valor_contrato || 0);
-    var filtradas = (medicoes || []).filter(function (m) {
-      if (String(m.equipe_id) !== String(func.id)) return false;
-      if (ini && m.data_medicao < ini) return false;
-      if (fim && m.data_medicao > fim) return false;
-      if (String(m.status || '').toUpperCase() === 'ESTORNADO') return false;
-      return true;
-    });
-    var pct = filtradas.reduce(function (s, m) { return s + Number(m.percentual || 0); }, 0);
-    var valor = filtradas.reduce(function (s, m) { return s + Number(m.valor || 0); }, 0);
-    return { contrato: contrato, percentual: pct, valor: valor, restante: Math.max(contrato - valor, 0), medicoes: filtradas };
+  function eqObraSaldoMetrosRender() {
+    var tercId = val('eqm-id');
+    var ini = val('eqm-ini');
+    var fim = val('eqm-fim');
+    var status = val('eqm-status') || 'PENDENTE';
+    var t = CACHE.terc.find(function (x) { return String(x.id) === String(tercId); });
+    if (!t) return;
+    var calc = calcMetros(tercId, ini, fim);
+    var regs = calc.registros.slice();
+    if (status === 'PENDENTE') regs = regs.filter(function (p) { return p.status !== 'PAGO'; });
+    else if (status === 'PAGO') regs = regs.filter(function (p) { return p.status === 'PAGO'; });
+    var total = regs.reduce(function (s, p) { return s + Number(p.metros || 0); }, 0);
+    var linhas = regs.map(function (p) {
+      return '<tr class="border-b"><td class="p-2 text-xs">' + dataBR(p.data_registro) + '</td>'
+        + '<td class="p-2 text-center text-xs font-bold">' + Number(p.metros || 0).toFixed(2) + ' m</td>'
+        + '<td class="p-2 text-center"><span class="px-2 py-0.5 rounded text-[9px] font-bold ' + (p.status === 'PAGO' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700') + '">' + (p.status === 'PAGO' ? 'PAGO' : 'PENDENTE') + '</span></td></tr>';
+    }).join('');
+    var lista = el('eqm-lista');
+    if (lista) lista.innerHTML = '<table class="w-full"><thead class="bg-slate-100"><tr class="text-left text-slate-500 text-[10px] uppercase"><th class="p-2">Data</th><th class="p-2 text-center">Metros</th><th class="p-2 text-center">Status</th></tr></thead><tbody>'
+      + (linhas || '<tr><td colspan="3" class="p-4 text-center text-slate-400 text-xs">Sem registros.</td></tr>') + '</tbody></table>';
+    if (el('eqm-tot')) el('eqm-tot').textContent = total.toFixed(2);
+    if (el('eqm-val')) el('eqm-val').textContent = money(total * Number(t.valor_metro || 0));
   }
 
-  async function eqObraCarregarMedicao() {
-    var funcId = eid(document.getElementById('eqo-emp-func').value);
-    if (!funcId) return;
-    var func = (await sb.from('equipe').select('*').eq('id', funcId).single()).data;
-    var med = await sb.from('medicoes_empreita').select('*').eq('equipe_id', funcId).order('data_medicao', { ascending: false });
-    var rows = med.data || [];
-    var vigentes = rows.filter(function (m) { return m.status !== 'ESTORNADO'; });
-    var resumo = calcularResumoEmpreita(func, vigentes);
-    document.getElementById('eqo-med-resumo').innerHTML = 'Contrato: <b>' + A().money(resumo.contrato) + '</b> · Medido: <b>' + resumo.percentual.toFixed(2) + '%</b> (' + A().money(resumo.valor) + ') · Restante: <b>' + A().money(resumo.restante) + '</b>';
-    document.getElementById('eqo-med-lista').innerHTML = '<table class="w-full text-sm"><thead><tr class="text-left text-slate-500"><th class="py-1">Data</th><th>%</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody>'
-      + rows.map(function (m) {
-        var acoes = '';
-        if (m.status === 'PENDENTE') {
-          acoes = '<button onclick="eqObraPagarMedicao(\'' + m.id + '\')" class="text-emerald-700 font-bold text-xs mr-2">Pagar</button>'
-            + '<button onclick="eqObraEstornarMedicao(\'' + m.id + '\')" class="text-red-600 font-bold text-xs">Estornar</button>';
-        } else if (m.status === 'PAGO') {
-          acoes = '<button onclick="eqObraEstornarMedicao(\'' + m.id + '\')" class="text-red-600 font-bold text-xs">Estornar</button>';
-        }
-        return '<tr class="border-t' + (m.status === 'ESTORNADO' ? ' opacity-50' : '') + '"><td class="py-1">' + A().dataBR(m.data_medicao) + '</td><td>' + Number(m.percentual).toFixed(2) + '</td><td>' + A().money(m.valor) + '</td><td>' + A().esc(m.status) + '</td><td>' + acoes + '</td></tr>';
-      }).join('') + '</tbody></table>';
+  async function eqObraSaldoMetrosLancar() {
+    var tercId = val('eqm-id');
+    var metros = Number(val('eqm-aj-metros')) || 0;
+    var data = val('eqm-aj-data');
+    if (!data || metros <= 0) return toast('Informe data e metros.', true);
+    var t = CACHE.terc.find(function (x) { return String(x.id) === String(tercId); });
+    var res = await sb.from('producao_terc').insert([{
+      terceirizado_id: tercId,
+      obra_id: (t && t.obra_atual_id) || null,
+      data_registro: data,
+      metros: metros,
+      status: 'PENDENTE',
+      observacao: val('eqm-aj-desc') || 'Lancamento manual'
+    }]);
+    if (res.error) return toast(res.error.message, true);
+    toast('Metros lancados.');
+    await carregarDados();
+    eqObraSaldoMetrosRender();
+    eqObraRenderLista();
   }
 
-  async function eqObraLancarMedicao(ev) {
-    ev.preventDefault();
-    var funcId = eid(document.getElementById('eqo-emp-func').value);
-    if (!funcId) return A().toast('Selecione o empreiteiro.', true);
-    var func = (await sb.from('equipe').select('*').eq('id', funcId).single()).data;
-    if (!func) return A().toast('Empreiteiro nao encontrado.', true);
-    var pct = Number(document.getElementById('eqo-med-pct').value) || 0;
-    if (pct <= 0) return A().toast('Informe o percentual.', true);
-    var med = await sb.from('medicoes_empreita').select('percentual,status').eq('equipe_id', funcId);
-    var ja = (med.data || []).filter(function (m) { return m.status !== 'ESTORNADO'; })
-      .reduce(function (s, m) { return s + Number(m.percentual || 0); }, 0);
-    if (ja + pct > 100.01) return A().toast('Percentual acumulado ultrapassa 100%.', true);
-    var valor = (Number(func.valor_contrato || 0) * pct) / 100;
+  async function eqObraSaldoMetrosFechar() {
+    var tercId = val('eqm-id');
+    var ini = val('eqm-ini');
+    var fim = val('eqm-fim');
+    var t = CACHE.terc.find(function (x) { return String(x.id) === String(tercId); });
+    if (!t) return;
+    var calc = calcMetros(tercId, ini, fim);
+    var regs = calc.registros.filter(function (p) { return p.status !== 'PAGO'; });
+    var metros = regs.reduce(function (s, p) { return s + Number(p.metros || 0); }, 0);
+    if (metros <= 0) return toast('Nada pendente.', true);
+    var valor = metros * Number(t.valor_metro || 0);
+    var ok = await confirmar('Fechar ' + metros.toFixed(2) + ' m = ' + money(valor) + '?', { confirmText: 'Fechar' });
+    if (!ok) return;
+    loading(true);
+    try {
+      var chain = await A().insertDespesaComLog({
+        item: 'TERCEIRIZADO',
+        fornecedor: t.nome,
+        custo: valor,
+        observacao: 'Producao ' + metros.toFixed(2) + ' m - ' + t.nome,
+        status: 'PENDENTE',
+        obra_id: t.obra_atual_id || null,
+        categoria: 'terceirizado'
+      });
+      var ids = regs.map(function (p) { return p.id; });
+      var upd = await sb.from('producao_terc').update({
+        status: 'PAGO',
+        fechamento_uid: chain.despesa.uid,
+        despesa_uid: chain.despesa.uid
+      }).in('id', ids);
+      if (upd.error) {
+        await A().estornarDespesaPorUid(chain.despesa.uid);
+        loading(false);
+        return toast('Pagamento desfeito: ' + upd.error.message, true);
+      }
+      toast('Producao paga. Despesa e log gerados.');
+      await carregarDados();
+      eqObraSaldoMetrosRender();
+      eqObraRenderLista();
+    } catch (e) {
+      toast(e.message || e, true);
+    } finally { loading(false); }
+  }
+
+  async function eqObraSaldoMetrosEstornar() {
+    var tercId = val('eqm-id');
+    var t = CACHE.terc.find(function (x) { return String(x.id) === String(tercId); });
+    if (!t) return;
+    var desp = await sb.from('despesas').select('uid,id,status')
+      .eq('categoria', 'terceirizado').eq('fornecedor', t.nome).neq('status', 'ESTORNADO')
+      .order('data', { ascending: false }).limit(1);
+    if (desp.error) return toast(desp.error.message, true);
+    var d = (desp.data || [])[0];
+    if (!d) return toast('Nenhum pagamento para estornar.', true);
+    var ok = await confirmar('Estornar este pagamento? Os metros voltam a pendente (nao apaga o historico).', { danger: true, confirmText: 'Estornar' });
+    if (!ok) return;
+    loading(true);
+    try {
+      await A().estornarDespesaPorUid(d.uid);
+      var upd = await sb.from('producao_terc').update({ status: 'PENDENTE', fechamento_uid: null, despesa_uid: null })
+        .eq('fechamento_uid', d.uid).eq('status', 'PAGO');
+      if (upd.error) throw upd.error;
+      toast('Pagamento estornado. Metros reabertos.');
+      await carregarDados();
+      eqObraSaldoMetrosRender();
+      eqObraRenderLista();
+    } catch (e) {
+      toast(e.message || e, true);
+    } finally { loading(false); }
+  }
+
+  function eqObraSaldoMetrosRecibo() {
+    var tercId = val('eqm-id');
+    var t = CACHE.terc.find(function (x) { return String(x.id) === String(tercId); });
+    if (!t) return;
+    var emp = (typeof getCompany === 'function') ? getCompany() : { name: 'NEVOA' };
+    var html = '<div style="font-family:Arial;padding:30px;border:2px solid #1e293b;border-radius:8px">'
+      + '<h1 style="font-size:22px;margin:0 0 10px">RECIBO DE METRAGEM</h1>'
+      + '<p style="font-size:15px">Recebi de <b>' + esc(emp.name || 'NEVOA') + '</b> a importancia de <b>' + esc(el('eqm-val') ? el('eqm-val').textContent : '') + '</b>, referente a <b>' + esc(el('eqm-tot') ? el('eqm-tot').textContent : '0') + ' metros</b>, ao valor de <b>' + money(t.valor_metro || 0) + '/m</b>.</p>'
+      + '<p style="margin-top:60px;border-top:1px solid #000;width:60%;padding-top:8px"><b>' + esc((t.nome || '').toUpperCase()) + '</b><br>CPF/CNPJ: ' + esc(t.cpf_cnpj || '____________') + '</p>'
+      + '</div>';
+    var p = el('print-area');
+    if (p) { p.innerHTML = html; setTimeout(function () { window.print(); }, 300); }
+  }
+
+  // ---------- Saldo Empreita ----------
+  function eqObraSaldoEmpreita(eqId) {
+    var c = CACHE.equipe.find(function (e) { return String(e.id) === String(eqId); });
+    if (!c) return toast('Empreiteiro nao encontrado.', true);
+    var html = ''
+      + '<input type="hidden" id="eqe-id" value="' + escAttr(eqId) + '">'
+      + '<div class="grid grid-cols-4 gap-2 mb-3">'
+      +   '<div class="bg-white p-2 rounded-lg border"><div class="text-[10px] font-bold text-slate-500 uppercase">Contrato</div><div id="eqe-contrato" class="font-black text-slate-800">-</div></div>'
+      +   '<div class="bg-white p-2 rounded-lg border"><div class="text-[10px] font-bold text-slate-500 uppercase">Pago</div><div id="eqe-pago" class="font-black text-emerald-700">-</div></div>'
+      +   '<div class="bg-amber-50 p-2 rounded-lg border border-amber-200"><div class="text-[10px] font-bold text-amber-700 uppercase">A pagar</div><div id="eqe-pend" class="font-black text-amber-800">-</div></div>'
+      +   '<div class="bg-white p-2 rounded-lg border"><div class="text-[10px] font-bold text-slate-500 uppercase">Saldo</div><div id="eqe-saldo" class="font-black text-indigo-700">-</div></div>'
+      + '</div>'
+      + '<div class="grid grid-cols-3 gap-2 mb-3">'
+      +   '<div><label class="text-[10px] font-bold text-slate-500 uppercase">Inicio</label><input id="eqe-ini" type="date" value="' + janFirst() + '" onchange="eqObraSaldoEmpreitaRender()" class="w-full p-2 border rounded-lg text-sm"></div>'
+      +   '<div><label class="text-[10px] font-bold text-slate-500 uppercase">Fim</label><input id="eqe-fim" type="date" value="' + lastDay() + '" onchange="eqObraSaldoEmpreitaRender()" class="w-full p-2 border rounded-lg text-sm"></div>'
+      +   '<div><label class="text-[10px] font-bold text-slate-500 uppercase">Status</label><select id="eqe-status" onchange="eqObraSaldoEmpreitaRender()" class="w-full p-2 border rounded-lg text-sm"><option value="PENDENTE">Pendentes</option><option value="PAGO">Pagos</option><option value="TODOS">Todos</option></select></div>'
+      + '</div>'
+      + '<div id="eqe-lista" class="border rounded-lg overflow-hidden mb-3"></div>'
+      + '<div class="bg-slate-50 rounded-lg p-3 mb-3"><p class="text-xs font-bold text-slate-600 mb-2">Lancar medicao (% do contrato)</p>'
+      +   '<div class="grid grid-cols-4 gap-2">'
+      +     '<input id="eqe-med-data" type="date" value="' + hojeISO() + '" class="p-2 border rounded-lg text-xs">'
+      +     '<input id="eqe-med-pct" type="number" step="0.01" min="0" max="100" placeholder="%" class="p-2 border rounded-lg text-xs">'
+      +     '<input id="eqe-med-desc" type="text" placeholder="Servico medido" class="p-2 border rounded-lg text-xs">'
+      +     '<button onclick="eqObraSaldoEmpreitaMedir()" class="bg-amber-700 text-white rounded-lg font-bold text-xs">Lancar</button>'
+      +   '</div></div>'
+      + '<div class="flex items-center justify-between flex-wrap gap-2 border-t pt-3">'
+      +   '<div>A pagar: <b id="eqe-tot" class="text-amber-800">R$ 0,00</b></div>'
+      +   '<div class="flex gap-2">'
+      +     '<button onclick="eqObraSaldoEmpreitaRecibo()" class="bg-slate-700 text-white px-3 py-2 rounded-lg font-bold text-xs">Recibo</button>'
+      +     '<button onclick="eqObraSaldoEmpreitaEstornar()" class="bg-amber-600 text-white px-3 py-2 rounded-lg font-bold text-xs">Estornar ultimo</button>'
+      +     '<button onclick="eqObraSaldoEmpreitaFechar()" class="bg-blue-700 text-white px-3 py-2 rounded-lg font-bold text-xs">Conferido (fechar)</button>'
+      +   '</div></div>';
+    abrirModal(html, 'Medicao de Empreita', 'max-w-4xl');
+    eqObraSaldoEmpreitaRender();
+  }
+
+  function eqObraSaldoEmpreitaRender() {
+    var eqId = val('eqe-id');
+    var ini = val('eqe-ini');
+    var fim = val('eqe-fim');
+    var status = val('eqe-status') || 'PENDENTE';
+    var c = CACHE.equipe.find(function (e) { return String(e.id) === String(eqId); });
+    if (!c) return;
+    var r = calcEmpreita(eqId, ini, fim);
+    if (el('eqe-contrato')) el('eqe-contrato').textContent = money(r.contrato);
+    if (el('eqe-pago')) el('eqe-pago').textContent = money(r.pago);
+    if (el('eqe-pend')) el('eqe-pend').textContent = money(r.pend);
+    if (el('eqe-saldo')) el('eqe-saldo').textContent = money(r.saldo);
+    var regs = r.medicoes.slice();
+    if (status === 'PENDENTE') regs = regs.filter(function (m) { return m.status !== 'PAGO'; });
+    else if (status === 'PAGO') regs = regs.filter(function (m) { return m.status === 'PAGO'; });
+    var total = regs.reduce(function (s, m) { return s + Number(m.valor || 0); }, 0);
+    var linhas = regs.map(function (m) {
+      return '<tr class="border-b"><td class="p-2 text-xs">' + dataBR(m.data_medicao) + '</td>'
+        + '<td class="p-2 text-xs text-slate-600">' + esc(m.descricao || '-') + '</td>'
+        + '<td class="p-2 text-center text-xs font-bold text-amber-700">' + Number(m.percentual || 0).toFixed(2) + '%</td>'
+        + '<td class="p-2 text-right text-xs font-bold">' + money(m.valor) + '</td>'
+        + '<td class="p-2 text-center"><span class="px-2 py-0.5 rounded text-[9px] font-bold ' + (m.status === 'PAGO' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700') + '">' + (m.status === 'PAGO' ? 'PAGO' : 'PENDENTE') + '</span></td></tr>';
+    }).join('');
+    var lista = el('eqe-lista');
+    if (lista) lista.innerHTML = '<table class="w-full"><thead class="bg-slate-100"><tr class="text-left text-slate-500 text-[10px] uppercase"><th class="p-2">Data</th><th class="p-2">Servico</th><th class="p-2 text-center">%</th><th class="p-2 text-right">Valor</th><th class="p-2 text-center">Status</th></tr></thead><tbody>'
+      + (linhas || '<tr><td colspan="5" class="p-4 text-center text-slate-400 text-xs">Sem medicoes.</td></tr>') + '</tbody></table>';
+    if (el('eqe-tot')) el('eqe-tot').textContent = money(total);
+  }
+
+  async function eqObraSaldoEmpreitaMedir() {
+    var eqId = val('eqe-id');
+    var data = val('eqe-med-data');
+    var pct = Number(val('eqe-med-pct')) || 0;
+    if (!data || pct <= 0) return toast('Informe data e percentual.', true);
+    var c = CACHE.equipe.find(function (e) { return String(e.id) === String(eqId); });
+    if (!c) return;
+    var r = calcEmpreita(eqId);
+    if (r.pctExec + pct > 100.01) return toast('Percentual acumulado ultrapassa 100%.', true);
+    var valor = (Number(c.valor_contrato || 0) * pct) / 100;
     var res = await sb.from('medicoes_empreita').insert([{
-      equipe_id: funcId,
-      obra_id: func.obra_atual_id || null,
-      data_medicao: document.getElementById('eqo-med-data').value,
+      equipe_id: eqId,
+      obra_id: c.obra_atual_id || null,
+      data_medicao: data,
       percentual: pct,
       valor: valor,
-      descricao: document.getElementById('eqo-med-desc').value.trim() || null,
+      descricao: val('eqe-med-desc') || 'Medicao de empreita',
       status: 'PENDENTE'
     }]);
-    if (res.error) return A().toast(res.error.message, true);
-    A().toast('Medicao lancada.');
-    document.getElementById('eqo-med-pct').value = '';
-    document.getElementById('eqo-med-desc').value = '';
-    eqObraCarregarMedicao();
+    if (res.error) return toast(res.error.message, true);
+    toast('Medicao lancada.');
+    await carregarDados();
+    eqObraSaldoEmpreitaRender();
+    eqObraRenderLista();
   }
 
-  async function eqObraPagarMedicao(id) {
-    var ok = await okConfirm('Pagar esta medicao? Gera despesa e log no financeiro.', { confirmText: 'Pagar' });
+  async function eqObraSaldoEmpreitaFechar() {
+    var eqId = val('eqe-id');
+    var ini = val('eqe-ini');
+    var fim = val('eqe-fim');
+    var c = CACHE.equipe.find(function (e) { return String(e.id) === String(eqId); });
+    if (!c) return;
+    var r = calcEmpreita(eqId, ini, fim);
+    var regs = r.medicoes.filter(function (m) { return m.status !== 'PAGO'; });
+    var valor = regs.reduce(function (s, m) { return s + Number(m.valor || 0); }, 0);
+    var pct = regs.reduce(function (s, m) { return s + Number(m.percentual || 0); }, 0);
+    if (valor <= 0) return toast('Nada pendente.', true);
+    var ok = await confirmar('Fechar ' + money(valor) + ' (' + pct.toFixed(2) + '% do contrato)?', { confirmText: 'Fechar' });
     if (!ok) return;
-    var m = (await sb.from('medicoes_empreita').select('*').eq('id', id).single()).data;
-    if (!m || m.status !== 'PENDENTE') return A().toast('Medicao nao esta pendente.', true);
-    var func = (await sb.from('equipe').select('*').eq('id', m.equipe_id).single()).data;
+    loading(true);
     try {
       var chain = await A().insertDespesaComLog({
         item: 'EMPREITA',
-        equipe_id: m.equipe_id,
-        fornecedor: func.nome,
-        custo: m.valor,
-        observacao: 'Medicao ' + Number(m.percentual).toFixed(2) + '% — ' + func.nome,
+        equipe_id: c.id,
+        fornecedor: c.nome,
+        custo: valor,
+        observacao: 'Medicao ' + pct.toFixed(2) + '% - ' + c.nome,
         status: 'PENDENTE',
-        obra_id: m.obra_id || func.obra_atual_id || null,
+        obra_id: c.obra_atual_id || null,
         categoria: 'empreita'
       });
-      var upd = await sb.from('medicoes_empreita').update({ status: 'PAGO', fechamento_uid: chain.despesa.uid, despesa_uid: chain.despesa.uid }).eq('id', id);
+      var ids = regs.map(function (m) { return m.id; });
+      var upd = await sb.from('medicoes_empreita').update({
+        status: 'PAGO',
+        fechamento_uid: chain.despesa.uid,
+        despesa_uid: chain.despesa.uid
+      }).in('id', ids);
       if (upd.error) {
         await A().estornarDespesaPorUid(chain.despesa.uid);
-        return A().toast('Pagamento desfeito: falha ao vincular medicao. ' + upd.error.message, true);
+        loading(false);
+        return toast('Pagamento desfeito: ' + upd.error.message, true);
       }
-      A().toast('Medicao paga. Despesa e log gerados.');
-      eqObraCarregarMedicao();
+      toast('Medicao paga. Despesa e log gerados.');
+      await carregarDados();
+      eqObraSaldoEmpreitaRender();
+      eqObraRenderLista();
     } catch (e) {
-      A().toast(e.message || e, true);
-    }
+      toast(e.message || e, true);
+    } finally { loading(false); }
   }
 
-  async function eqObraEstornarMedicao(id) {
-    var ok = await okConfirm('Estornar esta medicao? Nao apaga o historico.', { danger: true, confirmText: 'Estornar' });
+  async function eqObraSaldoEmpreitaEstornar() {
+    var eqId = val('eqe-id');
+    var desp = await sb.from('despesas').select('uid,id,status')
+      .eq('equipe_id', eqId).eq('categoria', 'empreita').neq('status', 'ESTORNADO')
+      .order('data', { ascending: false }).limit(1);
+    if (desp.error) return toast(desp.error.message, true);
+    var d = (desp.data || [])[0];
+    if (!d) return toast('Nenhum pagamento para estornar.', true);
+    var ok = await confirmar('Estornar esta medicao? Volta a pendente (nao apaga o historico).', { danger: true, confirmText: 'Estornar' });
     if (!ok) return;
-    var m = (await sb.from('medicoes_empreita').select('*').eq('id', id).single()).data;
-    if (!m || m.status === 'ESTORNADO') return;
+    loading(true);
     try {
-      if (m.fechamento_uid) await A().estornarDespesaPorUid(m.fechamento_uid);
-      var upd = await sb.from('medicoes_empreita').update({ status: 'ESTORNADO' }).eq('id', id);
+      await A().estornarDespesaPorUid(d.uid);
+      var upd = await sb.from('medicoes_empreita').update({ status: 'PENDENTE', fechamento_uid: null, despesa_uid: null })
+        .eq('fechamento_uid', d.uid).eq('status', 'PAGO');
       if (upd.error) throw upd.error;
-      A().toast('Medicao estornada.');
-      eqObraCarregarMedicao();
+      toast('Medicao estornada.');
+      await carregarDados();
+      eqObraSaldoEmpreitaRender();
+      eqObraRenderLista();
     } catch (e) {
-      A().toast(e.message || e, true);
+      toast(e.message || e, true);
+    } finally { loading(false); }
+  }
+
+  function eqObraSaldoEmpreitaRecibo() {
+    var eqId = val('eqe-id');
+    var c = CACHE.equipe.find(function (e) { return String(e.id) === String(eqId); });
+    if (!c) return;
+    var emp = (typeof getCompany === 'function') ? getCompany() : { name: 'NEVOA' };
+    var html = '<div style="font-family:Arial;padding:30px;border:2px solid #1e293b;border-radius:8px">'
+      + '<h1 style="font-size:22px;margin:0 0 10px">RECIBO DE EMPREITA</h1>'
+      + '<p style="font-size:15px">Recebi de <b>' + esc(emp.name || 'NEVOA') + '</b> a importancia de <b>' + esc(el('eqe-tot') ? el('eqe-tot').textContent : '') + '</b>, referente a medicao de empreita do contrato de <b>' + money(c.valor_contrato || 0) + '</b>.</p>'
+      + '<p style="margin-top:60px;border-top:1px solid #000;width:60%;padding-top:8px"><b>' + esc((c.nome || '').toUpperCase()) + '</b><br>CPF: ' + esc(c.cpf || '____________') + '</p>'
+      + '</div>';
+    var p = el('print-area');
+    if (p) { p.innerHTML = html; setTimeout(function () { window.print(); }, 300); }
+  }
+
+  // ---------- Cadastro ----------
+  function eqObraOpenForm(id, origem) {
+    var c = {
+      id: '', origem: '', nome: '', categoria: 'Servente', telefone: '', cpf: '', rg: '',
+      endereco: '', chave_pix: '', obra_atual_id: '', data_contrato: '', valor: 0, ativo: true
+    };
+    if (id) {
+      var found = colaboradores().find(function (x) { return String(x.id) === String(id) && (!origem || x.origem === origem); });
+      if (!found) return toast('Colaborador nao encontrado.', true);
+      c.id = found.id;
+      c.origem = found.origem;
+      c.nome = found.nome;
+      c.categoria = found.origem === 'terceirizado' ? 'Terceirizado' : (found.tipo === 'empreita' ? 'Empreita' : found.categoria);
+      c.telefone = found.telefone;
+      c.cpf = found.cpf;
+      c.rg = found.rg;
+      c.endereco = found.endereco;
+      c.chave_pix = found.chave_pix;
+      c.obra_atual_id = found.obra_atual_id;
+      c.data_contrato = found.data_contrato;
+      c.valor = found.tipo === 'empreita' ? found.valor_contrato : found.valor_base;
+      c.ativo = found.ativo;
+    }
+    var obras = CACHE.obras;
+    var cats = ['Pedreiro', 'Servente', 'Terceirizado', 'Empreita'];
+    var html = ''
+      + '<input type="hidden" id="eqp-id" value="' + escAttr(c.id) + '">'
+      + '<input type="hidden" id="eqp-origem" value="' + escAttr(c.origem) + '">'
+      + '<div class="space-y-3">'
+      +   '<div><label class="block text-[10px] font-bold text-slate-500 uppercase">Nome completo *</label>'
+      +   '<input id="eqp-nome" required value="' + escAttr(c.nome) + '" class="w-full p-2 border rounded-lg"></div>'
+      +   '<div class="grid grid-cols-2 gap-3">'
+      +     '<div><label class="block text-[10px] font-bold text-slate-500 uppercase">Categoria / Funcao</label>'
+      +     '<select id="eqp-cat" onchange="eqObraOnCat()" class="w-full p-2 border rounded-lg">'
+      +       cats.map(function (t) { return '<option' + (c.categoria === t ? ' selected' : '') + '>' + t + '</option>'; }).join('')
+      +     '</select></div>'
+      +     '<div><label class="block text-[10px] font-bold text-slate-500 uppercase">Telefone</label>'
+      +     '<input id="eqp-tel" value="' + escAttr(c.telefone) + '" class="w-full p-2 border rounded-lg"></div>'
+      +   '</div>'
+      +   '<div class="grid grid-cols-2 gap-3">'
+      +     '<div><label class="block text-[10px] font-bold text-slate-500 uppercase">CPF</label><input id="eqp-cpf" value="' + escAttr(c.cpf) + '" class="w-full p-2 border rounded-lg"></div>'
+      +     '<div><label class="block text-[10px] font-bold text-slate-500 uppercase">RG</label><input id="eqp-rg" value="' + escAttr(c.rg) + '" class="w-full p-2 border rounded-lg"></div>'
+      +   '</div>'
+      +   '<div><label class="block text-[10px] font-bold text-slate-500 uppercase">Endereco</label><input id="eqp-end" value="' + escAttr(c.endereco) + '" class="w-full p-2 border rounded-lg"></div>'
+      +   '<div><label class="block text-[10px] font-bold text-slate-500 uppercase">Chave PIX</label><input id="eqp-pix" value="' + escAttr(c.chave_pix) + '" class="w-full p-2 border rounded-lg"></div>'
+      +   '<div><label class="block text-[10px] font-bold text-slate-500 uppercase">Obra vinculada</label>'
+      +   '<select id="eqp-obra" class="w-full p-2 border rounded-lg">' + A().optionsObras(obras, c.obra_atual_id) + '</select></div>'
+      +   '<div class="grid grid-cols-2 gap-3">'
+      +     '<div><label class="block text-[10px] font-bold text-slate-500 uppercase">Data inicio (contrato)</label>'
+      +     '<input id="eqp-contrato" type="date" value="' + escAttr((c.data_contrato || '').slice(0, 10)) + '" class="w-full p-2 border rounded-lg"></div>'
+      +     '<div><label id="eqp-label-valor" class="block text-[10px] font-bold text-slate-500 uppercase">Valor</label>'
+      +     '<input id="eqp-valor" type="number" step="0.01" value="' + (c.valor || 0) + '" class="w-full p-2 border rounded-lg font-bold text-green-700"></div>'
+      +   '</div>'
+      +   '<label class="flex items-center gap-2"><input id="eqp-ativo" type="checkbox"' + (c.ativo ? ' checked' : '') + '> Ativo</label>'
+      + '</div>'
+      + '<div class="flex justify-end gap-2 mt-4"><button type="button" onclick="eqObraFecharModal()" class="px-4 py-2 border rounded-lg font-bold">Cancelar</button>'
+      + '<button onclick="eqObraSalvar(event)" class="px-4 py-2 bg-blue-700 text-white rounded-lg font-bold">Salvar</button></div>';
+    abrirModal(html, id ? 'Editar colaborador' : 'Novo colaborador', 'max-w-lg');
+    eqObraOnCat();
+  }
+
+  function eqObraOnCat() {
+    var cat = val('eqp-cat');
+    var label = el('eqp-label-valor');
+    if (!label) return;
+    if (cat === 'Terceirizado') label.textContent = 'Valor do metro (R$)';
+    else if (cat === 'Empreita') label.textContent = 'Valor total do contrato (R$)';
+    else label.textContent = 'Valor da diaria (R$)';
+  }
+
+  async function eqObraSalvar(ev) {
+    if (ev) ev.preventDefault();
+    var id = val('eqp-id');
+    var origem = val('eqp-origem');
+    var nome = (val('eqp-nome') || '').trim();
+    var cat = val('eqp-cat');
+    if (!nome || !cat) return toast('Informe nome e categoria.', true);
+    var valor = Number(val('eqp-valor')) || 0;
+    var common = {
+      nome: nome,
+      telefone: (val('eqp-tel') || '').trim() || null,
+      rg: (val('eqp-rg') || '').trim() || null,
+      endereco: (val('eqp-end') || '').trim() || null,
+      chave_pix: (val('eqp-pix') || '').trim() || null,
+      obra_atual_id: val('eqp-obra') || null,
+      data_contrato: val('eqp-contrato') || null,
+      ativo: el('eqp-ativo') ? el('eqp-ativo').checked : true
+    };
+    var novoTipo = cat === 'Terceirizado' ? 'terceirizado' : 'equipe';
+    var mudou = !!id && origem && origem !== novoTipo;
+    if (mudou) {
+      var dep = await contarDependencias(origem, id);
+      if (!dep.ok) return toast('Nao foi possivel verificar o historico. Tente novamente.', true);
+      if (dep.total > 0) return toast('Este colaborador tem ' + dep.total + ' lancamento(s). Nao e possivel mudar o tipo sem perder o historico.', true);
+    }
+    loading(true);
+    try {
+      if (cat === 'Terceirizado') {
+        var payT = Object.assign(common, { cpf_cnpj: (val('eqp-cpf') || '').trim() || null, valor_metro: valor });
+        var rt = id && !mudou
+          ? await sb.from('terceirizados').update(payT).eq('id', id)
+          : await sb.from('terceirizados').insert([payT]);
+        if (rt.error) throw rt.error;
+        if (mudou) await removerCadastroAntigo(origem, id);
+      } else {
+        var payE = Object.assign(common, {
+          tipo: cat === 'Empreita' ? 'Empreita' : 'Diaria',
+          categoria: cat,
+          tipo_remuneracao: cat === 'Empreita' ? 'empreita' : 'diaria',
+          cpf: (val('eqp-cpf') || '').trim() || null,
+          valor_diaria: cat === 'Empreita' ? null : valor,
+          valor_contrato: cat === 'Empreita' ? valor : 0,
+          valor_metro: 0
+        });
+        var re;
+        if (id && !mudou) {
+          re = await sb.from('equipe').update(payE).eq('id', id);
+        } else {
+          payE.contrato_assinado = false;
+          re = await sb.from('equipe').insert([payE]);
+        }
+        if (re.error) throw re.error;
+        if (mudou) await removerCadastroAntigo(origem, id);
+      }
+      toast('Cadastro salvo.');
+      fecharModal();
+      await carregarDados();
+      eqObraRenderLista();
+    } catch (e) {
+      toast(e.message || e, true);
+    } finally { loading(false); }
+  }
+
+  async function contarDependencias(origem, id) {
+    try {
+      if (origem === 'terceirizado') {
+        var a = await sb.from('producao_terc').select('id', { count: 'exact', head: true }).eq('terceirizado_id', id);
+        if (a.error) throw a.error;
+        return { ok: true, total: a.count || 0 };
+      }
+      var b = await sb.from('ponto_diario').select('id', { count: 'exact', head: true }).eq('funcionario_id', id);
+      var c = await sb.from('medicoes_empreita').select('id', { count: 'exact', head: true }).eq('equipe_id', id);
+      if (b.error || c.error) throw (b.error || c.error);
+      return { ok: true, total: (b.count || 0) + (c.count || 0) };
+    } catch (e) {
+      return { ok: false, total: 0 };
     }
   }
 
-  function eqObraContrato(id) {
-    if (typeof imprimirContratoObra === 'function') imprimirContratoObra(id);
-    else A().toast('Modulo de contrato nao carregado.', true);
+  async function removerCadastroAntigo(origem, id) {
+    var tabela = origem === 'terceirizado' ? 'terceirizados' : 'equipe';
+    var res = await sb.from(tabela).update({ ativo: false }).eq('id', id);
+    if (res.error) throw res.error;
   }
 
-  function abrir(html, titulo) {
-    var el = document.getElementById('obra-modal');
-    if (!el) { el = document.createElement('div'); el.id = 'obra-modal'; document.body.appendChild(el); }
-    el.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
-    el.innerHTML = '<div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">'
-      + '<div class="p-4 border-b flex justify-between items-center"><h3 class="font-bold text-slate-800">' + A().esc(titulo) + '</h3>'
-      + '<button onclick="obraFecharModal()" class="text-slate-400"><i data-lucide="x"></i></button></div>'
-      + '<div class="p-4">' + html + '</div></div>';
-    A().icons();
+  async function eqObraToggle(id, origem, ativoAtual) {
+    var ok = await confirmar(ativoAtual ? 'Desativar este colaborador?' : 'Reativar este colaborador?', { confirmText: ativoAtual ? 'Desativar' : 'Reativar' });
+    if (!ok) return;
+    var tabela = origem === 'terceirizado' ? 'terceirizados' : 'equipe';
+    var res = await sb.from(tabela).update({ ativo: !ativoAtual }).eq('id', id);
+    if (res.error) return toast(res.error.message, true);
+    toast('Status atualizado.');
+    await carregarDados();
+    eqObraRenderLista();
+  }
+
+  function eqObraContrato(id, origem) {
+    if (origem === 'terceirizado') return imprimirContratoTerceirizado(id);
+    if (typeof imprimirContratoObra === 'function') imprimirContratoObra(id);
+    else toast('Modulo de contrato nao carregado.', true);
+  }
+
+  // ---------- Checagem ----------
+  function eqObraChecagem() {
+    var ini = val('eqf-ini');
+    var fim = val('eqf-fim');
+    var statusF = val('eqf-status') || 'true';
+    var tipoF = val('eqf-tipo') || 'todos';
+    var obraF = val('eqf-obra');
+    var lista = colaboradores().filter(function (c) {
+      if (obraF && String(c.obra_atual_id || '') !== String(obraF)) return false;
+      if (statusF !== 'todos' && c.ativo !== (statusF === 'true')) return false;
+      if (tipoF !== 'todos' && c.tipo !== tipoF) return false;
+      return true;
+    });
+    var dados = [];
+    lista.forEach(function (c) {
+      var qtd = 0, unidade = '';
+      if (c.tipo === 'diaria') { qtd = calcDiaria(c.id, ini, fim).diarias; unidade = 'diarias'; }
+      else if (c.tipo === 'empreita') { qtd = calcEmpreita(c.id, ini, fim).pctPend; unidade = '%'; }
+      else { qtd = calcMetros(c.id, ini, fim).pend; unidade = 'm'; }
+      if (qtd > 0) {
+        var obra = CACHE.obras.find(function (o) { return String(o.id) === String(c.obra_atual_id); });
+        dados.push({ nome: c.nome, qtd: qtd, unidade: unidade, obra: obra ? obra.nome : 'Sem obra' });
+      }
+    });
+    if (!dados.length) return toast('Nenhum dado para a checagem.', true);
+    dados.sort(function (a, b) { return a.nome.localeCompare(b.nome); });
+    var emp = (typeof getCompany === 'function') ? getCompany() : { name: 'NEVOA' };
+    var per = (ini || fim) ? (dataBR(ini) + ' a ' + dataBR(fim)) : 'Todo o periodo';
+    var html = '<div style="font-family:Arial;padding:30px;color:#1e293b">'
+      + '<div style="border-bottom:3px solid #1d4ed8;padding-bottom:12px;margin-bottom:20px">'
+      + '<h1 style="margin:0;font-size:22px">PLANILHA DE CHECAGEM</h1>'
+      + '<p style="margin:4px 0 0;color:#1d4ed8;font-weight:bold">' + esc(emp.name || 'NEVOA') + ' · ' + per + '</p></div>'
+      + '<table width="100%" style="border-collapse:collapse;font-size:13px">'
+      + '<thead><tr style="background:#f1f5f9"><th style="padding:8px;border:1px solid #cbd5e1;text-align:left">Nome</th>'
+      + '<th style="padding:8px;border:1px solid #cbd5e1;text-align:center">Diarias / Metros / %</th>'
+      + '<th style="padding:8px;border:1px solid #cbd5e1;text-align:left">Obra</th></tr></thead><tbody>'
+      + dados.map(function (d) {
+        return '<tr><td style="padding:8px;border:1px solid #cbd5e1">' + esc((d.nome || '').toUpperCase()) + '</td>'
+          + '<td style="padding:8px;border:1px solid #cbd5e1;text-align:center">' + d.qtd.toFixed(2) + ' ' + d.unidade + '</td>'
+          + '<td style="padding:8px;border:1px solid #cbd5e1">' + esc(d.obra) + '</td></tr>';
+      }).join('')
+      + '</tbody></table></div>';
+    var p = el('print-area');
+    if (p) { p.innerHTML = html; setTimeout(function () { window.print(); }, 300); }
+  }
+
+  // ---------- Folha + PIX ----------
+  async function eqObraFolhaAbrir() {
+    var html = ''
+      + '<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">'
+      +   '<div><label class="text-[10px] font-bold text-slate-500 uppercase">Status</label>'
+      +   '<select id="eqfolha-status" class="w-full p-2 border rounded-lg text-sm"><option value="PENDENTE">Pendentes</option><option value="PAGO">Pagos</option><option value="TODOS">Todos</option></select></div>'
+      +   '<div><label class="text-[10px] font-bold text-slate-500 uppercase">Inicio</label><input id="eqfolha-ini" type="date" value="' + firstDay() + '" class="w-full p-2 border rounded-lg text-sm"></div>'
+      +   '<div><label class="text-[10px] font-bold text-slate-500 uppercase">Fim</label><input id="eqfolha-fim" type="date" value="' + lastDay() + '" class="w-full p-2 border rounded-lg text-sm"></div>'
+      +   '<div class="flex items-end"><button onclick="eqObraFolhaImprimir()" class="w-full bg-blue-700 text-white py-2 rounded-lg font-bold">Gerar e imprimir</button></div>'
+      + '</div>'
+      + '<p class="text-xs text-slate-500">Lista os fechamentos (despesas de mao de obra) no periodo, com a chave PIX de cada colaborador.</p>';
+    abrirModal(html, 'Folha de Pagamento', 'max-w-xl');
+  }
+
+  async function eqObraFolhaImprimir() {
+    var status = val('eqfolha-status') || 'PENDENTE';
+    var ini = val('eqfolha-ini');
+    var fim = val('eqfolha-fim');
+    var q = sb.from('despesas').select('id,uid,item,custo,observacao,data,status,equipe_id,fornecedor,categoria')
+      .in('categoria', ['ponto', 'terceirizado', 'empreita']).neq('status', 'ESTORNADO');
+    if (status !== 'TODOS') q = q.eq('status', status);
+    var res = await q.order('data', { ascending: false });
+    if (res.error) return toast(res.error.message, true);
+    var rows = (res.data || []).filter(function (d) {
+      var dia = String(d.data || '').slice(0, 10);
+      if (ini && dia < ini) return false;
+      if (fim && dia > fim) return false;
+      return true;
+    });
+    if (!rows.length) return toast('Nenhum registro com os filtros.', true);
+    var cols = colaboradores();
+    var emp = (typeof getCompany === 'function') ? getCompany() : { name: 'NEVOA' };
+    var per = (ini || fim) ? (dataBR(ini) + ' a ' + dataBR(fim)) : 'Todos os periodos';
+    var soma = 0;
+    var linhas = rows.map(function (d) {
+      var c = cols.find(function (x) {
+        if (d.equipe_id != null && x.origem === 'equipe') return String(x.id) === String(d.equipe_id);
+        return d.fornecedor && x.nome === d.fornecedor;
+      });
+      var pix = c ? (c.chave_pix || 'Nao informado') : 'Nao informado';
+      soma += Number(d.custo || 0);
+      var tipo = d.categoria === 'ponto' ? 'Diaria' : (d.categoria === 'empreita' ? 'Empreita' : 'Metro');
+      return '<tr><td style="padding:8px;border:1px solid #cbd5e1"><b>' + esc((d.fornecedor || '-').toUpperCase()) + '</b>'
+        + '<div style="font-size:11px;color:#1d4ed8">PIX: ' + esc(pix) + '</div></td>'
+        + '<td style="padding:8px;border:1px solid #cbd5e1;text-align:center">' + tipo + '</td>'
+        + '<td style="padding:8px;border:1px solid #cbd5e1">' + esc(d.observacao || '') + '</td>'
+        + '<td style="padding:8px;border:1px solid #cbd5e1;text-align:right;font-weight:900">' + money(d.custo) + '</td></tr>';
+    }).join('');
+    var html = '<div style="font-family:Arial;padding:30px;color:#1e293b">'
+      + '<div style="border-bottom:3px solid #1d4ed8;padding-bottom:12px;margin-bottom:20px">'
+      + '<h1 style="margin:0;font-size:22px">FOLHA DE PAGAMENTOS</h1>'
+      + '<p style="margin:4px 0 0;color:#1d4ed8;font-weight:bold">' + esc(emp.name || 'NEVOA') + ' · ' + per + ' · ' + status + '</p></div>'
+      + '<table width="100%" style="border-collapse:collapse;font-size:12px">'
+      + '<thead><tr style="background:#f1f5f9"><th style="padding:8px;border:1px solid #cbd5e1;text-align:left">Funcionario / PIX</th>'
+      + '<th style="padding:8px;border:1px solid #cbd5e1;text-align:center">Tipo</th>'
+      + '<th style="padding:8px;border:1px solid #cbd5e1;text-align:left">Referencia</th>'
+      + '<th style="padding:8px;border:1px solid #cbd5e1;text-align:right">Valor</th></tr></thead><tbody>'
+      + linhas
+      + '</tbody></table>'
+      + '<div style="text-align:right;margin-top:16px;font-size:15px">TOTAL: <b style="color:#b91c1c">' + money(soma) + '</b></div>'
+      + '</div>';
+    fecharModal();
+    var p = el('print-area');
+    if (p) { p.innerHTML = html; setTimeout(function () { window.print(); }, 300); }
+  }
+
+  // ---------- Contrato terceirizado ----------
+  async function imprimirContratoTerceirizado(id) {
+    var res = await sb.from('terceirizados').select('*').eq('id', id).single();
+    if (res.error || !res.data) return toast('Terceirizado nao encontrado.', true);
+    var t = res.data;
+    var obra = null;
+    if (t.obra_atual_id) {
+      var o = await sb.from('obras').select('nome,endereco').eq('id', t.obra_atual_id).single();
+      obra = o.data;
+    }
+    var emp = (typeof getCompany === 'function') ? getCompany() : { name: 'NEVOA', cnpj: '', address: '' };
+    var html = '<html><head><title>Contrato</title><style>body{font-family:Georgia,serif;padding:32px;line-height:1.5}h1{font-size:16px;text-align:center}p{text-align:justify}</style></head><body>'
+      + '<h1>CONTRATO DE PRESTACAO DE SERVICOS — TERCEIRIZADO (METRO)</h1>'
+      + '<p><b>CONTRATANTE:</b> ' + esc(emp.name || emp.nome || 'NEVOA') + (emp.cnpj ? ', CNPJ ' + emp.cnpj : '') + (emp.address ? ', ' + emp.address : '') + '.</p>'
+      + '<p><b>CONTRATADO:</b> ' + esc((t.nome || '').toUpperCase()) + (t.cpf_cnpj ? ', CPF/CNPJ ' + esc(t.cpf_cnpj) : '') + (t.endereco ? ', residente em ' + esc(t.endereco) : '') + '.</p>'
+      + '<p>O presente contrato tem por objeto a prestacao de servicos de terceirizado por metragem na obra <b>' + esc(obra ? (obra.endereco || obra.nome) : 'Obra nao definida') + '</b>, ao valor de <b>' + money(t.valor_metro || 0) + ' por metro</b>.</p>'
+      + '<p>O CONTRATADO declara atuar com autonomia, sem vinculo empregaticio, responsabilizando-se por tributos, EPIs e qualidade dos servicos.</p>'
+      + '<p>Jatai, ' + new Date().toLocaleDateString('pt-BR') + '.</p>'
+      + '<br><br><p>_________________________________<br>CONTRATANTE</p>'
+      + '<br><p>_________________________________<br>CONTRATADO — ' + esc(t.nome || '') + '</p></body></html>';
+    var w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    w.print();
+  }
+
+  // ---------- Aliases de compatibilidade ----------
+  function calcularResumoEmpreita(eqId, ini, fim) {
+    var r = calcEmpreita(eqId, ini, fim);
+    return { contrato: r.contrato, percentual: r.pctExec, valor: r.pago + r.pend, restante: r.saldo, medicoes: r.todas };
   }
 
   window.renderEquipeObra = renderEquipeObra;
+  window.eqObraRenderLista = eqObraRenderLista;
+  window.eqObraSaldo = eqObraSaldo;
+  window.eqObraSaldoRender = eqObraSaldoRender;
+  window.eqObraSaldoBatida = eqObraSaldoBatida;
+  window.eqObraSaldoAjuste = eqObraSaldoAjuste;
+  window.eqObraSaldoFechar = eqObraSaldoFechar;
+  window.eqObraSaldoEstornar = eqObraSaldoEstornar;
+  window.eqObraSaldoRecibo = eqObraSaldoRecibo;
+  window.eqObraSaldoMetros = eqObraSaldoMetros;
+  window.eqObraSaldoMetrosRender = eqObraSaldoMetrosRender;
+  window.eqObraSaldoMetrosLancar = eqObraSaldoMetrosLancar;
+  window.eqObraSaldoMetrosFechar = eqObraSaldoMetrosFechar;
+  window.eqObraSaldoMetrosEstornar = eqObraSaldoMetrosEstornar;
+  window.eqObraSaldoMetrosRecibo = eqObraSaldoMetrosRecibo;
+  window.eqObraSaldoEmpreita = eqObraSaldoEmpreita;
+  window.eqObraSaldoEmpreitaRender = eqObraSaldoEmpreitaRender;
+  window.eqObraSaldoEmpreitaMedir = eqObraSaldoEmpreitaMedir;
+  window.eqObraSaldoEmpreitaFechar = eqObraSaldoEmpreitaFechar;
+  window.eqObraSaldoEmpreitaEstornar = eqObraSaldoEmpreitaEstornar;
+  window.eqObraSaldoEmpreitaRecibo = eqObraSaldoEmpreitaRecibo;
   window.eqObraOpenForm = eqObraOpenForm;
+  window.eqObraOnCat = eqObraOnCat;
   window.eqObraSalvar = eqObraSalvar;
-  window.eqObraCarregarPonto = eqObraCarregarPonto;
-  window.eqObraBater = eqObraBater;
-  window.eqObraAjuste = eqObraAjuste;
-  window.eqObraImportCsv = eqObraImportCsv;
-  window.eqObraLerCsv = eqObraLerCsv;
-  window.eqObraFecharPonto = eqObraFecharPonto;
-  window.eqObraCarregarMedicao = eqObraCarregarMedicao;
-  window.eqObraLancarMedicao = eqObraLancarMedicao;
-  window.eqObraPagarMedicao = eqObraPagarMedicao;
-  window.eqObraEstornarMedicao = eqObraEstornarMedicao;
-  window.eqObraEstornarBatida = eqObraEstornarBatida;
-  window.eqObraEstornarFechamento = eqObraEstornarFechamento;
+  window.eqObraToggle = eqObraToggle;
   window.eqObraContrato = eqObraContrato;
+  window.eqObraChecagem = eqObraChecagem;
+  window.eqObraFolhaAbrir = eqObraFolhaAbrir;
+  window.eqObraFolhaImprimir = eqObraFolhaImprimir;
+  window.eqObraFecharModal = fecharModal;
   window.calcularResumoEmpreita = calcularResumoEmpreita;
 })();

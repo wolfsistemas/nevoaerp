@@ -17,7 +17,6 @@
     'nav-obra-obras': 'obras',
     'nav-obra-fases': 'fases',
     'nav-obra-equipe': 'equipe',
-    'nav-obra-terc': 'terceiros',
     'nav-obra-fornecedores': 'fornecedores',
     'nav-obra-oc': 'oc',
     'nav-obra-precos': 'precos',
@@ -38,7 +37,6 @@
     gerencial: 'Aba Gerencial',
     obras: 'Obras',
     fases: 'Fases',
-    terceiros: 'Terceirizados',
     fornecedores: 'Fornecedores',
     oc: 'Ordens de compra',
     precos: 'Historico de precos',
@@ -234,16 +232,18 @@
   window.addEventListener('load', function () {
     var originalNavigate = window.navigate;
     window.navigate = function (viewId) {
+      if (viewId === 'obra-terc') viewId = 'obra-equipe';
       var rec = RECURSOS_NAV['nav-' + viewId];
       var seg = segmentoAtual();
       var isObra = viewId.indexOf('obra-') === 0;
       if (seg !== 'ambos') {
         if (isObra && seg !== 'obra') {
-          if (typeof showToast === 'function') showToast('Modulo de obra indisponivel neste plano.', true);
+          originalNavigate('pos');
           return;
         }
         if (!isObra && seg === 'obra' && rec && ['pdv','expedicao','orcamentos','mdf'].indexOf(rec) !== -1) {
-          if (typeof showToast === 'function') showToast('Modulo de ERP indisponivel neste plano.', true);
+          originalNavigate('obra-obras');
+          if (typeof renderObras === 'function') renderObras();
           return;
         }
       }
@@ -259,7 +259,6 @@
       if (viewId === 'obra-obras' && typeof renderObras === 'function') renderObras();
       if (viewId === 'obra-fases' && typeof renderObras === 'function') renderObras();
       if (viewId === 'obra-equipe' && typeof renderEquipeObra === 'function') renderEquipeObra();
-      if (viewId === 'obra-terc' && typeof renderTerceirizados === 'function') renderTerceirizados();
       if (viewId === 'obra-fornecedores' && typeof renderFornecedoresObra === 'function') renderFornecedoresObra();
       if (viewId === 'obra-oc' && typeof renderOC === 'function') renderOC();
       if (viewId === 'obra-precos' && typeof renderPrecosObra === 'function') renderPrecosObra();
@@ -316,6 +315,13 @@
         el.classList.toggle('hidden', !liberado);
       });
       aplicarSegmento();
+      if (ASSINATURA_ATUAL.segmento === 'obra') {
+        var active = document.querySelector('.active-section');
+        var vid = active ? String(active.id || '').replace('view-', '') : '';
+        if (!vid || vid.indexOf('obra-') !== 0) {
+          if (typeof window.navigate === 'function') window.navigate('obra-obras');
+        }
+      }
     } catch (e) { /* em caso de erro, mantem tudo visivel (nao travar o app) */ }
   }
 

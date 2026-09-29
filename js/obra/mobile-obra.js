@@ -209,6 +209,161 @@
     mobObraCarregarMedicao();
   }
 
+  // ---------- Metros (terceirizado) ----------
+  async function mobObraMetros() {
+    var body = document.getElementById('mob-metros-body');
+    if (!body) return;
+    var terc = await sb.from('terceirizados').select('*').eq('ativo', true).order('nome');
+    if (terc.error) { body.innerHTML = '<div class="text-red-600">' + A().esc(terc.error.message) + '</div>'; return; }
+    var lista = terc.data || [];
+    if (!lista.length) {
+      body.innerHTML = '<p class="text-slate-400 text-center py-8">Nenhum terceirizado ativo.</p>';
+      return;
+    }
+    body.innerHTML = ''
+      + '<div class="space-y-3">'
+      +   '<div><label class="text-[10px] font-bold text-slate-400 uppercase">Terceirizado</label>'
+      +   '<select id="mob-metros-terc" class="w-full p-3 border rounded-xl bg-white font-bold" onchange="mobObraCarregarMetros()">'
+      +     lista.map(function (t) { return '<option value="' + A().esc(t.id) + '">' + A().esc(t.nome) + '</option>'; }).join('')
+      +   '</select></div>'
+      +   '<form onsubmit="mobObraLancarMetros(event)" class="bg-white border rounded-xl p-3 space-y-2">'
+      +     '<input type="date" id="mob-metros-data" required value="' + A().hojeISO() + '" class="w-full p-3 border rounded-xl">'
+      +     '<input type="number" step="0.01" min="0" id="mob-metros-qtd" required placeholder="Metros" class="w-full p-3 border rounded-xl">'
+      +     '<input type="text" id="mob-metros-desc" placeholder="Justificativa" class="w-full p-3 border rounded-xl">'
+      +     '<button class="w-full bg-emerald-600 text-white py-3 rounded-xl font-black">Lancar metros</button>'
+      +   '</form>'
+      +   '<div id="mob-metros-resumo" class="text-sm bg-white p-3 rounded-xl border"></div>'
+      +   '<button id="mob-metros-pagar" onclick="mobObraFecharMetros()" class="hidden w-full bg-blue-700 text-white py-3 rounded-xl font-black">Fechar pendente</button>'
+      +   '<div id="mob-metros-lista" class="flex flex-col gap-2 pb-8"></div>'
+      + '</div>';
+    mobObraCarregarMetros();
+    A().icons();
+  }
+
+  async function mobObraCarregarMetros() {
+    var sel = document.getElementById('mob-metros-terc');
+    if (!sel) return;
+    var tercId = sel.value;
+    if (!tercId) return;
+    var t = (await sb.from('terceirizados').select('*').eq('id', tercId).single()).data || {};
+    var prod = await sb.from('producao_terc').select('*').eq('terceirizado_id', tercId).order('data_registro', { ascending: false });
+    var rows = prod.data || [];
+    var pendentes = rows.filter(function (p) { return p.status !== 'PAGO' && p.status !== 'ESTORNADO'; });
+    var metrosPend = pendentes.reduce(function (s, p) { return s + Number(p.metros || 0); }, 0);
+    var valorPend = metrosPend * Number(t.valor_metro || 0);
+    var resumo = document.getElementById('mob-metros-resumo');
+    if (resumo) resumo.innerHTML = 'Valor/m <b>' + A().money(t.valor_metro) + '</b> · Pendente <b>' + metrosPend.toFixed(2) + ' m</b> = <b>' + A().money(valorPend) + '</b>';
+    var btn = document.getElementById('mob-metros-pagar');
+    if (btn) {
+      btn.classList.toggle('hidden', valorPend <= 0);
+      btn.textContent = 'Fechar pendente (' + A().money(valorPend) + ')';
+    }
+    var lista = document.getElementById('mob-metros-lista');
+    if (!lista) return;
+    lista.innerHTML = rows.length ? rows.slice(0, 60).map(function (p) {
+      var est = p.status === 'ESTORNADO';
+      var acao = '';
+      if (p.status === 'PENDENTE') acao = '<button onclick="mobObraEstornarMetros(\'' + p.id + '\')" class="text-red-600 text-[10px] font-bold">Estornar</button>';
+      else if (p.status === 'PAGO' && p.fechamento_uid) acao = '<button onclick="mobObraEstornarPagamentoMetros(\'' + p.fechamento_uid + '\')" class="text-red-600 text-[10px] font-bold">Estornar pgto</button>';
+      return '<div class="bg-white border rounded-xl p-3 flex justify-between items-center' + (est ? ' opacity-50' : '') + '">'
+        + '<div><p class="font-bold text-sm">' + A().dataBR(p.data_registro) + ' · ' + Number(p.metros || 0).toFixed(2) + ' m</p>'
+        + '<p class="text-[11px] text-slate-500">' + A().money(Number(p.metros || 0) * Number(t.valor_metro || 0)) + ' · ' + A().esc(p.status) + '</p></div>'
+        + acao + '</div>';
+    }).join('') : '<p class="text-center text-slate-400 py-4">Sem lancamentos.</p>';
+  }
+
+  async function mobObraLancarMetros(ev) {
+    ev.preventDefault();
+    var sel = document.getElementById('mob-metros-terc');
+    var tercId = sel ? sel.value : '';
+    var metros = Number(document.getElementById('mob-metros-qtd').value) || 0;
+    if (!tercId) return toast('Selecione o terceirizado.', true);
+    if (metros <= 0) return toast('Informe os metros.', true);
+    var t = (await sb.from('terceirizados').select('obra_atual_id').eq('id', tercId).single()).data || {};
+    var res = await sb.from('producao_terc').insert([{
+      terceirizado_id: tercId,
+      obra_id: t.obra_atual_id || null,
+      data_registro: document.getElementById('mob-metros-data').value,
+      metros: metros,
+      status: 'PENDENTE',
+      observacao: document.getElementById('mob-metros-desc').value.trim() || 'Lancamento mobile'
+    }]);
+    if (res.error) return toast(res.error.message, true);
+    toast('Metros lancados.');
+    document.getElementById('mob-metros-qtd').value = '';
+    document.getElementById('mob-metros-desc').value = '';
+    mobObraCarregarMetros();
+  }
+
+  async function mobObraFecharMetros() {
+    var sel = document.getElementById('mob-metros-terc');
+    var tercId = sel ? sel.value : '';
+    if (!tercId) return;
+    var ok = window.confirm('Fechar producao pendente? Gera despesa e log no financeiro.');
+    if (!ok) return;
+    var t = (await sb.from('terceirizados').select('*').eq('id', tercId).single()).data || {};
+    var prod = await sb.from('producao_terc').select('*').eq('terceirizado_id', tercId).eq('status', 'PENDENTE');
+    var rows = prod.data || [];
+    var metros = rows.reduce(function (s, p) { return s + Number(p.metros || 0); }, 0);
+    var valor = metros * Number(t.valor_metro || 0);
+    if (valor <= 0) return toast('Nada pendente.', true);
+    var obraId = (A().obraMaisFrequente && A().obraMaisFrequente(rows)) || t.obra_atual_id || null;
+    try {
+      var chain = await A().insertDespesaComLog({
+        item: 'TERCEIRIZADO',
+        fornecedor: t.nome,
+        custo: valor,
+        observacao: 'Producao ' + metros.toFixed(2) + ' m - ' + t.nome,
+        status: 'PENDENTE',
+        obra_id: obraId,
+        categoria: 'terceirizado'
+      });
+      var ids = rows.map(function (p) { return p.id; });
+      var upd = await sb.from('producao_terc').update({
+        status: 'PAGO',
+        fechamento_uid: chain.despesa.uid,
+        despesa_uid: chain.despesa.uid
+      }).in('id', ids);
+      if (upd.error) {
+        await A().estornarDespesaPorUid(chain.despesa.uid);
+        return toast('Pagamento desfeito: falha ao vincular producao. ' + upd.error.message, true);
+      }
+      toast('Producao paga. Despesa e log gerados.');
+      mobObraCarregarMetros();
+    } catch (e) {
+      toast(e.message || e, true);
+    }
+  }
+
+  async function mobObraEstornarMetros(id) {
+    var ok = window.confirm('Estornar este lancamento de metros? Nao apaga.');
+    if (!ok) return;
+    var row = (await sb.from('producao_terc').select('*').eq('id', id).single()).data;
+    if (!row || row.status !== 'PENDENTE') return toast('So lancamento pendente pode ser estornado aqui.', true);
+    var res = await sb.from('producao_terc').update({ status: 'ESTORNADO' }).eq('id', id);
+    if (res.error) return toast(res.error.message, true);
+    toast('Lancamento estornado.');
+    mobObraCarregarMetros();
+  }
+
+  async function mobObraEstornarPagamentoMetros(uid) {
+    var ok = window.confirm('Estornar este pagamento? Metros voltam a pendente. Despesa/log ficam ESTORNADO.');
+    if (!ok) return;
+    try {
+      await A().estornarDespesaPorUid(uid);
+      var upd = await sb.from('producao_terc').update({
+        status: 'PENDENTE',
+        fechamento_uid: null,
+        despesa_uid: null
+      }).eq('fechamento_uid', uid).eq('status', 'PAGO');
+      if (upd.error) throw upd.error;
+      toast('Pagamento estornado. Metros reabertos.');
+      mobObraCarregarMetros();
+    } catch (e) {
+      toast(e.message || e, true);
+    }
+  }
+
   window.mobObraPonto = mobObraPonto;
   window.mobObraCarregarPonto = mobObraCarregarPonto;
   window.mobObraBater = mobObraBater;
@@ -218,4 +373,10 @@
   window.mobObraLancarMedicao = mobObraLancarMedicao;
   window.mobObraEstornarBatida = mobObraEstornarBatida;
   window.mobObraEstornarMedicao = mobObraEstornarMedicao;
+  window.mobObraMetros = mobObraMetros;
+  window.mobObraCarregarMetros = mobObraCarregarMetros;
+  window.mobObraLancarMetros = mobObraLancarMetros;
+  window.mobObraFecharMetros = mobObraFecharMetros;
+  window.mobObraEstornarMetros = mobObraEstornarMetros;
+  window.mobObraEstornarPagamentoMetros = mobObraEstornarPagamentoMetros;
 })();

@@ -282,6 +282,11 @@
           <div id="mob-med-body" class="text-sm text-slate-500">Carregando...</div>
       </div>
 
+      <div id="view-obra-metros" class="hidden-section">
+          <h2 class="text-xl font-black text-slate-800 flex items-center gap-2 mb-4"><i data-lucide="ruler" class="text-emerald-600"></i> Metros</h2>
+          <div id="mob-metros-body" class="text-sm text-slate-500">Carregando...</div>
+      </div>
+
     </main>
 
     <div id="view-pos" class="hidden fixed inset-0 bg-slate-50 z-[60] flex-col animate-[fadeIn_0.2s]">
@@ -683,6 +688,10 @@
             <i data-lucide="percent" class="mb-1 w-6 h-6"></i>
             <span class="text-[10px] uppercase font-medium">Medicao</span>
         </button>
+        <button onclick="navigate('obra-metros')" id="nav-obra-metros" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
+            <i data-lucide="ruler" class="mb-1 w-6 h-6"></i>
+            <span class="text-[10px] uppercase font-medium">Metros</span>
+        </button>
     </nav>
 
     <div id="client-form-container" class="hidden fixed inset-0 bg-slate-900/70 z-[80] flex items-end justify-center sm:items-center">
@@ -944,7 +953,7 @@
 
         // Assinatura/plano da empresa (gating de modulos no mobile)
         let ASSINATURA_ATUAL = null;
-        const RECURSOS_MOBILE = { quotes: 'orcamentos', reports: 'relatorios', fin: 'financeiro', prod: 'produtos', clients: 'clientes', pos: 'pdv', 'obra-ponto': 'equipe', 'obra-medicao': 'equipe' };
+        const RECURSOS_MOBILE = { quotes: 'orcamentos', reports: 'relatorios', fin: 'financeiro', prod: 'produtos', clients: 'clientes', pos: 'pdv', 'obra-ponto': 'equipe', 'obra-medicao': 'equipe', 'obra-metros': 'equipe' };
 
         function recursoLiberado(recurso) {
             if (!ASSINATURA_ATUAL) return true;
@@ -1133,6 +1142,7 @@
             if(viewId === 'fin') renderFinance();
             if(viewId === 'obra-ponto' && typeof mobObraPonto === 'function') mobObraPonto();
             if(viewId === 'obra-medicao' && typeof mobObraMedicao === 'function') mobObraMedicao();
+            if(viewId === 'obra-metros' && typeof mobObraMetros === 'function') mobObraMetros();
             
             lucide.createIcons();
             window.scrollTo(0, 0); 

@@ -148,7 +148,7 @@
 
         const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
-        // Pre-seleciona o plano vindo da landing (?plano=essencial|profissional|enterprise)
+        // Pre-seleciona o plano vindo da landing (?plano=essencial|obra_enterprise|...)
         (function planoDaUrl() {
             const p = new URLSearchParams(window.location.search).get('plano');
             const sel = document.getElementById('plano');

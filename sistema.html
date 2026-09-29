@@ -333,7 +333,6 @@
         <div data-segmento="obra" class="hidden">
         <button onclick="navigate('obra-obras')" id="nav-obra-obras" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="building"></i> <span class="font-medium text-sm">Obras</span></button>
         <button onclick="navigate('obra-equipe')" id="nav-obra-equipe" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="hard-hat"></i> <span class="font-medium text-sm">Equipe</span></button>
-        <button onclick="navigate('obra-terc')" id="nav-obra-terc" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="users-round"></i> <span class="font-medium text-sm">Terceirizados</span></button>
         <button onclick="navigate('obra-fornecedores')" id="nav-obra-fornecedores" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="truck"></i> <span class="font-medium text-sm">Fornecedores</span></button>
         <button onclick="navigate('obra-oc')" id="nav-obra-oc" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="clipboard-list"></i> <span class="font-medium text-sm">Ordens de compra</span></button>
         <button onclick="navigate('obra-precos')" id="nav-obra-precos" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="trending-up"></i> <span class="font-medium text-sm">Preços</span></button>
@@ -943,7 +942,6 @@
     <div id="view-obra-obras" class="hidden-section"></div>
     <div id="view-obra-fases" class="hidden-section"></div>
     <div id="view-obra-equipe" class="hidden-section"></div>
-    <div id="view-obra-terc" class="hidden-section"></div>
     <div id="view-obra-fornecedores" class="hidden-section"></div>
     <div id="view-obra-oc" class="hidden-section"></div>
     <div id="view-obra-precos" class="hidden-section"></div>
@@ -1832,7 +1830,6 @@
     if(viewId === 'equipe') { if (typeof renderEquipe === 'function') renderEquipe(); }
     if(viewId === 'obra-obras' && typeof renderObras === 'function') renderObras();
     if(viewId === 'obra-equipe' && typeof renderEquipeObra === 'function') renderEquipeObra();
-    if(viewId === 'obra-terc' && typeof renderTerceirizados === 'function') renderTerceirizados();
     if(viewId === 'obra-fornecedores' && typeof renderFornecedoresObra === 'function') renderFornecedoresObra();
     if(viewId === 'obra-oc' && typeof renderOC === 'function') renderOC();
     if(viewId === 'obra-precos' && typeof renderPrecosObra === 'function') renderPrecosObra();
@@ -2059,7 +2056,8 @@
         function onDataLoaded() {
             updateClientSelects();
             if(!document.querySelector('.active-section')) {
-                navigate('pos');
+                var segBoot = window.SEGMENTO_ATUAL || 'erp';
+                navigate(segBoot === 'obra' ? 'obra-obras' : 'pos');
             } else {
                 const current = document.querySelector('.active-section').id.replace('view-','');
                 navigate(current);
@@ -7652,7 +7650,6 @@ function startInactivityMonitoring() {
     <script src="js/obra/contrato.js"></script>
     <script src="abas/obra/obras.js"></script>
     <script src="abas/obra/equipe-obra.js"></script>
-    <script src="abas/obra/terceirizados.js"></script>
     <script src="abas/obra/fornecedores.js"></script>
     <script src="abas/obra/oc.js"></script>
     <script src="abas/obra/precos.js"></script>
