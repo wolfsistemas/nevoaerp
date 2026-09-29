@@ -331,6 +331,7 @@
         </div>
 
         <div data-segmento="obra" class="hidden">
+        <button onclick="navigate('obra-dashboard')" id="nav-obra-dashboard" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="layout-dashboard"></i> <span class="font-medium text-sm">Painel</span></button>
         <button onclick="navigate('obra-obras')" id="nav-obra-obras" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="building"></i> <span class="font-medium text-sm">Obras</span></button>
         <button onclick="navigate('obra-equipe')" id="nav-obra-equipe" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="hard-hat"></i> <span class="font-medium text-sm">Equipe</span></button>
         <button onclick="navigate('obra-fornecedores')" id="nav-obra-fornecedores" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="truck"></i> <span class="font-medium text-sm">Fornecedores</span></button>
@@ -338,6 +339,7 @@
         <div class="border-t border-slate-700 my-2 pt-2"></div>
         <button onclick="navigate('obra-fin')" id="nav-obra-fin" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="bar-chart-3"></i> <span class="font-medium text-sm">Financeiro</span></button>
         <button onclick="navigate('obra-gerencial')" id="nav-obra-gerencial" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="calculator"></i> <span class="font-medium text-sm">Gerencial</span></button>
+        <button onclick="navigate('obra-relatorios')" id="nav-obra-relatorios" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="file-text"></i> <span class="font-medium text-sm">Relatórios</span></button>
         </div>
        
         <div class="border-t border-slate-700 my-2 pt-2"></div>
@@ -938,6 +940,7 @@
     <div id="view-equipe" class="hidden-section"></div>
     <div id="view-gerencial" class="hidden-section"></div>
     <div id="view-mdf" class="hidden-section"></div>
+    <div id="view-obra-dashboard" class="hidden-section"></div>
     <div id="view-obra-obras" class="hidden-section"></div>
     <div id="view-obra-fases" class="hidden-section"></div>
     <div id="view-obra-equipe" class="hidden-section"></div>
@@ -946,6 +949,7 @@
     <div id="view-obra-precos" class="hidden-section"></div>
     <div id="view-obra-fin" class="hidden-section"></div>
     <div id="view-obra-gerencial" class="hidden-section"></div>
+    <div id="view-obra-relatorios" class="hidden-section"></div>
     <div id="view-config" class="hidden-section">
       <div id="config-empresa-panel"></div>
       <div id="config-assinatura-panel"></div>
@@ -1828,12 +1832,14 @@
     if(viewId === 'fin') renderFinance();
     if(viewId === 'equipe') { if (typeof renderEquipe === 'function') renderEquipe(); }
     if(viewId === 'obra-obras' && typeof renderObras === 'function') renderObras();
+    if(viewId === 'obra-dashboard' && typeof renderDashboardObra === 'function') renderDashboardObra();
     if(viewId === 'obra-equipe' && typeof renderEquipeObra === 'function') renderEquipeObra();
     if(viewId === 'obra-fornecedores' && typeof renderFornecedoresObra === 'function') renderFornecedoresObra();
     if(viewId === 'obra-oc' && typeof renderOC === 'function') renderOC();
     if(viewId === 'obra-precos' && typeof renderPrecosObra === 'function') renderPrecosObra();
     if(viewId === 'obra-fin' && typeof renderFinObra === 'function') renderFinObra();
     if(viewId === 'obra-gerencial' && typeof renderGerencialObra === 'function') renderGerencialObra();
+    if(viewId === 'obra-relatorios' && typeof renderRelatoriosObra === 'function') renderRelatoriosObra();
     if(viewId === 'clients') renderClients();
     if(viewId === 'prod') renderProducts();
     if(viewId === 'production') renderProductionSelect();
@@ -2058,7 +2064,8 @@
             updateClientSelects();
             if(!document.querySelector('.active-section')) {
                 var segBoot = window.SEGMENTO_ATUAL || 'erp';
-                navigate(segBoot === 'obra' ? 'obra-obras' : 'pos');
+                var landingObra = (window.papeis && !window.papeis.ehAdmin()) ? 'obra-obras' : 'obra-dashboard';
+                navigate(segBoot === 'obra' ? landingObra : 'pos');
             } else {
                 const current = document.querySelector('.active-section').id.replace('view-','');
                 navigate(current);
@@ -7656,6 +7663,8 @@ function startInactivityMonitoring() {
     <script src="abas/obra/oc.js"></script>
     <script src="abas/obra/precos.js"></script>
     <script src="abas/obra/gerencial-obra.js"></script>
+    <script src="abas/obra/dashboard-obra.js"></script>
+    <script src="abas/obra/relatorios-obra.js"></script>
     <script src="abas/obra/financeiro-obra.js"></script>
     
     

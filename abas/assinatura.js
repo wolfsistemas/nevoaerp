@@ -15,12 +15,14 @@
     'nav-production': 'relatorios',
     'nav-gerencial': 'gerencial',
     'nav-obra-obras': 'obras',
+    'nav-obra-dashboard': 'obras',
     'nav-obra-fases': 'fases',
     'nav-obra-equipe': 'equipe',
     'nav-obra-fornecedores': 'fornecedores',
     'nav-obra-oc': 'oc',
     'nav-obra-fin': 'financeiro',
-    'nav-obra-gerencial': 'gerencial'
+    'nav-obra-gerencial': 'gerencial',
+    'nav-obra-relatorios': 'relatorios'
   };
 
   // Catalogo de recursos por tipo de conta (ERP ou Obra). Cada item tem o
@@ -355,6 +357,8 @@
       if (viewId === 'obra-precos' && typeof renderPrecosObra === 'function') renderPrecosObra();
       if (viewId === 'obra-fin' && typeof renderFinObra === 'function') renderFinObra();
       if (viewId === 'obra-gerencial' && typeof renderGerencialObra === 'function') renderGerencialObra();
+      if (viewId === 'obra-dashboard' && typeof renderDashboardObra === 'function') renderDashboardObra();
+      if (viewId === 'obra-relatorios' && typeof renderRelatoriosObra === 'function') renderRelatoriosObra();
     };
     aplicarPapel();
     aplicarPlano();
@@ -410,7 +414,8 @@
         var active = document.querySelector('.active-section');
         var vid = active ? String(active.id || '').replace('view-', '') : '';
         if (!vid || vid.indexOf('obra-') !== 0) {
-          if (typeof window.navigate === 'function') window.navigate('obra-obras');
+          var landObra = (window.papeis && !window.papeis.ehAdmin()) ? 'obra-obras' : 'obra-dashboard';
+          if (typeof window.navigate === 'function') window.navigate(landObra);
         }
       }
     } catch (e) { /* em caso de erro, mantem tudo visivel (nao travar o app) */ }
