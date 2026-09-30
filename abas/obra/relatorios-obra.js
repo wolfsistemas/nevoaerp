@@ -198,8 +198,8 @@
         empty: 'Sem diarias validadas no periodo.'
       });
       rep.tables.push({
-        heading: 'Producao por metro (terceirizados)', icon: 'ruler',
-        cols: [{ label: 'Terceirizado' }, { label: 'Obra' }, { label: 'Pendente (m)', align: 'right' }, { label: 'Pago (m)', align: 'right' }],
+        heading: 'Producao por metro (Metragem)', icon: 'ruler',
+        cols: [{ label: 'Metragem' }, { label: 'Obra' }, { label: 'Pendente (m)', align: 'right' }, { label: 'Pago (m)', align: 'right' }],
         rows: met.map(function (m) { return [esc(m.nome), esc(m.obra), m.pend.toFixed(2), m.pago.toFixed(2)]; }),
         empty: 'Sem producao no periodo.'
       });

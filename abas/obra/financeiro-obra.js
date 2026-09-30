@@ -72,11 +72,6 @@
   function optionsTiposEntrada(sel) {
     return TIPOS_ENTRADA.map(function (t) { return '<option' + (t === (sel || '') ? ' selected' : '') + '>' + t + '</option>'; }).join('');
   }
-  function optionsObras(sel) {
-    return (OFIN.obras || []).map(function (o) {
-      return '<option value="' + esc(o.id) + '"' + (String(o.id) === String(sel || '') ? ' selected' : '') + '>' + esc(o.nome) + (o.ativo === false ? ' (finalizada)' : '') + '</option>';
-    }).join('');
-  }
   function nomeObra(id) {
     var o = OFIN.obras.find(function (x) { return String(x.id) === String(id); });
     return o ? o.nome : '';
@@ -574,7 +569,6 @@
   function modalRevenueHtml() {
     var body = ''
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Tipo de Entrada</label><select id="ofin-rev-tipo" class="w-full p-3 border rounded-xl bg-white">' + optionsTiposEntrada() + '</select></div>'
-      + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Obra Vinculada</label><select id="ofin-rev-obra" class="w-full p-3 border rounded-xl bg-white"></select></div>'
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Nome do Cliente (opcional)</label><input type="text" id="ofin-rev-client" class="w-full p-3 border rounded-xl" placeholder="Ex: João Silva"></div>'
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Valor a Receber (R$)</label><input type="number" id="ofin-rev-val" class="w-full p-3 border rounded-xl font-bold text-indigo-700" placeholder="0.00"></div>'
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Data de Vencimento</label><input type="date" id="ofin-rev-due" class="w-full p-3 border rounded-xl"></div>'
@@ -665,12 +659,7 @@
 
   // ---------- receita (a receber) ----------
   function ofinOpenRevenue() {
-    if (!OFIN.obras.length) return toast('Cadastre uma obra antes de lançar receitas.', true);
-    var obSel = el('ofin-rev-obra');
-    if (obSel) {
-      var atual = (OFIN.obraId && OFIN.obraId !== '__all__') ? OFIN.obraId : (OFIN.obras[0] && OFIN.obras[0].id);
-      obSel.innerHTML = optionsObras(atual);
-    }
+    if (!OFIN.obraId || OFIN.obraId === '__all__') return toast('Selecione uma obra especifica no topo para lançar receitas.', true);
     var t = el('ofin-rev-tipo'); if (t) t.value = TIPOS_ENTRADA[0];
     el('ofin-rev-client').value = '';
     el('ofin-rev-val').value = '';
@@ -681,24 +670,23 @@
   }
 
   async function ofinSaveRevenue() {
+    if (!OFIN.obraId || OFIN.obraId === '__all__') return toast('Selecione uma obra especifica no topo.', true);
     var tipo = val('ofin-rev-tipo') || TIPOS_ENTRADA[0];
-    var obra = val('ofin-rev-obra');
     var client = val('ofin-rev-client').trim() || 'Consumidor Final';
     var v = parseFloat(val('ofin-rev-val')) || 0;
     var method = val('ofin-rev-method');
     var due = val('ofin-rev-due') || getHojeLocalStr();
     var note = val('ofin-rev-note').trim();
-    if (!obra) return toast('Selecione a obra vinculada!', true);
     if (!v) return toast('Informe o valor a receber!', true);
     loading(true);
     try {
       var payload = {
         id: await nextLogId(), uid: uidGen(), tipo: 'receita',
         produto_nome: tipo, categoria: tipo, quantidade: 1, data: getHojeLocalStr(),
-        observacao: note || ('Receita de obra: ' + nomeObra(obra)), valor_total: v, cliente_nome: client,
+        observacao: note || ('Receita de obra: ' + nomeObra(OFIN.obraId)), valor_total: v, cliente_nome: client,
         forma_pagamento: method, status: 'ATIVO', status_entrega: 'ENTREGUE', qtd_entregue: 1,
         desconto: 0, status_financeiro: 'PENDENTE', vencimento: due, valor_pago: 0,
-        endereco_entrega: '', obra_id: obra
+        endereco_entrega: '', obra_id: OFIN.obraId
       };
       var res = await sb.from('logs').insert([payload]);
       if (res.error) throw res.error;

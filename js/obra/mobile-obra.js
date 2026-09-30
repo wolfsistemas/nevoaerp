@@ -209,7 +209,7 @@
     mobObraCarregarMedicao();
   }
 
-  // ---------- Metros (terceirizado) ----------
+  // ---------- Metros (Metragem) ----------
   async function mobObraMetros() {
     var body = document.getElementById('mob-metros-body');
     if (!body) return;
@@ -217,12 +217,12 @@
     if (terc.error) { body.innerHTML = '<div class="text-red-600">' + A().esc(terc.error.message) + '</div>'; return; }
     var lista = terc.data || [];
     if (!lista.length) {
-      body.innerHTML = '<p class="text-slate-400 text-center py-8">Nenhum terceirizado ativo.</p>';
+      body.innerHTML = '<p class="text-slate-400 text-center py-8">Nenhum colaborador de metragem ativo.</p>';
       return;
     }
     body.innerHTML = ''
       + '<div class="space-y-3">'
-      +   '<div><label class="text-[10px] font-bold text-slate-400 uppercase">Terceirizado</label>'
+      +   '<div><label class="text-[10px] font-bold text-slate-400 uppercase">Metragem</label>'
       +   '<select id="mob-metros-terc" class="w-full p-3 border rounded-xl bg-white font-bold" onchange="mobObraCarregarMetros()">'
       +     lista.map(function (t) { return '<option value="' + A().esc(t.id) + '">' + A().esc(t.nome) + '</option>'; }).join('')
       +   '</select></div>'

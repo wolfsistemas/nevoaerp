@@ -1,5 +1,5 @@
 // equipe-obra.js - Equipe unificada do segmento Obra (padrao RV).
-// Lista unica: Diaria (Pedreiro/Servente), Empreita e Terceirizado (metro).
+// Lista unica: Diaria, Metragem e Empreita.
 // Cadastro, CALCULAR (fechamento/estorno), Checagem e Folha+PIX.
 // Estorno nunca apaga: grava ESTORNADO e desfaz a cadeia financeira.
 (function () {
@@ -36,6 +36,73 @@
   function val(id) { var e = el(id); return e ? e.value : ''; }
   function num(id) { return Number(val(id)) || 0; }
   function escAttr(v) { return esc(v).replace(/`/g, ''); }
+
+  // ---------- CPF / CNPJ ----------
+  function soDigitos(v) { return String(v == null ? '' : v).replace(/\D/g, ''); }
+  function formatDoc(v) {
+    var d = soDigitos(v).slice(0, 14);
+    if (d.length <= 11) {
+      var out = d.slice(0, 3);
+      if (d.length > 3) out += '.' + d.slice(3, 6);
+      if (d.length > 6) out += '.' + d.slice(6, 9);
+      if (d.length > 9) out += '-' + d.slice(9, 11);
+      return out;
+    }
+    var o = d.slice(0, 2);
+    if (d.length > 2) o += '.' + d.slice(2, 5);
+    if (d.length > 5) o += '.' + d.slice(5, 8);
+    if (d.length > 8) o += '/' + d.slice(8, 12);
+    if (d.length > 12) o += '-' + d.slice(12, 14);
+    return o;
+  }
+  function validaCPF(v) {
+    var c = soDigitos(v);
+    if (c.length !== 11 || /^(\d)\1{10}$/.test(c)) return false;
+    var s = 0, r, i;
+    for (i = 0; i < 9; i++) s += parseInt(c[i], 10) * (10 - i);
+    r = (s * 10) % 11; if (r === 10) r = 0;
+    if (r !== parseInt(c[9], 10)) return false;
+    s = 0;
+    for (i = 0; i < 10; i++) s += parseInt(c[i], 10) * (11 - i);
+    r = (s * 10) % 11; if (r === 10) r = 0;
+    return r === parseInt(c[10], 10);
+  }
+  function validaCNPJ(v) {
+    var c = soDigitos(v);
+    if (c.length !== 14 || /^(\d)\1{13}$/.test(c)) return false;
+    function dv(base) {
+      var pesos = base.length === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+      var s = 0;
+      for (var i = 0; i < base.length; i++) s += parseInt(base[i], 10) * pesos[i];
+      var r = s % 11;
+      return r < 2 ? 0 : 11 - r;
+    }
+    return dv(c.slice(0, 12)) === parseInt(c[12], 10) && dv(c.slice(0, 13)) === parseInt(c[13], 10);
+  }
+  function validaDoc(v) {
+    var d = soDigitos(v);
+    if (d.length === 11) return validaCPF(d);
+    if (d.length === 14) return validaCNPJ(d);
+    return false;
+  }
+  async function docJaUsado(dig, idAtual, origemAtual) {
+    var res = await Promise.all([
+      sb.from('equipe').select('id,cpf'),
+      sb.from('terceirizados').select('id,cpf_cnpj')
+    ]);
+    var erro = res.find(function (r) { return r && r.error; });
+    if (erro) throw erro.error;
+    var dup = false;
+    (res[0].data || []).forEach(function (r) {
+      if (origemAtual === 'equipe' && String(r.id) === String(idAtual)) return;
+      if (soDigitos(r.cpf) === dig) dup = true;
+    });
+    (res[1].data || []).forEach(function (r) {
+      if (origemAtual === 'terceirizado' && String(r.id) === String(idAtual)) return;
+      if (soDigitos(r.cpf_cnpj) === dig) dup = true;
+    });
+    return dup;
+  }
 
   // ---------- Impressao padrao profissional (obraPrint) ----------
   function printDoc(opts) {
@@ -84,7 +151,7 @@
         origem: 'equipe',
         tipo: isEmp ? 'empreita' : 'diaria',
         nome: e.nome || '',
-        categoria: e.categoria || (isEmp ? 'Empreita' : 'Diaria'),
+        categoria: isEmp ? 'Empreita' : 'Diaria',
         valor_base: Number(e.valor_diaria || 0),
         valor_contrato: Number(e.valor_contrato || 0),
         telefone: e.telefone || '',
@@ -104,7 +171,7 @@
         origem: 'terceirizado',
         tipo: 'metro',
         nome: t.nome || '',
-        categoria: 'Terceirizado (Metro)',
+        categoria: 'Metragem',
         valor_base: Number(t.valor_metro || 0),
         valor_contrato: 0,
         telefone: t.telefone || '',
@@ -191,7 +258,7 @@
       + '<div class="space-y-4 p-4">'
       +   '<div class="flex items-center justify-between flex-wrap gap-3">'
       +     '<div><h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="hard-hat" class="text-emerald-600"></i> Equipe</h2>'
-      +     '<p class="text-sm text-slate-500">Diaria, empreita e terceirizado (metro) em um so lugar. CALCULAR fecha o pagamento e gera a despesa.</p></div>'
+      +     '<p class="text-sm text-slate-500">Diaria, Metragem e Empreita em um so lugar. CALCULAR fecha o pagamento e gera a despesa.</p></div>'
       +     '<div class="flex gap-2 flex-wrap">'
       +       '<button onclick="eqObraChecagem()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2.5 rounded-xl font-bold shadow flex items-center gap-2"><i data-lucide="clipboard-check" class="w-4 h-4"></i> Checagem</button>'
       +       '<button onclick="eqObraFolhaAbrir()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl font-bold shadow flex items-center gap-2"><i data-lucide="printer" class="w-4 h-4"></i> Imprimir Folha</button>'
@@ -225,7 +292,7 @@
     if (!box) return;
     box.innerHTML = ''
       + selectFiltro('eqf-status', 'Status', [['true', 'Ativos'], ['false', 'Desativados'], ['todos', 'Todos']], 'true')
-      + selectFiltro('eqf-tipo', 'Tipo', [['todos', 'Todos'], ['diaria', 'Diaria'], ['empreita', 'Empreita'], ['metro', 'Metro']], 'todos')
+      + selectFiltro('eqf-tipo', 'Tipo', [['todos', 'Todos'], ['diaria', 'Diaria'], ['empreita', 'Empreita'], ['metro', 'Metragem']], 'todos')
       + campoFiltro('eqf-ini', 'Inicio', 'date', '')
       + campoFiltro('eqf-fim', 'Fim', 'date', '')
       + '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Obra</label>'
@@ -869,7 +936,7 @@
   // ---------- Cadastro ----------
   function eqObraOpenForm(id, origem) {
     var c = {
-      id: '', origem: '', nome: '', categoria: 'Servente', telefone: '', cpf: '', rg: '',
+      id: '', origem: '', nome: '', categoria: 'Diaria', telefone: '', cpf: '', rg: '',
       endereco: '', chave_pix: '', obra_atual_id: '', data_contrato: '', valor: 0, ativo: true
     };
     if (id) {
@@ -878,7 +945,7 @@
       c.id = found.id;
       c.origem = found.origem;
       c.nome = found.nome;
-      c.categoria = found.origem === 'terceirizado' ? 'Terceirizado' : (found.tipo === 'empreita' ? 'Empreita' : found.categoria);
+      c.categoria = found.origem === 'terceirizado' ? 'Metragem' : (found.tipo === 'empreita' ? 'Empreita' : 'Diaria');
       c.telefone = found.telefone;
       c.cpf = found.cpf;
       c.rg = found.rg;
@@ -890,7 +957,7 @@
       c.ativo = found.ativo;
     }
     var obras = CACHE.obras;
-    var cats = ['Pedreiro', 'Servente', 'Terceirizado', 'Empreita'];
+    var cats = ['Diaria', 'Metragem', 'Empreita'];
     var html = ''
       + '<input type="hidden" id="eqp-id" value="' + escAttr(c.id) + '">'
       + '<input type="hidden" id="eqp-origem" value="' + escAttr(c.origem) + '">'
@@ -906,7 +973,7 @@
       +     '<input id="eqp-tel" value="' + escAttr(c.telefone) + '" class="w-full p-2 border rounded-lg"></div>'
       +   '</div>'
       +   '<div class="grid grid-cols-2 gap-3">'
-      +     '<div><label class="block text-[10px] font-bold text-slate-500 uppercase">CPF</label><input id="eqp-cpf" value="' + escAttr(c.cpf) + '" class="w-full p-2 border rounded-lg"></div>'
+      +     '<div><label class="block text-[10px] font-bold text-slate-500 uppercase">CPF / CNPJ</label><input id="eqp-cpf" maxlength="18" placeholder="000.000.000-00 / 00.000.000/0000-00" oninput="eqObraMaskDoc(this)" value="' + escAttr(c.cpf) + '" class="w-full p-2 border rounded-lg"></div>'
       +     '<div><label class="block text-[10px] font-bold text-slate-500 uppercase">RG</label><input id="eqp-rg" value="' + escAttr(c.rg) + '" class="w-full p-2 border rounded-lg"></div>'
       +   '</div>'
       +   '<div><label class="block text-[10px] font-bold text-slate-500 uppercase">Endereco</label><input id="eqp-end" value="' + escAttr(c.endereco) + '" class="w-full p-2 border rounded-lg"></div>'
@@ -931,7 +998,7 @@
     var cat = val('eqp-cat');
     var label = el('eqp-label-valor');
     if (!label) return;
-    if (cat === 'Terceirizado') label.textContent = 'Valor do metro (R$)';
+    if (cat === 'Metragem') label.textContent = 'Valor do metro (R$)';
     else if (cat === 'Empreita') label.textContent = 'Valor total do contrato (R$)';
     else label.textContent = 'Valor da diaria (R$)';
   }
@@ -944,6 +1011,16 @@
     var cat = val('eqp-cat');
     if (!nome || !cat) return toast('Informe nome e categoria.', true);
     var valor = Number(val('eqp-valor')) || 0;
+    var docDig = soDigitos(val('eqp-cpf'));
+    var docRaw = (val('eqp-cpf') || '').trim();
+    if (docRaw && !validaDoc(docDig)) return toast('CPF/CNPJ invalido. Use 000.000.000-00 ou 00.000.000/0000-00.', true);
+    var docFinal = docDig ? formatDoc(docDig) : null;
+    if (docDig) {
+      var dup;
+      try { dup = await docJaUsado(docDig, id, origem); }
+      catch (e) { return toast('Nao foi possivel validar o documento. Tente novamente.', true); }
+      if (dup) return toast('Ja existe um colaborador com este CPF/CNPJ nesta empresa.', true);
+    }
     var common = {
       nome: nome,
       telefone: (val('eqp-tel') || '').trim() || null,
@@ -954,7 +1031,7 @@
       data_contrato: val('eqp-contrato') || null,
       ativo: el('eqp-ativo') ? el('eqp-ativo').checked : true
     };
-    var novoTipo = cat === 'Terceirizado' ? 'terceirizado' : 'equipe';
+    var novoTipo = cat === 'Metragem' ? 'terceirizado' : 'equipe';
     var mudou = !!id && origem && origem !== novoTipo;
     if (mudou) {
       var dep = await contarDependencias(origem, id);
@@ -963,8 +1040,8 @@
     }
     loading(true);
     try {
-      if (cat === 'Terceirizado') {
-        var payT = Object.assign(common, { cpf_cnpj: (val('eqp-cpf') || '').trim() || null, valor_metro: valor });
+      if (cat === 'Metragem') {
+        var payT = Object.assign(common, { cpf_cnpj: docFinal, valor_metro: valor });
         var rt = id && !mudou
           ? await sb.from('terceirizados').update(payT).eq('id', id)
           : await sb.from('terceirizados').insert([payT]);
@@ -975,7 +1052,7 @@
           tipo: cat === 'Empreita' ? 'Empreita' : 'Diaria',
           categoria: cat,
           tipo_remuneracao: cat === 'Empreita' ? 'empreita' : 'diaria',
-          cpf: (val('eqp-cpf') || '').trim() || null,
+          cpf: docFinal,
           valor_diaria: cat === 'Empreita' ? null : valor,
           valor_contrato: cat === 'Empreita' ? valor : 0,
           valor_metro: 0
@@ -1192,6 +1269,7 @@
   window.eqObraOpenForm = eqObraOpenForm;
   window.eqObraOnCat = eqObraOnCat;
   window.eqObraSalvar = eqObraSalvar;
+  window.eqObraMaskDoc = function (input) { if (input) input.value = formatDoc(input.value); };
   window.eqObraToggle = eqObraToggle;
   window.eqObraContrato = eqObraContrato;
   window.eqObraChecagem = eqObraChecagem;

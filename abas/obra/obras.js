@@ -137,7 +137,7 @@
       valor_total: Number(obra.valor_contrato) || 0,
       cliente_nome: obra.solicitante || 'Consumidor Final',
       observacao: 'Contrato da obra ' + (obra.nome || ''),
-      vencimento: obra.data_inicio || A().hojeISO(),
+      vencimento: obra.data_termino || obra.data_inicio || A().hojeISO(),
       status: 'ATIVO',
       status_financeiro: 'PENDENTE',
       valor_pago: 0,
