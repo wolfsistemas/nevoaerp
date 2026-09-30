@@ -66,13 +66,13 @@ RPCs conferidas na base de teste: `minha_assinatura`, `sa_listar_planos` e `sa_l
 
 Planos no catalogo:
 - ERP: essencial 49 / profissional 389,90 / enterprise 447
-- Obra: `obra_essencial` 97 / `obra_profissional` 297 / `obra_enterprise` 597
+- Obra: `obra_essencial` 129,90 (ate 2 usuarios) / `obra_profissional` 199,90 (ate 5) / `obra_enterprise` 299,90 (ilimitado). Todos com os mesmos recursos.
 
 Tabelas novas: `obras`, `obras_fases`, `terceirizados`, `ponto_diario`, `producao_terc`, `medicoes_empreita`, `fornecedores`, `historico_precos`, `ordens_compra`, `ordens_compra_itens`.
 
 ## 4. Defaults adotados (brief 4.2)
 
-- Planos de obra: 97 / 297 / 597 (anual = 10x).
+- Planos de obra: 129,90 / 199,90 / 299,90 (anual = 10x). Todos com os mesmos recursos, diferenciados so pela quantidade de usuarios (2 / 5 / ilimitado).
 - Segmento dos planos de obra: `obra` (nao `ambos`).
 - Mesma landing, abas ERP/Obra.
 - Ponto: manual + CSV `data_hora;tipo`. Sem relogio externo.

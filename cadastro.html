@@ -51,8 +51,8 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-1">CNPJ</label>
-                        <input type="text" id="cnpj" placeholder="00.000.000/0000-00" class="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none bg-slate-50">
+                        <label class="block text-sm font-bold text-slate-700 mb-1">CPF ou CNPJ *</label>
+                        <input type="text" id="cnpj" required inputmode="numeric" placeholder="CPF ou CNPJ com dígitos válidos" class="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none bg-slate-50">
                     </div>
                     <div>
                         <label class="block text-sm font-bold text-slate-700 mb-1">Telefone</label>
@@ -74,9 +74,9 @@
                             <option value="enterprise">Enterprise - R$ 447/mês (ilimitado + abas RH/Gerencial + MDF)</option>
                         </optgroup>
                         <optgroup label="Obra">
-                            <option value="obra_essencial">Obra Essencial - R$ 97/mês (2 usuários, obras e ponto)</option>
-                            <option value="obra_profissional">Obra Profissional - R$ 297/mês (até 5 usuários, OC e gerencial)</option>
-                            <option value="obra_enterprise">Obra Enterprise - R$ 597/mês (ilimitado)</option>
+                            <option value="obra_essencial">Obra Essencial - R$ 129,90/mês (até 2 usuários, todos os recursos de obra)</option>
+                            <option value="obra_profissional">Obra Profissional - R$ 199,90/mês (até 5 usuários, todos os recursos de obra)</option>
+                            <option value="obra_enterprise">Obra Enterprise - R$ 299,90/mês (usuários ilimitados, todos os recursos de obra)</option>
                         </optgroup>
                     </select>
                     <p class="text-xs text-slate-400 mt-1">14 dias de teste grátis. Você pode trocar de plano depois, sem perder seus dados.</p>
@@ -101,6 +101,15 @@
                         <i data-lucide="mail" class="absolute left-3 top-3 text-slate-400 w-5 h-5"></i>
                         <input type="email" id="email" required autocomplete="email" placeholder="voce@empresa.com.br" class="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none bg-slate-50">
                     </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Nome de usuário (login) *</label>
+                    <div class="relative">
+                        <i data-lucide="at-sign" class="absolute left-3 top-3 text-slate-400 w-5 h-5"></i>
+                        <input type="text" id="login" required minlength="3" maxlength="30" autocomplete="username" placeholder="ex.: joao.silva" class="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none bg-slate-50">
+                    </div>
+                    <p class="text-xs text-slate-400 mt-1">Use de 3 a 30 caracteres: letras minúsculas, números, ponto, hífen ou underline. É o que você digita na tela de login.</p>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -166,17 +175,56 @@
             atualizar();
         })();
 
-        // Normaliza o CNPJ digitado: somente digitos, com mascara.
-        (function mascaraCnpj() {
+        // Valida CPF (11 digitos) e CNPJ (14 digitos) pelos digitos verificadores.
+        function docValido(valor) {
+            const d = String(valor || '').replace(/\D/g, '');
+            if (d === '' || /^(\d)\1+$/.test(d)) return false;
+            function dv(base, pesos) {
+                let soma = 0;
+                for (let i = 0; i < pesos.length; i++) soma += Number(base[i]) * pesos[i];
+                const r = soma % 11;
+                return r < 2 ? 0 : 11 - r;
+            }
+            if (d.length === 11) {
+                const p1 = [10, 9, 8, 7, 6, 5, 4, 3, 2];
+                const p2 = [11, 10, 9, 8, 7, 6, 5, 4, 3, 2];
+                return String(dv(d, p1)) === d[9] && String(dv(d, p2)) === d[10];
+            }
+            if (d.length === 14) {
+                const p1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+                const p2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+                return String(dv(d, p1)) === d[12] && String(dv(d, p2)) === d[13];
+            }
+            return false;
+        }
+
+        // Aplica a mascara de CPF (ate 11 digitos) ou de CNPJ (12 a 14).
+        function formatarDoc(digitos) {
+            const d = digitos.replace(/\D/g, '').slice(0, 14);
+            let out = d;
+            if (d.length <= 11) {
+                if (d.length > 3) out = d.slice(0, 3) + '.' + d.slice(3);
+                if (d.length > 6) out = d.slice(0, 3) + '.' + d.slice(3, 6) + '.' + d.slice(6);
+                if (d.length > 9) out = d.slice(0, 3) + '.' + d.slice(3, 6) + '.' + d.slice(6, 9) + '-' + d.slice(9);
+            } else {
+                out = d.slice(0, 2) + '.' + d.slice(2, 5) + '.' + d.slice(5, 8) + '/' + d.slice(8, 12);
+                if (d.length > 12) out += '-' + d.slice(12);
+            }
+            return out;
+        }
+
+        (function mascaraDoc() {
             const input = document.getElementById('cnpj');
             input.addEventListener('input', function () {
-                const d = input.value.replace(/\D/g, '').slice(0, 14);
-                let out = d;
-                if (d.length > 2)  out = d.slice(0, 2) + '.' + d.slice(2);
-                if (d.length > 5)  out = d.slice(0, 2) + '.' + d.slice(2, 5) + '.' + d.slice(5);
-                if (d.length > 8)  out = d.slice(0, 2) + '.' + d.slice(2, 5) + '.' + d.slice(5, 8) + '/' + d.slice(8);
-                if (d.length > 12) out = d.slice(0, 2) + '.' + d.slice(2, 5) + '.' + d.slice(5, 8) + '/' + d.slice(8, 12) + '-' + d.slice(12);
-                input.value = out;
+                input.value = formatarDoc(input.value);
+            });
+        })();
+
+        // Login sempre em minusculas e sem espacos, no formato aceito pelo banco.
+        (function mascaraLogin() {
+            const input = document.getElementById('login');
+            input.addEventListener('input', function () {
+                input.value = input.value.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9._-]/g, '').slice(0, 30);
             });
         })();
 
@@ -194,6 +242,7 @@
             const telefone = document.getElementById('telefone').value.trim();
             const endereco = document.getElementById('endereco').value.trim();
             const admin    = document.getElementById('admin').value.trim();
+            const login    = document.getElementById('login').value.trim().toLowerCase();
             const email    = document.getElementById('email').value.trim().toLowerCase();
             const senha    = document.getElementById('senha').value;
             const senha2   = document.getElementById('senha2').value;
@@ -211,10 +260,19 @@
             try {
                 if (!empresa) throw new Error('Informe o nome da empresa.');
                 if (!admin) throw new Error('Informe o nome do administrador.');
+                if (!cnpj) throw new Error('Informe um CPF ou CNPJ.');
+                if (!docValido(cnpj)) throw new Error('CPF/CNPJ inválido. Confira os dígitos informados.');
                 if (!email || !email.includes('@')) throw new Error('Informe um e-mail válido.');
+                if (!/^[a-z0-9][a-z0-9._-]{1,28}[a-z0-9]$/.test(login)) throw new Error('O nome de usuário deve ter de 3 a 30 caracteres (letras minúsculas, números, ponto, hífen ou underline).');
+                if (['admin', 'administrador'].includes(login)) throw new Error('Este nome de usuário é reservado da plataforma. Escolha outro.');
                 if ((senha || '').length < 6) throw new Error('A senha deve ter ao menos 6 caracteres.');
                 if (senha !== senha2) throw new Error('As senhas não conferem.');
                 if (!aceite) throw new Error('É necessário aceitar os Termos de Uso e a Política de Privacidade.');
+
+                // Nome de usuario unico em todo o sistema. Checa ANTES de criar a
+                // conta de Auth para nao deixar login orfao quando ja existe.
+                const { data: loginEmUso } = await sb.rpc('buscar_email_por_usuario', { usuario_busca: login });
+                if (loginEmUso) throw new Error('Este nome de usuário já está em uso. Escolha outro.');
 
                 const { data: su, error: suErr } = await sb.auth.signUp({ email, password: senha });
                 if (suErr) throw suErr;
@@ -226,7 +284,8 @@
                 const { data: ret, error: rpcErr } = await sb.rpc('criar_empresa_e_admin', {
                     p_empresa_nome: empresa,
                     p_admin_nome: admin,
-                    p_cnpj: cnpj || null,
+                    p_login: login,
+                    p_cnpj: cnpj,
                     p_telefone: telefone || null,
                     p_endereco: endereco || null,
                     p_plano: plano,
@@ -241,6 +300,7 @@
                 localStorage.setItem('rv_user', JSON.stringify({
                     id: ret && ret.usuario_id,
                     nome: admin,
+                    login: (ret && ret.login) || login,
                     nivel: 'admin'
                 }));
                 localStorage.setItem('rv_empresa', JSON.stringify({

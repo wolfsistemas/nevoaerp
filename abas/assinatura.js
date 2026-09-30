@@ -534,7 +534,7 @@
 
       +   '<div class="bg-white rounded-xl border shadow-sm p-6 flex items-center justify-between flex-wrap gap-3">'
       +     '<div><div class="font-bold text-slate-700">Precisa de mais recursos ou usuarios?</div>'
-      +     '<div class="text-sm text-slate-500">Conheca os planos Profissional e Enterprise.</div></div>'
+      +     '<div class="text-sm text-slate-500">Conheca os planos disponiveis para o seu segmento.</div></div>'
       +     '<a href="landing.html#planos" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"><i data-lucide="arrow-up-circle" class="w-4 h-4"></i> Ver planos</a>'
       +   '</div>'
       + '</div>';
