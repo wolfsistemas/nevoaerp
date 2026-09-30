@@ -12,7 +12,7 @@
   function isEst(r) { return A().isEstornado(r); }
   function icons() { A().icons(); }
 
-  var RE = { escopo: '__all__', ini: '', fim: '', tipo: 'resumo', cat: '', dados: null };
+  var RE = { escopo: '__all__', ini: '', fim: '', tipo: 'resumo', cat: '', fase: '', dados: null };
 
   function num(v) { return Number(v || 0); }
   function sum(a, f) { return (a || []).reduce(function (s, x) { return s + f(x); }, 0); }
@@ -32,9 +32,11 @@
   }
   function nomeObra(id) { var o = (RE.dados.obras || []).find(function (x) { return String(x.id) === String(id); }); return o ? o.nome : ''; }
   function nomeTerc(id) { var e = (RE.dados.terc || []).find(function (x) { return String(x.id) === String(id); }); return e ? e.nome : ''; }
+  function nomeFase(id) { var f = (RE.dados.fases || []).find(function (x) { return String(x.id) === String(id); }); return f ? f.nome : ''; }
+  function faseOk(r) { return !RE.fase || String(r.fase_id) === String(RE.fase); }
 
-  function logs() { return (RE.dados.logs || []).filter(function (l) { return obraOk(l.obra_id) && noPeriodo(l.data); }); }
-  function desps() { return (RE.dados.desps || []).filter(function (d) { return obraOk(d.obra_id) && noPeriodo(d.data); }); }
+  function logs() { return (RE.dados.logs || []).filter(function (l) { return obraOk(l.obra_id) && noPeriodo(l.data) && faseOk(l); }); }
+  function desps() { return (RE.dados.desps || []).filter(function (d) { return obraOk(d.obra_id) && noPeriodo(d.data) && faseOk(d); }); }
   function prod() { return (RE.dados.prod || []).filter(function (p) { return obraOk(p.obra_id) && noPeriodo(p.data_registro); }); }
   function meds() { return (RE.dados.meds || []).filter(function (m) { return obraOk(m.obra_id) && noPeriodo(m.data_medicao); }); }
   function pontos() { return (RE.dados.pontos || []).filter(function (p) { return obraOk(p.obra_id) && noPeriodo(String(p.hora_registro || '').slice(0, 10)); }); }
@@ -140,14 +142,14 @@
       ];
       rep.tables.push({
         heading: 'Contas a receber', icon: 'circle-arrow-down',
-        cols: [{ label: 'Data' }, { label: 'Descricao' }, { label: 'Obra' }, { label: 'Vencimento' }, { label: 'Status' }, { label: 'Valor', align: 'right' }],
-        rows: rec.map(function (l) { return [esc(dataBR(l.data)), esc(l.produto_nome || l.observacao || '-'), esc(nomeObra(l.obra_id)), esc(dataBR(l.vencimento)), esc(l.status_financeiro || l.status || '-'), money(l.valor_total)]; }),
+        cols: [{ label: 'Data' }, { label: 'Descricao' }, { label: 'Obra' }, { label: 'Fase' }, { label: 'Vencimento' }, { label: 'Status' }, { label: 'Valor', align: 'right' }],
+        rows: rec.map(function (l) { return [esc(dataBR(l.data)), esc(l.produto_nome || l.observacao || '-'), esc(nomeObra(l.obra_id)), esc(nomeFase(l.fase_id) || '-'), esc(dataBR(l.vencimento)), esc(l.status_financeiro || l.status || '-'), money(l.valor_total)]; }),
         empty: 'Nenhum recebimento no periodo.'
       });
       rep.tables.push({
         heading: 'Contas a pagar', icon: 'circle-arrow-up',
-        cols: [{ label: 'Data' }, { label: 'Item' }, { label: 'Obra' }, { label: 'Categoria' }, { label: 'Status' }, { label: 'Valor', align: 'right' }],
-        rows: D.map(function (d) { return [esc(dataBR(d.data)), esc(d.item || '-'), esc(nomeObra(d.obra_id)), esc(catNome(d.categoria || '-')), esc(d.status || '-'), money(d.custo)]; }),
+        cols: [{ label: 'Data' }, { label: 'Item' }, { label: 'Obra' }, { label: 'Fase' }, { label: 'Categoria' }, { label: 'Status' }, { label: 'Valor', align: 'right' }],
+        rows: D.map(function (d) { return [esc(dataBR(d.data)), esc(d.item || '-'), esc(nomeObra(d.obra_id)), esc(nomeFase(d.fase_id) || '-'), esc(catNome(d.categoria || '-')), esc(d.status || '-'), money(d.custo)]; }),
         empty: 'Nenhuma despesa no periodo.'
       });
       return rep;
@@ -183,6 +185,39 @@
         rows: Object.keys(catMap).map(function (k) { return { k: k, v: catMap[k] }; }).sort(function (a, b) { return b.v - a.v; })
           .map(function (e) { return [esc(catNome(e.k)), money(e.v), (catTot > 0 ? Math.round(e.v / catTot * 100) : 0) + '%']; }),
         empty: 'Sem despesas.'
+      });
+      return rep;
+    }
+
+    if (RE.tipo === 'fases') {
+      rep.title = 'Receita e custo por fase';
+      var Lf = logs(), Df = desps();
+      var fasesRep = (RE.dados.fases || []).filter(function (f) {
+        return !f.arquivada && String(f.nome || '').trim().toLowerCase() !== '(removida)'
+          && obraOk(f.obra_id) && (!RE.fase || String(f.id) === String(RE.fase));
+      }).sort(function (a, b) { return (a.ordem || 0) - (b.ordem || 0); });
+      function blocoFase(nome, lf, df) {
+        var recebido = A().recebidoDe ? A().recebidoDe(lf) : 0;
+        var aReceber = A().aReceberDe ? A().aReceberDe(lf) : 0;
+        var pago = sum(lf.filter(function (l) { return l.tipo === 'despesa' && !isEst(l) && String(l.status_financeiro || '').toUpperCase() === 'PAGO'; }), function (l) { return num(l.valor_total); });
+        var aPagar = sum(df.filter(function (d) { return !isEst(d) && String(d.status || '').toUpperCase() !== 'PAGO'; }), function (d) { return Math.max(0, num(d.custo) - num(d.valor_pago)); });
+        return { nome: nome, recebido: recebido, aReceber: aReceber, pago: pago, aPagar: aPagar, saldo: recebido - pago };
+      }
+      var blocos = fasesRep.map(function (f) {
+        return blocoFase(f.nome, Lf.filter(function (l) { return String(l.fase_id) === String(f.id); }), Df.filter(function (d) { return String(d.fase_id) === String(f.id); }));
+      });
+      blocos.push(blocoFase('Sem fase', Lf.filter(function (l) { return !l.fase_id; }), Df.filter(function (d) { return !d.fase_id; })));
+      rep.kpis = [
+        { label: 'Recebido', value: money(sum(blocos, function (b) { return b.recebido; })) },
+        { label: 'A receber', value: money(sum(blocos, function (b) { return b.aReceber; })) },
+        { label: 'Pago', value: money(sum(blocos, function (b) { return b.pago; })) },
+        { label: 'A pagar', value: money(sum(blocos, function (b) { return b.aPagar; })) }
+      ];
+      rep.tables.push({
+        heading: 'Financeiro por fase', icon: 'layers',
+        cols: [{ label: 'Fase' }, { label: 'Recebido', align: 'right' }, { label: 'A receber', align: 'right' }, { label: 'Pago', align: 'right' }, { label: 'A pagar', align: 'right' }, { label: 'Saldo', align: 'right' }],
+        rows: blocos.map(function (b) { return [esc(b.nome), money(b.recebido), money(b.aReceber), money(b.pago), money(b.aPagar), money(b.saldo)]; }),
+        empty: 'Sem fases cadastradas.'
       });
       return rep;
     }
@@ -238,9 +273,9 @@
       });
       rep.tables.push({
         heading: 'Despesas lancadas' + (RE.cat ? ' - ' + esc(catNome(RE.cat)) : ''), icon: 'receipt',
-        cols: [{ label: 'Data' }, { label: 'Categoria' }, { label: 'Descricao' }, { label: 'Obra' }, { label: 'Fornecedor' }, { label: 'Status' }, { label: 'Valor', align: 'right' }],
+        cols: [{ label: 'Data' }, { label: 'Categoria' }, { label: 'Descricao' }, { label: 'Obra' }, { label: 'Fase' }, { label: 'Fornecedor' }, { label: 'Status' }, { label: 'Valor', align: 'right' }],
         rows: dr.lista.slice().sort(function (a, b) { return String(b.data || '').localeCompare(String(a.data || '')); }).map(function (d) {
-          return [esc(dataBR(d.data)), esc(catNome(catDesp(d))), esc(d.item || '-'), esc(nomeObra(d.obra_id)), esc(d.fornecedor || '-'), esc(d.status || '-'), money(d.custo)];
+          return [esc(dataBR(d.data)), esc(catNome(catDesp(d))), esc(d.item || '-'), esc(nomeObra(d.obra_id)), esc(nomeFase(d.fase_id) || '-'), esc(d.fornecedor || '-'), esc(d.status || '-'), money(d.custo)];
         }),
         empty: 'Nenhuma despesa lancada no periodo.'
       });
@@ -336,10 +371,13 @@
     var obraOpts = '<option value="__all__">Todas as obras</option>' + (RE.dados.obras || []).map(function (o) {
       return '<option value="' + esc(o.id) + '"' + (String(o.id) === String(RE.escopo) ? ' selected' : '') + '>' + esc(o.nome) + (o.ativo === false ? ' (finalizada)' : '') + '</option>';
     }).join('');
-    var tipos = [['resumo', 'Resumo geral'], ['financeiro', 'Financeiro'], ['custos', 'Custos'], ['despesas', 'Despesas'], ['equipe', 'Equipe e produ\u00e7\u00e3o']];
+    var tipos = [['resumo', 'Resumo geral'], ['financeiro', 'Financeiro'], ['custos', 'Custos'], ['fases', 'Custo/Receita por fase'], ['despesas', 'Despesas'], ['equipe', 'Equipe e produ\u00e7\u00e3o']];
     var catOpts = '<option value="">Todas as categorias</option>' + categoriasDespesas().map(function (c) {
       return '<option value="' + esc(c) + '"' + (RE.cat === c ? ' selected' : '') + '>' + esc(catNome(c)) + '</option>';
     }).join('');
+    var faseOpts = '<option value="">Todas as fases</option>' + (RE.dados.fases || []).filter(function (f) {
+      return !f.arquivada && String(f.nome || '').trim().toLowerCase() !== '(removida)';
+    }).map(function (f) { return '<option value="' + esc(f.id) + '"' + (String(RE.fase) === String(f.id) ? ' selected' : '') + '>' + esc(f.nome) + '</option>'; }).join('');
     var sel = 'p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500';
     var btn = 'px-3 py-2 rounded-lg text-sm font-semibold border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 transition';
 
@@ -357,6 +395,8 @@
       +     '<select id="re-escopo" onchange="reObraSet()" class="' + sel + ' w-full">' + obraOpts + '</select></div>'
       +   '<div><label class="block text-[11px] uppercase font-bold text-slate-400 mb-1">Categoria de despesa</label>'
       +     '<select id="re-cat" onchange="reObraSet()" class="' + sel + '">' + catOpts + '</select></div>'
+      +   '<div><label class="block text-[11px] uppercase font-bold text-slate-400 mb-1">Fase</label>'
+      +     '<select id="re-fase" onchange="reObraSet()" class="' + sel + '">' + faseOpts + '</select></div>'
       +   '<div><label class="block text-[11px] uppercase font-bold text-slate-400 mb-1">De</label>'
       +     '<input id="re-ini" type="date" value="' + esc(RE.ini) + '" onchange="reObraSet()" class="' + sel + '"></div>'
       +   '<div><label class="block text-[11px] uppercase font-bold text-slate-400 mb-1">At\u00e9</label>'
@@ -375,21 +415,23 @@
   async function carregar() {
     var res = await Promise.all([
       A().listObras(false),
-      sb.from('logs').select('uid,tipo,produto_nome,data,valor_total,status,status_financeiro,obra_id,categoria,observacao,vencimento,fornecedor_id'),
+      sb.from('logs').select('uid,tipo,produto_nome,data,valor_total,status,status_financeiro,obra_id,categoria,observacao,vencimento,fornecedor_id,fase_id'),
       sb.from('despesas').select('uid,item,custo,data,status,obra_id,categoria,fornecedor,valor_pago,fase_id'),
       sb.from('producao_terc').select('id,terceirizado_id,obra_id,data_registro,metros,status'),
       sb.from('medicoes_empreita').select('id,equipe_id,obra_id,data_medicao,percentual,valor,status'),
       sb.from('ponto_diario').select('id,funcionario_id,obra_id,tipo,status,hora_registro,fracao_diaria'),
       sb.from('terceirizados').select('id,nome'),
       sb.from('equipe').select('id,nome,tipo,categoria,valor_diaria,valor_metro,valor_contrato'),
-      sb.from('fornecedores').select('id,nome')
+      sb.from('fornecedores').select('id,nome'),
+      sb.from('obras_fases').select('id,obra_id,nome,ordem,arquivada')
     ]);
     var erro = res.find(function (r) { return r && r.error; });
     if (erro) throw erro.error;
     return {
       obras: res[0] || [], logs: res[1].data || [], desps: res[2].data || [],
       prod: res[3].data || [], meds: res[4].data || [], pontos: res[5].data || [],
-      terc: res[6].data || [], equipe: res[7].data || [], forns: res[8].data || []
+      terc: res[6].data || [], equipe: res[7].data || [], forns: res[8].data || [],
+      fases: res[9].data || []
     };
   }
 
@@ -414,6 +456,7 @@
     RE.ini = val('re-ini');
     RE.fim = val('re-fim');
     RE.cat = val('re-cat');
+    RE.fase = val('re-fase');
     if (RE.cat && RE.tipo !== 'despesas') {
       RE.tipo = 'despesas';
       var t = document.getElementById('re-tipo'); if (t) t.value = 'despesas';

@@ -9,8 +9,10 @@
     c.innerHTML = '<div class="p-6 text-slate-400">Carregando obras...</div>';
     try {
       var obras = await A().listObras(false);
-      var fasesRes = await sb.from('obras_fases').select('*').order('ordem');
-      var fases = fasesRes.data || [];
+      var fasesRes = await sb.from('obras_fases').select('id,obra_id,nome,ordem,arquivada').order('ordem');
+      var fases = (fasesRes.data || []).filter(function (f) {
+        return !f.arquivada && String(f.nome || '').trim().toLowerCase() !== '(removida)';
+      });
       var porObra = {};
       fases.forEach(function (f) {
         if (!porObra[f.obra_id]) porObra[f.obra_id] = [];
@@ -244,19 +246,21 @@
 
   async function obraOpenFases(obraId) {
     var o = await sb.from('obras').select('nome').eq('id', obraId).single();
-    var f = await sb.from('obras_fases').select('*').eq('obra_id', obraId).order('ordem');
-    var fases = f.data || [];
+    var f = await sb.from('obras_fases').select('id,nome,ordem,arquivada').eq('obra_id', obraId).order('ordem');
+    var fases = (f.data || []).filter(function (x) {
+      return !x.arquivada && String(x.nome || '').trim().toLowerCase() !== '(removida)';
+    });
     abrirModal(''
       + '<div class="space-y-3">'
       +   '<form onsubmit="obraSalvarFase(event,\'' + obraId + '\')" class="flex gap-2">'
       +     '<input id="fase-nome" required placeholder="Nome da fase" class="flex-1 p-2.5 border rounded-lg">'
       +     '<button class="bg-emerald-600 text-white px-4 rounded-lg font-bold">Adicionar</button>'
       +   '</form>'
+      +   '<p class="text-xs text-slate-400">Fases arquivadas deixam de aparecer nos lancamentos, mas o historico financeiro ja lancado continua vinculado.</p>'
       +   '<ul class="divide-y">'
       +     (fases.length ? fases.map(function (x) {
-        var rem = x.nome === '(removida)';
-        return '<li class="py-2 flex justify-between items-center' + (rem ? ' opacity-50' : '') + '"><span>' + A().esc(x.ordem) + '. ' + A().esc(x.nome) + '</span>'
-          + (!rem ? '<button onclick="obraExcluirFase(\'' + x.id + '\',\'' + obraId + '\')" class="text-red-500 text-xs font-bold">Remover</button>' : '') + '</li>';
+        return '<li class="py-2 flex justify-between items-center"><span>' + A().esc(x.ordem) + '. ' + A().esc(x.nome) + '</span>'
+          + '<button onclick="obraExcluirFase(\'' + x.id + '\',\'' + obraId + '\')" class="text-red-500 text-xs font-bold">Arquivar</button></li>';
       }).join('') : '<li class="text-slate-400 text-sm py-2">Nenhuma fase.</li>')
       +   '</ul></div>', 'Fases — ' + ((o.data && o.data.nome) || ''));
   }
@@ -274,11 +278,11 @@
   }
 
   async function obraExcluirFase(id, obraId) {
-    var ok = typeof confirmDialog === 'function' ? await confirmDialog('Marcar esta fase como removida? Nao apaga o registro.', { danger: true, confirmText: 'Remover' }) : true;
+    var ok = typeof confirmDialog === 'function' ? await confirmDialog('Arquivar esta fase? Ela sai dos lancamentos novos, mas o historico ja lancado continua vinculado.', { danger: true, confirmText: 'Arquivar' }) : true;
     if (!ok) return;
-    var res = await sb.from('obras_fases').update({ nome: '(removida)' }).eq('id', id);
+    var res = await sb.from('obras_fases').update({ arquivada: true }).eq('id', id);
     if (res.error) return A().toast(res.error.message, true);
-    A().toast('Fase marcada como removida.');
+    A().toast('Fase arquivada.');
     obraOpenFases(obraId);
     renderObras();
   }

@@ -17,6 +17,7 @@
     obras: [],
     logs: [],
     despesas: [],
+    fases: [],
     clients: [],
     showCards: true,
     recCtx: null,
@@ -141,6 +142,7 @@
       +     '<div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 shadow-sm"><p class="text-indigo-800 text-xs font-bold uppercase">Saldo de caixa</p><h3 id="ofin-balance" class="text-2xl font-bold text-indigo-600 mt-1">R$ 0,00</h3></div>'
       +     '<div class="bg-amber-50 p-4 rounded-xl border border-amber-100 shadow-sm"><p class="text-amber-800 text-xs font-bold uppercase">Em aberto</p><h3 id="ofin-open" class="text-2xl font-bold text-amber-600 mt-1">R$ 0,00</h3><p class="text-[10px] text-amber-700 mt-0.5">a receber - a pagar</p></div>'
       +   '</div>'
+      +   '<div id="ofin-fase-resumo" class="hidden"></div>'
       +   '<div id="ofin-overview" class="hidden"></div>'
       +   '<div id="ofin-detail">'
       +     '<div class="mb-2 border-b border-slate-200">'
@@ -169,6 +171,7 @@
       +     '<input type="text" id="ofin-rec-search" placeholder="Buscar cliente/descrição..." class="w-full pl-8 p-1.5 border rounded text-xs focus:ring-1 focus:ring-indigo-600 outline-none" onkeyup="ofinRenderReceber()"></div>'
       +     '<select id="ofin-rec-status" class="w-32 p-1.5 border rounded text-xs focus:ring-1 focus:ring-indigo-600 outline-none" onchange="ofinRenderReceber()"><option value="">Todos</option><option value="ABERTOS">Em Aberto</option><option value="VENCIDOS">Vencidos</option><option value="PAGOS">Pagos</option></select>'
       +   '</div>'
+      +   '<div class="flex gap-2"><select id="ofin-rec-fase-filter" class="flex-1 p-1.5 border rounded text-xs focus:ring-1 focus:ring-indigo-600 outline-none" onchange="ofinRenderReceber()"></select></div>'
       +   '<div class="flex gap-2 items-center">'
       +     '<input type="date" id="ofin-rec-start" class="p-1.5 border rounded text-xs flex-1" onchange="ofinRenderReceber()">'
       +     '<span class="text-slate-400 text-xs">até</span>'
@@ -177,7 +180,7 @@
       +   '</div>'
       + '</div>'
       + '<div class="overflow-y-auto flex-1 p-0"><table class="w-full text-sm text-left"><thead class="text-slate-500 bg-slate-50 sticky top-0 border-b z-10"><tr>'
-      +   '<th class="p-3 font-semibold">Venc/Pagto</th><th class="p-3 font-semibold">Cliente/Ref</th><th class="p-3 font-semibold">Valor</th><th class="p-3 font-semibold text-right w-40">Ação</th>'
+      +   '<th class="p-3 font-semibold">Venc/Pagto</th><th class="p-3 font-semibold">Cliente/Ref</th><th class="p-3 font-semibold">Fase</th><th class="p-3 font-semibold">Valor</th><th class="p-3 font-semibold text-right w-40">Ação</th>'
       + '</tr></thead><tbody id="ofin-receivables-list" class="divide-y"></tbody></table></div>';
   }
 
@@ -198,6 +201,7 @@
       +     '<input type="text" id="ofin-exp-search" placeholder="Buscar fornecedor/item..." class="w-full pl-8 p-1.5 border rounded text-xs focus:ring-1 focus:ring-red-500 outline-none" onkeyup="ofinRenderPagar()"></div>'
       +     '<select id="ofin-exp-status" class="w-32 p-1.5 border rounded text-xs focus:ring-1 focus:ring-red-500 outline-none" onchange="ofinRenderPagar()"><option value="">Todos</option><option value="PENDENTE">Pendentes</option><option value="PAGO">Pagos</option><option value="VENCIDOS">Vencidos</option></select>'
       +   '</div>'
+      +   '<div class="flex gap-2"><select id="ofin-exp-fase-filter" class="flex-1 p-1.5 border rounded text-xs focus:ring-1 focus:ring-red-500 outline-none" onchange="ofinRenderPagar()"></select></div>'
       +   '<div class="flex gap-2 items-center">'
       +     '<input type="date" id="ofin-exp-start" class="p-1.5 border rounded text-xs flex-1" onchange="ofinRenderPagar()">'
       +     '<span class="text-slate-400 text-xs">até</span>'
@@ -206,7 +210,7 @@
       +   '</div>'
       + '</div>'
       + '<div class="overflow-y-auto flex-1 p-0"><table class="w-full text-sm text-left"><thead class="text-slate-500 bg-slate-50 sticky top-0 border-b z-10"><tr>'
-      +   '<th class="p-3 font-semibold">Data</th><th class="p-3 font-semibold text-center w-12">ID</th><th class="p-3 font-semibold">Fornecedor</th><th class="p-3 font-semibold">Valor</th><th class="p-3 font-semibold text-right w-44">Ação</th>'
+      +   '<th class="p-3 font-semibold">Data</th><th class="p-3 font-semibold text-center w-12">ID</th><th class="p-3 font-semibold">Fornecedor</th><th class="p-3 font-semibold">Fase</th><th class="p-3 font-semibold">Valor</th><th class="p-3 font-semibold text-right w-44">Ação</th>'
       + '</tr></thead><tbody id="ofin-expenses-list" class="divide-y"></tbody></table></div>';
   }
 
@@ -215,34 +219,72 @@
   function scopedLogs() { return allMode() ? OFIN.logs : onlyObraLogs(OFIN.logs, OFIN.obraId); }
   function scopedDespesas() { return allMode() ? OFIN.despesas : onlyObraDesp(OFIN.despesas, OFIN.obraId); }
 
+  // ---------- fases ----------
+  function faseValida(f) {
+    return f && !f.arquivada && String(f.nome || '').trim().toLowerCase() !== '(removida)';
+  }
+  function activeFases() {
+    return (OFIN.fases || []).filter(function (f) {
+      return faseValida(f) && String(f.obra_id) === String(OFIN.obraId);
+    });
+  }
+  function faseName(id) {
+    if (!id) return '';
+    var f = (OFIN.fases || []).find(function (x) { return String(x.id) === String(id); });
+    return f ? f.nome : '';
+  }
+  function preencherFaseSelect(selId, selected) {
+    var s = el(selId);
+    if (!s) return;
+    var fases = (!allMode() && OFIN.obraId) ? activeFases() : [];
+    s.innerHTML = A().fasesOptions ? A().fasesOptions(fases, selected) : '';
+  }
+  function preencherFaseFiltro(selId) {
+    var s = el(selId);
+    if (!s) return;
+    var cur = s.value;
+    var fases = (!allMode() && OFIN.obraId) ? activeFases() : (OFIN.fases || []).filter(faseValida);
+    s.innerHTML = '<option value="">Todas as fases</option>'
+      + fases.map(function (f) { return '<option value="' + esc(f.id) + '">' + esc(f.nome) + '</option>'; }).join('');
+    s.value = cur || '';
+  }
+  function faseCell(id) {
+    var n = faseName(id);
+    return n ? '<span class="text-[10px] font-bold uppercase text-slate-500 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">' + esc(n) + '</span>' : '<span class="text-slate-300 text-xs">-</span>';
+  }
+
   async function ofinCarregar() {
     var recvBody = el('ofin-receivables-list');
     var pagBody = el('ofin-expenses-list');
     if (!OFIN.obraId) {
-      if (recvBody) recvBody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400">Selecione uma obra.</td></tr>';
-      if (pagBody) pagBody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400">Selecione uma obra.</td></tr>';
+      if (recvBody) recvBody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400">Selecione uma obra.</td></tr>';
+      if (pagBody) pagBody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Selecione uma obra.</td></tr>';
       renderCards();
       return;
     }
-    if (recvBody) recvBody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400">Carregando...</td></tr>';
-    if (pagBody) pagBody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400">Carregando...</td></tr>';
+    if (recvBody) recvBody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400">Carregando...</td></tr>';
+    if (pagBody) pagBody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Carregando...</td></tr>';
     try {
       var lq = sb.from('logs').select('*');
       var dq = sb.from('despesas').select('*');
+      var fq = sb.from('obras_fases').select('id,obra_id,nome,ordem,arquivada').order('ordem');
       if (allMode()) {
         lq = lq.not('obra_id', 'is', null);
         dq = dq.not('obra_id', 'is', null);
       } else {
         lq = lq.eq('obra_id', OFIN.obraId);
         dq = dq.eq('obra_id', OFIN.obraId);
+        fq = fq.eq('obra_id', OFIN.obraId);
       }
-      var r = await Promise.all([lq, dq]);
+      var r = await Promise.all([lq, dq, fq]);
       if (r[0].error) throw r[0].error;
       if (r[1].error) throw r[1].error;
+      if (r[2].error) throw r[2].error;
       OFIN.logs = r[0].data || [];
       OFIN.despesas = r[1].data || [];
+      OFIN.fases = r[2].data || [];
     } catch (e) {
-      if (recvBody) recvBody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-red-600">' + esc(e.message || e) + '</td></tr>';
+      if (recvBody) recvBody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-red-600">' + esc(e.message || e) + '</td></tr>';
       return;
     }
     renderCards();
@@ -255,8 +297,11 @@
     } else {
       if (ov) ov.classList.add('hidden');
       if (det) det.classList.remove('hidden');
+      preencherFaseFiltro('ofin-rec-fase-filter');
+      preencherFaseFiltro('ofin-exp-fase-filter');
       ofinRenderReceber();
       ofinRenderPagar();
+      renderFaseResumo();
     }
   }
 
@@ -343,6 +388,52 @@
     return { recebido: recebido, pago: pago, saldo: recebido - pago, aReceber: aReceber, aPagar: aPagar, emAberto: aReceber - aPagar };
   }
 
+  // Resumo de caixa por fase da obra atual (receita/custo atribuidos).
+  function renderFaseResumo() {
+    var box = el('ofin-fase-resumo');
+    if (!box) return;
+    if (allMode() || !OFIN.obraId) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+    var fases = (OFIN.fases || []).filter(function (f) { return String(f.obra_id) === String(OFIN.obraId) && faseValida(f); });
+
+    var logs = onlyObraLogs(OFIN.logs, OFIN.obraId);
+    var desps = onlyObraDesp(OFIN.despesas, OFIN.obraId);
+    function linha(nome, lf, df) {
+      var recebido = A().recebidoDe ? A().recebidoDe(lf) : 0;
+      var aReceber = openARFrom(lf);
+      var pago = lf.filter(function (l) { return l.tipo === 'despesa' && !isEst(l) && String(l.status_financeiro || '').toUpperCase() === 'PAGO'; })
+        .reduce(function (s, l) { return s + Number(l.valor_total || 0); }, 0);
+      var aPagar = df.filter(function (e) { return !isEst(e) && String(e.status || '').toUpperCase() !== 'PAGO'; })
+        .reduce(function (s, e) { return s + Math.max(0, saldoDespesa(e)); }, 0);
+      return { nome: nome, recebido: recebido, aReceber: aReceber, pago: pago, aPagar: aPagar, saldo: recebido - pago };
+    }
+    var rows = fases.map(function (f) {
+      return linha(f.nome, logs.filter(function (l) { return String(l.fase_id) === String(f.id); }),
+                          desps.filter(function (d) { return String(d.fase_id) === String(f.id); }));
+    });
+    rows.push(linha('Sem fase', logs.filter(function (l) { return !l.fase_id; }), desps.filter(function (d) { return !d.fase_id; })));
+
+    box.innerHTML = ''
+      + '<div class="bg-white rounded-xl border shadow-sm overflow-hidden">'
+      +   '<div class="p-4 border-b bg-slate-50 flex items-center justify-between"><h3 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="layers" class="w-5 h-5 text-emerald-600"></i> Resumo por fase</h3>'
+      +   '<span class="text-[11px] text-slate-400">Receita e custo atribuidos a cada fase</span></div>'
+      +   '<div class="overflow-x-auto"><table class="w-full text-sm text-left">'
+      +     '<thead class="bg-slate-100 text-slate-600"><tr>'
+      +       '<th class="p-3">Fase</th><th class="p-3 text-right">Recebido</th><th class="p-3 text-right">A receber</th>'
+      +       '<th class="p-3 text-right">Pago</th><th class="p-3 text-right">A pagar</th><th class="p-3 text-right">Saldo</th>'
+      +     '</tr></thead><tbody>'
+      +     rows.map(function (r) {
+        var cls = r.saldo >= 0 ? 'text-emerald-700' : 'text-red-600';
+        return '<tr class="border-t"><td class="p-3 font-bold text-slate-700">' + esc(r.nome) + '</td>'
+          + '<td class="p-3 text-right text-green-700">' + money(r.recebido) + '</td>'
+          + '<td class="p-3 text-right text-amber-700">' + money(r.aReceber) + '</td>'
+          + '<td class="p-3 text-right text-red-600">' + money(r.pago) + '</td>'
+          + '<td class="p-3 text-right text-orange-600">' + money(r.aPagar) + '</td>'
+          + '<td class="p-3 text-right font-bold ' + cls + '">' + money(r.saldo) + '</td></tr>';
+      }).join('')
+      +     '</tbody></table></div></div>';
+    box.classList.remove('hidden');
+  }
+
   function renderOverview() {
     var box = el('ofin-overview');
     if (!box) return;
@@ -416,6 +507,7 @@
     var st = el('ofin-rec-status') ? el('ofin-rec-status').value : '';
     var ini = el('ofin-rec-start') ? el('ofin-rec-start').value : '';
     var fim = el('ofin-rec-end') ? el('ofin-rec-end').value : '';
+    var faseF = el('ofin-rec-fase-filter') ? el('ofin-rec-fase-filter').value : '';
     var hoje = getHojeLocalStr();
 
     var ids = {};
@@ -425,10 +517,11 @@
     var lista = Object.keys(ids).map(function (id) {
       var c = calcTituloObra(id);
       var r0 = c.rows[0] || {};
-      return { id: id, clientName: r0.cliente_nome || 'Consumidor Final', desc: r0.produto_nome || ('Título #' + id), dueDate: r0.vencimento, payment: r0.forma_pagamento, calc: c };
+      return { id: id, clientName: r0.cliente_nome || 'Consumidor Final', desc: r0.produto_nome || ('Título #' + id), dueDate: r0.vencimento, payment: r0.forma_pagamento, faseId: r0.fase_id, calc: c };
     });
     lista = lista.filter(function (r) {
       if (term && normalizeSearch(r.clientName + ' ' + r.desc + ' ' + r.id).indexOf(term) < 0) return false;
+      if (faseF && String(r.faseId || '') !== String(faseF)) return false;
       if (st === 'PAGOS' && r.calc.status !== 'PAGO') return false;
       if (st === 'ABERTOS' && (r.calc.status === 'PAGO' || (r.dueDate || '').split('T')[0] < hoje)) return false;
       if (st === 'VENCIDOS' && (r.calc.status === 'PAGO' || (r.dueDate || '').split('T')[0] >= hoje)) return false;
@@ -439,7 +532,7 @@
     lista.sort(function (a, b) { return String(b.dueDate || '').localeCompare(String(a.dueDate || '')); });
 
     if (!lista.length) {
-      body.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400">Nenhum registro encontrado.</td></tr>';
+      body.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400">Nenhum registro encontrado.</td></tr>';
       return;
     }
     var totalVal = lista.reduce(function (a, r) { return a + (r.calc.total + r.calc.jur - r.calc.disc); }, 0);
@@ -467,6 +560,7 @@
         + '<td class="p-3"><div class="font-bold text-slate-800 text-xs">' + dataBR(r.dueDate) + '</div>'
         + '<div class="text-[10px] font-bold uppercase ' + (pago ? 'text-green-600' : (vencido ? 'text-red-600' : 'text-orange-500')) + '">' + esc(r.calc.status) + aviso + '</div></td>'
         + '<td class="p-3"><div class="font-bold text-slate-700 text-sm">' + esc(r.clientName) + '</div><div class="text-xs text-slate-500">' + esc(r.desc) + '</div></td>'
+        + '<td class="p-3">' + faseCell(r.faseId) + '</td>'
         + '<td class="p-3"><div class="font-bold text-indigo-700">' + money(saldo) + '</div><div class="text-[10px] text-slate-400">Total ' + money(r.calc.total + r.calc.jur - r.calc.disc) + ' · Pago ' + money(r.calc.pago) + '</div></td>'
         + '<td class="p-3"><div class="flex items-center justify-end gap-1">'
         +   zap
@@ -477,7 +571,7 @@
         + '</div></td></tr>';
     }).join('');
     body.innerHTML = rows
-      + '<tr class="bg-slate-100 font-black text-slate-700"><td class="p-3" colspan="2">Totais</td><td class="p-3">' + money(totalVal - totalPago) + '</td><td class="p-3 text-right text-[10px] text-slate-500">Recebido ' + money(totalPago) + ' de ' + money(totalVal) + '</td></tr>';
+      + '<tr class="bg-slate-100 font-black text-slate-700"><td class="p-3" colspan="3">Totais</td><td class="p-3">' + money(totalVal - totalPago) + '</td><td class="p-3 text-right text-[10px] text-slate-500">Recebido ' + money(totalPago) + ' de ' + money(totalVal) + '</td></tr>';
     icons();
   }
 
@@ -489,12 +583,14 @@
     var ini = el('ofin-exp-start') ? el('ofin-exp-start').value : '';
     var fim = el('ofin-exp-end') ? el('ofin-exp-end').value : '';
     var cat = el('ofin-exp-category') ? el('ofin-exp-category').value : '';
+    var faseF = el('ofin-exp-fase-filter') ? el('ofin-exp-fase-filter').value : '';
     var hoje = getHojeLocalStr();
 
     var lista = OFIN.despesas.slice().filter(function (e) {
       var dt = String(e.data || '').split('T')[0];
       if (isEst(e)) return false;
       if (cat && String(e.item) !== cat) return false;
+      if (faseF && String(e.fase_id || '') !== String(faseF)) return false;
       if (term && normalizeSearch((e.fornecedor || '') + ' ' + (e.item || '') + ' ' + (e.observacao || '') + ' ' + e.id).indexOf(term) < 0) return false;
       if (st === 'PAGO' && e.status !== 'PAGO') return false;
       if (st === 'PENDENTE' && e.status === 'PAGO') return false;
@@ -506,7 +602,7 @@
     lista.sort(function (a, b) { return String(b.data || '').localeCompare(String(a.data || '')); });
 
     if (!lista.length) {
-      body.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400">Nenhum registro encontrado.</td></tr>';
+      body.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Nenhum registro encontrado.</td></tr>';
       return;
     }
     var rows = lista.map(function (e) {
@@ -521,6 +617,7 @@
         + '<div class="text-[10px] font-bold uppercase ' + (pago ? 'text-green-600' : (vencido ? 'text-red-600' : 'text-orange-500')) + '">' + esc(e.status || 'PENDENTE') + aviso + '</div></td>'
         + '<td class="p-3 text-center text-xs text-slate-500 font-bold">#' + esc(e.id) + '</td>'
         + '<td class="p-3"><div class="font-bold text-slate-700 text-sm">' + esc(e.fornecedor || '—') + '</div><div class="text-xs text-slate-500">' + esc(e.item || '') + (e.observacao ? ' · ' + esc(e.observacao) : '') + '</div></td>'
+        + '<td class="p-3">' + faseCell(e.fase_id) + '</td>'
         + '<td class="p-3"><div class="font-bold text-red-600">' + money(saldo > 0 ? saldo : 0) + '</div><div class="text-[10px] text-slate-400">Total ' + money(e.custo) + ' · Pago ' + money(e.valor_pago) + '</div></td>'
         + '<td class="p-3"><div class="flex items-center justify-end gap-1">'
         +   (pago ? '' : '<button onclick="ofinPayExpense(\'' + e.id + '\')" class="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded shadow" title="Baixar / Pagar"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i></button>')
@@ -574,6 +671,7 @@
   function modalRevenueHtml() {
     var body = ''
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Tipo de Entrada</label><select id="ofin-rev-tipo" class="w-full p-3 border rounded-xl bg-white">' + optionsTiposEntrada() + '</select></div>'
+      + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Fase (opcional)</label><select id="ofin-rev-fase" class="w-full p-3 border rounded-xl bg-white"></select></div>'
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Nome do Cliente (opcional)</label><input type="text" id="ofin-rev-client" class="w-full p-3 border rounded-xl" placeholder="Ex: João Silva"></div>'
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Valor a Receber (R$)</label><input type="number" id="ofin-rev-val" class="w-full p-3 border rounded-xl font-bold text-indigo-700" placeholder="0.00"></div>'
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Data de Vencimento</label><input type="date" id="ofin-rev-due" class="w-full p-3 border rounded-xl"></div>'
@@ -588,6 +686,7 @@
     var body = ''
       + '<input type="hidden" id="ofin-exp-id">'
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Categoria da Despesa</label><select id="ofin-exp-item" class="w-full p-3 border rounded-xl">' + optionsCategorias('FORNECEDOR') + '</select></div>'
+      + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Fase (opcional)</label><select id="ofin-exp-fase" class="w-full p-3 border rounded-xl bg-white"></select></div>'
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Nome / Fornecedor</label><input type="text" id="ofin-exp-provider" class="w-full p-3 border rounded-xl" placeholder="Ex: João da Silva..."></div>'
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Custo Total (R$)</label><input type="number" id="ofin-exp-cost" class="w-full p-3 border rounded-xl font-bold text-red-600" placeholder="0.00"></div>'
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Data de Vencimento</label><input type="date" id="ofin-exp-date" class="w-full p-3 border rounded-xl"></div>'
@@ -666,6 +765,7 @@
   function ofinOpenRevenue() {
     if (!OFIN.obraId || OFIN.obraId === '__all__') return toast('Selecione uma obra especifica no topo para lançar receitas.', true);
     var t = el('ofin-rev-tipo'); if (t) t.value = TIPOS_ENTRADA[0];
+    preencherFaseSelect('ofin-rev-fase', '');
     el('ofin-rev-client').value = '';
     el('ofin-rev-val').value = '';
     el('ofin-rev-note').value = '';
@@ -691,7 +791,7 @@
         observacao: note || ('Receita de obra: ' + nomeObra(OFIN.obraId)), valor_total: v, cliente_nome: client,
         forma_pagamento: method, status: 'ATIVO', status_entrega: 'ENTREGUE', qtd_entregue: 1,
         desconto: 0, status_financeiro: 'PENDENTE', vencimento: due, valor_pago: 0,
-        endereco_entrega: '', obra_id: OFIN.obraId
+        endereco_entrega: '', obra_id: OFIN.obraId, fase_id: val('ofin-rev-fase') || null
       };
       var res = await sb.from('logs').insert([payload]);
       if (res.error) throw res.error;
@@ -801,7 +901,7 @@
           desconto: isPrimeira ? desconto : 0, acrescimo: isPrimeira ? juros : 0,
           cliente_nome: st.rows[0].cliente_nome, cliente_id: st.rows[0].cliente_id || null,
           forma_pagamento: f.metodo, status: 'ATIVO', status_financeiro: 'PAGO', valor_pago: f.valor,
-          obra_id: OFIN.obraId
+          obra_id: OFIN.obraId, fase_id: st.rows[0].fase_id || null
         }]);
         if (res.error) throw res.error;
       }
@@ -932,7 +1032,7 @@
           valor_total: p.valor, cliente_nome: r0.cliente_nome || 'Consumidor Final', cliente_id: r0.cliente_id || null,
           forma_pagamento: r0.forma_pagamento || null, status: 'ATIVO', status_entrega: 'ENTREGUE', qtd_entregue: 1,
           desconto: 0, status_financeiro: 'PENDENTE', vencimento: p.data, valor_pago: 0, endereco_entrega: '',
-          obra_id: OFIN.obraId
+          obra_id: OFIN.obraId, fase_id: r0.fase_id || null
         }]);
         if (res.error) throw res.error;
       }
@@ -955,6 +1055,7 @@
     el('ofin-exp-parcelas').value = '1';
     el('ofin-exp-parcel-int').value = '30';
     el('ofin-exp-note').value = '';
+    preencherFaseSelect('ofin-exp-fase', '');
   }
 
   function ofinOpenNewExpense() {
@@ -974,6 +1075,7 @@
     el('ofin-exp-parcelas').value = '1';
     el('ofin-exp-parcel-int').value = '30';
     el('ofin-exp-note').value = e.observacao || '';
+    preencherFaseSelect('ofin-exp-fase', e.fase_id || '');
     abrirModal('ofin-modal-expense');
   }
 
@@ -991,7 +1093,7 @@
     loading(true);
     try {
       var make = function (custo, data, obs) {
-        return { item: item, quantidade: 1, unidade: 'Un', custo: custo, data: data, fornecedor: provider, observacao: obs, status: 'PENDENTE', valor_pago: 0, desconto_total: 0, acrescimo_total: 0, obra_id: OFIN.obraId, categoria: item };
+        return { item: item, quantidade: 1, unidade: 'Un', custo: custo, data: data, fornecedor: provider, observacao: obs, status: 'PENDENTE', valor_pago: 0, desconto_total: 0, acrescimo_total: 0, obra_id: OFIN.obraId, categoria: item, fase_id: val('ofin-exp-fase') || null };
       };
       var res;
       if (isNew && parcelas > 1) {
@@ -1077,7 +1179,7 @@
           quantidade: Number(e.quantidade) || 1, data: dataPgto, observacao: 'Ref Despesa #' + e.id,
           valor_total: f.valor, desconto: isPrimeira ? desconto : 0, acrescimo: isPrimeira ? juros : 0,
           forma_pagamento: f.metodo, status: 'ATIVO', status_financeiro: 'PAGO', valor_pago: f.valor,
-          obra_id: e.obra_id || OFIN.obraId
+          obra_id: e.obra_id || OFIN.obraId, fase_id: e.fase_id || null
         }]);
         if (res.error) throw res.error;
       }
@@ -1142,7 +1244,7 @@
       var res = await sb.from('despesas').insert([{
         id: await nextDespesaId(), item: e.item, quantidade: Number(e.quantidade) || 1, unidade: e.unidade || 'Un',
         custo: e.custo, data: nd.toISOString().split('T')[0], fornecedor: e.fornecedor || '', observacao: e.observacao || '',
-        status: 'PENDENTE', valor_pago: 0, desconto_total: 0, acrescimo_total: 0, obra_id: e.obra_id || OFIN.obraId, categoria: e.item
+        status: 'PENDENTE', valor_pago: 0, desconto_total: 0, acrescimo_total: 0, obra_id: e.obra_id || OFIN.obraId, categoria: e.item, fase_id: e.fase_id || null
       }]);
       if (res.error) throw res.error;
       toast('Despesa duplicada (venc. +30 dias)!');

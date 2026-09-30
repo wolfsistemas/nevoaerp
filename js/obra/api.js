@@ -97,6 +97,34 @@
     return total;
   }
 
+  // Fases ativas de uma obra (para os selects de lancamento).
+  async function listFases(obraId) {
+    if (!obraId || obraId === '__all__') return [];
+    try {
+      var res = await sb.from('obras_fases')
+        .select('id,nome,ordem,arquivada')
+        .eq('obra_id', obraId)
+        .order('ordem');
+      return (res.data || []).filter(function (f) {
+        return !f.arquivada && String(f.nome || '').trim().toLowerCase() !== '(removida)';
+      });
+    } catch (e) { return []; }
+  }
+
+  function fasesOptions(fases, sel) {
+    var opts = ['<option value="">Sem fase</option>'];
+    (fases || []).forEach(function (f) {
+      opts.push('<option value="' + f.id + '"' + (String(f.id) === String(sel || '') ? ' selected' : '') + '>' + esc(f.nome) + '</option>');
+    });
+    return opts.join('');
+  }
+
+  function faseNome(fases, id) {
+    if (!id) return '';
+    var f = (fases || []).find(function (x) { return String(x.id) === String(id); });
+    return f ? f.nome : '';
+  }
+
   var CAT_LABELS = {
     ponto: 'M.O. DI\u00c1RIA',
     terceirizado: 'M.O. METRAGEM',
@@ -263,6 +291,9 @@
     calcTitulo: calcTitulo,
     recebidoDe: recebidoDe,
     aReceberDe: aReceberDe,
+    listFases: listFases,
+    fasesOptions: fasesOptions,
+    faseNome: faseNome,
     catLabel: catLabel,
     confirmar: confirmar,
     nextId: nextId,
