@@ -111,16 +111,71 @@
     var p = el('print-area');
     if (p) { p.innerHTML = html; setTimeout(function () { window.print(); }, 300); }
   }
-  function reciboBody(titulo, texto, nomeAssin, docAssin) {
-    return '<div style="border:1px solid #000;border-top:none;padding:24px;font-size:15px;line-height:1.8;">'
-      + '<h2 style="margin:0 0 16px;font-size:18px;text-transform:uppercase;">' + esc(titulo) + '</h2>'
-      + '<p style="margin:0 0 12px;">' + texto + '</p>'
-      + '<p style="margin:0;color:#64748b;font-size:12px;">Data: ' + dataBR(hojeISO()) + '</p>'
-      + '<div style="margin-top:70px;text-align:center;">'
-      +   '<div style="border-top:1px solid #000;width:60%;margin:0 auto 6px;"></div>'
-      +   '<div style="font-size:11px;font-weight:bold;text-transform:uppercase;">' + esc(nomeAssin || '') + '</div>'
-      +   '<div style="font-size:10px;color:#64748b;">' + esc(docAssin || '') + '</div>'
-      + '</div></div>';
+  function reciboPadrao(o) {
+    o = o || {};
+    var P = window.obraPrint || {};
+    var comp = P.company ? P.company() : ((typeof getCompany === 'function') ? getCompany() : {});
+    var nomeEmp = comp.nome || comp.name || 'NÉVOA';
+    var logo = comp.logoUrl || comp.logo || 'logo.png';
+    var endEmp = comp.endereco || comp.address;
+    var telEmp = comp.telefone || comp.phone;
+    var hoje = dataBR(hojeISO());
+    var linhas = (o.linhas || []).map(function (l) {
+      return '<tr><td style="padding:3px 12px 3px 0;color:#475569;">' + esc(l[0]) + '</td>'
+        + '<td style="padding:3px 0;text-align:right;font-weight:bold;color:#0f172a;">' + esc(l[1]) + '</td></tr>';
+    }).join('');
+    return '<div style="font-family:Helvetica,Arial,sans-serif;max-width:800px;margin:auto;padding:20px;background:#fff;color:#0f172a;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #059669;padding-bottom:14px;margin-bottom:20px;">'
+      +   '<div style="display:flex;align-items:center;gap:14px;">'
+      +     '<img src="' + esc(logo) + '" style="max-height:64px;max-width:130px;" onerror="this.style.display=\'none\';" />'
+      +     '<div>'
+      +       '<h2 style="margin:0;color:#059669;font-size:20px;text-transform:uppercase;">' + esc(nomeEmp) + '</h2>'
+      +       (comp.cnpj ? '<p style="margin:2px 0;font-size:11px;color:#475569;">CNPJ: ' + esc(comp.cnpj) + '</p>' : '')
+      +       (endEmp ? '<p style="margin:2px 0;font-size:11px;color:#475569;">' + esc(endEmp) + '</p>' : '')
+      +       (telEmp ? '<p style="margin:2px 0;font-size:11px;color:#475569;">Tel: ' + esc(telEmp) + '</p>' : '')
+      +     '</div>'
+      +   '</div>'
+      +   '<div style="text-align:right;">'
+      +     '<h3 style="margin:0;font-size:16px;font-weight:bold;text-transform:uppercase;">' + esc(o.titulo || 'Recibo') + '</h3>'
+      +     '<p style="margin:2px 0;font-size:12px;">Emissao: ' + esc(hoje) + '</p>'
+      +   '</div>'
+      + '</div>'
+      + '<div style="display:flex;justify-content:space-between;gap:20px;margin-bottom:20px;">'
+      +   '<div style="font-size:13px;line-height:1.7;">'
+      +     '<div><b>Colaborador:</b> ' + esc(o.funcionario || '') + '</div>'
+      +     (o.doc ? '<div><b>CPF/CNPJ:</b> ' + esc(o.doc) + '</div>' : '')
+      +     (o.obra ? '<div><b>Obra:</b> ' + esc(o.obra) + '</div>' : '')
+      +     (o.periodo ? '<div><b>Periodo:</b> ' + esc(o.periodo) + '</div>' : '')
+      +     (linhas ? '<table style="margin-top:8px;border-collapse:collapse;">' + linhas + '</table>' : '')
+      +   '</div>'
+      +   '<div style="text-align:right;min-width:190px;">'
+      +     '<div style="font-size:11px;text-transform:uppercase;color:#475569;">' + esc(o.valorLabel || 'Valor a pagar') + '</div>'
+      +     '<div style="font-size:26px;font-weight:bold;color:#047857;">' + esc(o.valor || '') + '</div>'
+      +   '</div>'
+      + '</div>'
+      + '<div style="border:1px dashed #94a3b8;padding:12px;border-radius:6px;background:#f8fafc;margin-bottom:24px;font-size:13px;line-height:1.6;">' + (o.declaracao || '') + '</div>'
+      + '<div style="margin-top:60px;text-align:center;">'
+      +   '<div style="width:55%;border-top:1px solid #000;margin:0 auto 6px;"></div>'
+      +   '<div style="font-weight:bold;font-size:13px;text-transform:uppercase;">' + esc(o.assinatura || o.funcionario || '') + '</div>'
+      +   (o.assinaturaObs ? '<div style="font-size:11px;color:#475569;">' + esc(o.assinaturaObs) + '</div>' : '')
+      + '</div>'
+      + '<div style="margin-top:24px;font-size:11px;color:#94a3b8;text-align:center;">Documento gerado em ' + esc(hoje) + '</div>'
+      + '</div>';
+  }
+  function printRecibo(html) {
+    var P = window.obraPrint;
+    if (P && typeof P.print === 'function') return P.print(html);
+    var p = el('print-area');
+    if (p) { p.innerHTML = html; setTimeout(function () { window.print(); }, 300); }
+  }
+  function nomeObraPorId(id) {
+    var o = CACHE.obras.find(function (x) { return String(x.id) === String(id); });
+    return o ? (o.nome || '') : '';
+  }
+  function periodoTexto(iniId, fimId) {
+    var i = val(iniId), f = val(fimId);
+    if (!i && !f) return '';
+    return dataBR(i || f) + ' a ' + dataBR(f || i);
   }
 
   // ---------- Dados ----------
@@ -571,10 +626,19 @@
     var total = val('eqs-tot') || '0';
     var valor = el('eqs-val') ? el('eqs-val').textContent : '';
     var emp = (typeof getCompany === 'function') ? getCompany() : { name: 'NEVOA' };
-    var body = reciboBody('Recibo de Diarias',
-      'Recebi de <b>' + esc(emp.name || emp.nome || 'NEVOA') + '</b> a importancia de <b>' + esc(valor) + '</b>, referente a <b>' + esc(total) + ' diarias</b>, com a diaria acordada em <b>' + money(c.valor_diaria || 0) + '</b>.',
-      (c.nome || '').toUpperCase(), 'CPF: ' + (c.cpf || '____________'));
-    printDoc({ title: 'Recibo', meta: dataBR(hojeISO()), body: body });
+    var nomeEmp = emp.name || emp.nome || 'NEVOA';
+    printRecibo(reciboPadrao({
+      titulo: 'Recibo de Diarias',
+      funcionario: c.nome || '',
+      doc: c.cpf || '',
+      obra: nomeObraPorId(c.obra_atual_id),
+      periodo: periodoTexto('eqs-ini', 'eqs-fim'),
+      linhas: [['Diarias', total], ['Valor da diaria', money(c.valor_diaria || 0)]],
+      valor: valor,
+      valorLabel: 'Total a receber',
+      declaracao: 'Recebi de <b>' + esc(nomeEmp) + '</b> a importancia de <b>' + esc(valor) + '</b>, referente a <b>' + esc(total) + ' diarias</b>, com a diaria acordada em <b>' + money(c.valor_diaria || 0) + '</b>.',
+      assinatura: c.nome || ''
+    }));
   }
 
   async function eqObraExcluirLancamento(tabela, idsCsv, nome) {
@@ -754,10 +818,21 @@
     var t = CACHE.terc.find(function (x) { return String(x.id) === String(tercId); });
     if (!t) return;
     var emp = (typeof getCompany === 'function') ? getCompany() : { name: 'NEVOA' };
-    var body = reciboBody('Recibo de Metragem',
-      'Recebi de <b>' + esc(emp.name || emp.nome || 'NEVOA') + '</b> a importancia de <b>' + esc(el('eqm-val') ? el('eqm-val').textContent : '') + '</b>, referente a <b>' + esc(el('eqm-tot') ? el('eqm-tot').textContent : '0') + ' metros</b>, ao valor de <b>' + money(t.valor_metro || 0) + '/m</b>.',
-      (t.nome || '').toUpperCase(), 'CPF/CNPJ: ' + (t.cpf_cnpj || '____________'));
-    printDoc({ title: 'Recibo', meta: dataBR(hojeISO()), body: body });
+    var nomeEmp = emp.name || emp.nome || 'NEVOA';
+    var valor = el('eqm-val') ? el('eqm-val').textContent : '';
+    var total = el('eqm-tot') ? el('eqm-tot').textContent : '0';
+    printRecibo(reciboPadrao({
+      titulo: 'Recibo de Metragem',
+      funcionario: t.nome || '',
+      doc: t.cpf_cnpj || '',
+      obra: nomeObraPorId(t.obra_atual_id),
+      periodo: periodoTexto('eqm-ini', 'eqm-fim'),
+      linhas: [['Metros', total], ['Valor do metro', money(t.valor_metro || 0)]],
+      valor: valor,
+      valorLabel: 'Total a receber',
+      declaracao: 'Recebi de <b>' + esc(nomeEmp) + '</b> a importancia de <b>' + esc(valor) + '</b>, referente a <b>' + esc(total) + ' metros</b>, ao valor de <b>' + money(t.valor_metro || 0) + '/m</b>.',
+      assinatura: t.nome || ''
+    }));
   }
 
   // ---------- Saldo Empreita ----------
@@ -927,10 +1002,20 @@
     var c = CACHE.equipe.find(function (e) { return String(e.id) === String(eqId); });
     if (!c) return;
     var emp = (typeof getCompany === 'function') ? getCompany() : { name: 'NEVOA' };
-    var body = reciboBody('Recibo de Empreita',
-      'Recebi de <b>' + esc(emp.name || emp.nome || 'NEVOA') + '</b> a importancia de <b>' + esc(el('eqe-tot') ? el('eqe-tot').textContent : '') + '</b>, referente a medicao de empreita do contrato de <b>' + money(c.valor_contrato || 0) + '</b>.',
-      (c.nome || '').toUpperCase(), 'CPF: ' + (c.cpf || '____________'));
-    printDoc({ title: 'Recibo', meta: dataBR(hojeISO()), body: body });
+    var nomeEmp = emp.name || emp.nome || 'NEVOA';
+    var valor = el('eqe-tot') ? el('eqe-tot').textContent : '';
+    printRecibo(reciboPadrao({
+      titulo: 'Recibo de Empreita',
+      funcionario: c.nome || '',
+      doc: c.cpf || '',
+      obra: nomeObraPorId(c.obra_atual_id),
+      periodo: periodoTexto('eqe-ini', 'eqe-fim'),
+      linhas: [['Contrato', money(c.valor_contrato || 0)]],
+      valor: valor,
+      valorLabel: 'Total a receber',
+      declaracao: 'Recebi de <b>' + esc(nomeEmp) + '</b> a importancia de <b>' + esc(valor) + '</b>, referente a medicao de empreita do contrato de <b>' + money(c.valor_contrato || 0) + '</b>.',
+      assinatura: c.nome || ''
+    }));
   }
 
   // ---------- Cadastro ----------
