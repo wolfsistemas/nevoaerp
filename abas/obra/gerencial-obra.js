@@ -69,7 +69,7 @@
     var keys = Object.keys(map);
     if (!keys.length) return '<div class="text-slate-400 text-sm">Sem lancamentos.</div>';
     return '<ul class="text-sm space-y-1">' + keys.map(function (k) {
-      return '<li class="flex justify-between border-b py-1"><span>' + A().esc(k) + '</span><b>' + A().money(map[k]) + '</b></li>';
+      return '<li class="flex justify-between border-b py-1"><span>' + A().esc(A().catLabel(k)) + '</span><b>' + A().money(map[k]) + '</b></li>';
     }).join('') + '</ul>';
   }
 

@@ -82,6 +82,7 @@
     }).sort(function (a, b) { return b.pago - a.pago; });
   }
   function catDesp(d) { return d.categoria || d.item || 'Outros'; }
+  function catNome(k) { return A().catLabel(k); }
 
   function categoriasDespesas() {
     var set = {};
@@ -140,7 +141,7 @@
       rep.tables.push({
         heading: 'Contas a pagar', icon: 'circle-arrow-up',
         cols: [{ label: 'Data' }, { label: 'Item' }, { label: 'Obra' }, { label: 'Categoria' }, { label: 'Status' }, { label: 'Valor', align: 'right' }],
-        rows: D.map(function (d) { return [esc(dataBR(d.data)), esc(d.item || '-'), esc(nomeObra(d.obra_id)), esc(d.categoria || '-'), esc(d.status || '-'), money(d.custo)]; }),
+        rows: D.map(function (d) { return [esc(dataBR(d.data)), esc(d.item || '-'), esc(nomeObra(d.obra_id)), esc(catNome(d.categoria || '-')), esc(d.status || '-'), money(d.custo)]; }),
         empty: 'Nenhuma despesa no periodo.'
       });
       return rep;
@@ -174,7 +175,7 @@
         heading: 'Custo por categoria', icon: 'tag',
         cols: [{ label: 'Categoria' }, { label: 'Total', align: 'right' }, { label: '%', align: 'right' }],
         rows: Object.keys(catMap).map(function (k) { return { k: k, v: catMap[k] }; }).sort(function (a, b) { return b.v - a.v; })
-          .map(function (e) { return [esc(e.k), money(e.v), (catTot > 0 ? Math.round(e.v / catTot * 100) : 0) + '%']; }),
+          .map(function (e) { return [esc(catNome(e.k)), money(e.v), (catTot > 0 ? Math.round(e.v / catTot * 100) : 0) + '%']; }),
         empty: 'Sem despesas.'
       });
       return rep;
@@ -225,15 +226,15 @@
         heading: 'Resumo por categoria', icon: 'tag',
         cols: [{ label: 'Categoria' }, { label: 'Qtd', align: 'right' }, { label: 'Total', align: 'right' }, { label: '%', align: 'right' }],
         rows: dr.porCat.map(function (c) {
-          return [esc(c.k), String(c.qtd), money(c.total), (dr.total > 0 ? Math.round(c.total / dr.total * 100) : 0) + '%'];
+          return [esc(catNome(c.k)), String(c.qtd), money(c.total), (dr.total > 0 ? Math.round(c.total / dr.total * 100) : 0) + '%'];
         }),
         empty: 'Sem despesas no periodo.'
       });
       rep.tables.push({
-        heading: 'Despesas lancadas' + (RE.cat ? ' - ' + esc(RE.cat) : ''), icon: 'receipt',
+        heading: 'Despesas lancadas' + (RE.cat ? ' - ' + esc(catNome(RE.cat)) : ''), icon: 'receipt',
         cols: [{ label: 'Data' }, { label: 'Categoria' }, { label: 'Descricao' }, { label: 'Obra' }, { label: 'Fornecedor' }, { label: 'Status' }, { label: 'Valor', align: 'right' }],
         rows: dr.lista.slice().sort(function (a, b) { return String(b.data || '').localeCompare(String(a.data || '')); }).map(function (d) {
-          return [esc(dataBR(d.data)), esc(catDesp(d)), esc(d.item || '-'), esc(nomeObra(d.obra_id)), esc(d.fornecedor || '-'), esc(d.status || '-'), money(d.custo)];
+          return [esc(dataBR(d.data)), esc(catNome(catDesp(d))), esc(d.item || '-'), esc(nomeObra(d.obra_id)), esc(d.fornecedor || '-'), esc(d.status || '-'), money(d.custo)];
         }),
         empty: 'Nenhuma despesa lancada no periodo.'
       });
@@ -330,7 +331,7 @@
     }).join('');
     var tipos = [['resumo', 'Resumo geral'], ['financeiro', 'Financeiro'], ['custos', 'Custos'], ['despesas', 'Despesas'], ['equipe', 'Equipe e produ\u00e7\u00e3o']];
     var catOpts = '<option value="">Todas as categorias</option>' + categoriasDespesas().map(function (c) {
-      return '<option value="' + esc(c) + '"' + (RE.cat === c ? ' selected' : '') + '>' + esc(c) + '</option>';
+      return '<option value="' + esc(c) + '"' + (RE.cat === c ? ' selected' : '') + '>' + esc(catNome(c)) + '</option>';
     }).join('');
     var sel = 'p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500';
     var btn = 'px-3 py-2 rounded-lg text-sm font-semibold border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 transition';

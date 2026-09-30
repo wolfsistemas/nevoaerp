@@ -160,7 +160,7 @@
 
       var catMap = {};
       despsAtv.forEach(function (d) { var k = d.categoria || d.item || 'Outros'; catMap[k] = (catMap[k] || 0) + num(d.custo); });
-      var cats = Object.keys(catMap).map(function (k) { return { k: k, v: catMap[k] }; }).sort(function (a, b) { return b.v - a.v; });
+      var cats = Object.keys(catMap).map(function (k) { return { k: A().catLabel(k), v: catMap[k] }; }).sort(function (a, b) { return b.v - a.v; });
 
       var custoObras = obras.map(function (o) { return { k: o.nome, v: custoObra(o.id) }; })
         .filter(function (e) { return e.v > 0; }).sort(function (a, b) { return b.v - a.v; }).slice(0, 8);

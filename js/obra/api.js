@@ -46,6 +46,19 @@
     return st === 'ESTORNADO' || sf === 'ESTORNADO';
   }
 
+  var CAT_LABELS = {
+    ponto: 'M.O. DI\u00c1RIA',
+    terceirizado: 'M.O. METRAGEM',
+    empreita: 'M.O. EMPREITA'
+  };
+
+  function catLabel(v) {
+    var s = String(v == null ? '' : v).trim();
+    if (!s) return '';
+    var friendly = CAT_LABELS[s.toLowerCase()];
+    return friendly || s.toUpperCase();
+  }
+
   async function confirmar(msg, opts) {
     if (typeof confirmDialog === 'function') return confirmDialog(msg, opts || {});
     return window.confirm(msg);
@@ -195,6 +208,7 @@
     icons: icons,
     equipeId: equipeId,
     isEstornado: isEstornado,
+    catLabel: catLabel,
     confirmar: confirmar,
     nextId: nextId,
     insertDespesa: insertDespesa,
