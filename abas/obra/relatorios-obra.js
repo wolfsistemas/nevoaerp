@@ -262,7 +262,7 @@
     }).join('') : '<tr><td colspan="' + cols.length + '" class="p-6 text-center text-slate-400 text-sm">' + esc(t.empty || 'Sem registros.') + '</td></tr>';
     return '<div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">'
       + (t.heading ? '<h3 class="font-bold text-slate-700 mb-3 flex items-center gap-2"><i data-lucide="' + (t.icon || 'list') + '" class="w-4 h-4 text-emerald-600"></i> ' + esc(t.heading) + '</h3>' : '')
-      + '<div class="overflow-x-auto"><table class="w-full">' + head + '<tbody>' + body + '</tbody></table></div></div>';
+      + '<div class="overflow-x-auto"><table class="w-full"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table></div></div>';
   }
   function renderCorpo() {
     var box = document.getElementById('re-body');
@@ -308,7 +308,7 @@
     var sel = 'p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500';
     var btn = 'px-3 py-2 rounded-lg text-sm font-semibold border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 transition';
 
-    return '<div class="space-y-4 p-4">'
+    return '<div class="space-y-4 ' + (window.OBRA_UI_MOBILE ? '' : 'p-4') + '">'
       + '<div class="rounded-2xl p-5 bg-gradient-to-r from-slate-800 to-slate-700 text-white shadow-lg flex items-center justify-between flex-wrap gap-3">'
       +   '<div><div class="text-emerald-300 text-[11px] font-bold uppercase tracking-widest">N\'evoa Obra</div>'
       +     '<h1 class="text-xl md:text-2xl font-extrabold flex items-center gap-2"><i data-lucide="file-text" class="w-5 h-5"></i> Relat\u00f3rios</h1>'

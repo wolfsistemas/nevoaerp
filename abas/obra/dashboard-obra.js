@@ -168,7 +168,7 @@
       var hoje = dataBR(new Date().toISOString());
 
       c.innerHTML = ''
-        + '<div class="space-y-5 p-4">'
+        + '<div class="space-y-5 ' + (window.OBRA_UI_MOBILE ? '' : 'p-4') + '">'
         +   '<div class="rounded-2xl p-6 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 text-white shadow-lg flex items-center justify-between flex-wrap gap-4">'
         +     '<div>'
         +       '<div class="text-emerald-100 text-[11px] font-bold uppercase tracking-widest">N\'evoa Obra</div>'
@@ -176,7 +176,7 @@
         +       '<p class="text-emerald-50 text-sm mt-1">Vis\u00e3o geral de contratos, custos e produ\u00e7\u00e3o &bull; ' + esc(hoje) + '</p>'
         +     '</div>'
         +     '<div class="flex gap-2">'
-        +       '<button onclick="navigate(\'obra-obras\')" class="bg-white/15 hover:bg-white/25 backdrop-blur px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition"><i data-lucide="building" class="w-4 h-4"></i> Obras</button>'
+        +       (window.OBRA_UI_MOBILE ? '' : '<button onclick="navigate(\'obra-obras\')" class="bg-white/15 hover:bg-white/25 backdrop-blur px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition"><i data-lucide="building" class="w-4 h-4"></i> Obras</button>')
         +       '<button onclick="navigate(\'obra-relatorios\')" class="bg-white text-emerald-700 hover:bg-emerald-50 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition"><i data-lucide="file-text" class="w-4 h-4"></i> Relat\u00f3rios</button>'
         +     '</div>'
         +   '</div>'

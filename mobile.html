@@ -70,6 +70,24 @@
       .total-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 11px; border-bottom: 1px solid #e2e8f0; }
       .total-row.final { border-bottom: none; border-top: 2px solid #0f172a; font-size: 14px; font-weight: 900; background-color: #f1f5f9; padding: 10px; margin-top: 5px; }
     </style>
+    <style>
+      /* Impressao mobile (relatorios / recibos do modo obra) */
+      .print-only { display: none; }
+      @media print {
+        @page { size: A4; margin: 10mm; }
+        body { background: #fff; padding: 0 !important; }
+        body > *:not(#print-area) { display: none !important; }
+        #print-area { display: block !important; }
+        .header-orig { display: flex; border-bottom: 1px solid #000; }
+        .logo-box-orig { width: 100px; padding: 5px; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center; }
+        .company-box-orig { flex: 1; padding: 5px; font-size: 11px; border-right: 1px solid #000; }
+        .info-box-orig { width: 150px; padding: 5px; font-size: 11px; background-color: #f9f9f9; }
+        .items-table-orig { width: 100%; border-collapse: collapse; font-size: 10px; }
+        .items-table-orig th { border-bottom: 1px solid #000; border-right: 1px solid #000; background-color: #eee; padding: 3px; text-align: left; }
+        .items-table-orig td { border-bottom: 1px solid #ccc; border-right: 1px solid #000; padding: 3px; }
+        .invoice-box-orig { width: 100%; border: 1px solid #000; margin: 0 auto; background: transparent !important; }
+      }
+    </style>
   </head>
   <body class="text-slate-800 pb-20">
 
@@ -286,6 +304,10 @@
           <h2 class="text-xl font-black text-slate-800 flex items-center gap-2 mb-4"><i data-lucide="ruler" class="text-emerald-600"></i> Metros</h2>
           <div id="mob-metros-body" class="text-sm text-slate-500">Carregando...</div>
       </div>
+
+      <div id="view-obra-dashboard" class="hidden-section"></div>
+
+      <div id="view-obra-relatorios" class="hidden-section"></div>
 
     </main>
 
@@ -680,6 +702,10 @@
             <i data-lucide="users" class="mb-1 w-6 h-6"></i>
             <span class="text-[10px] uppercase font-medium">Clientes</span>
         </button>
+        <button onclick="navigate('obra-dashboard')" id="nav-obra-dashboard" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
+            <i data-lucide="layout-dashboard" class="mb-1 w-6 h-6"></i>
+            <span class="text-[10px] uppercase font-medium">Painel</span>
+        </button>
         <button onclick="navigate('obra-ponto')" id="nav-obra-ponto" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
             <i data-lucide="clock" class="mb-1 w-6 h-6"></i>
             <span class="text-[10px] uppercase font-medium">Ponto</span>
@@ -691,6 +717,10 @@
         <button onclick="navigate('obra-metros')" id="nav-obra-metros" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
             <i data-lucide="ruler" class="mb-1 w-6 h-6"></i>
             <span class="text-[10px] uppercase font-medium">Metros</span>
+        </button>
+        <button onclick="navigate('obra-relatorios')" id="nav-obra-relatorios" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
+            <i data-lucide="file-text" class="mb-1 w-6 h-6"></i>
+            <span class="text-[10px] uppercase font-medium">Relat\u00f3rios</span>
         </button>
     </nav>
 
@@ -953,7 +983,7 @@
 
         // Assinatura/plano da empresa (gating de modulos no mobile)
         let ASSINATURA_ATUAL = null;
-        const RECURSOS_MOBILE = { quotes: 'orcamentos', reports: 'relatorios', fin: 'financeiro', prod: 'produtos', clients: 'clientes', pos: 'pdv', 'obra-ponto': 'equipe', 'obra-medicao': 'equipe', 'obra-metros': 'equipe' };
+        const RECURSOS_MOBILE = { quotes: 'orcamentos', reports: 'relatorios', fin: 'financeiro', prod: 'produtos', clients: 'clientes', pos: 'pdv', 'obra-dashboard': 'obras', 'obra-ponto': 'equipe', 'obra-medicao': 'equipe', 'obra-metros': 'equipe', 'obra-relatorios': 'relatorios' };
 
         function recursoLiberado(recurso) {
             if (!ASSINATURA_ATUAL) return true;
@@ -1143,6 +1173,8 @@
             if(viewId === 'obra-ponto' && typeof mobObraPonto === 'function') mobObraPonto();
             if(viewId === 'obra-medicao' && typeof mobObraMedicao === 'function') mobObraMedicao();
             if(viewId === 'obra-metros' && typeof mobObraMetros === 'function') mobObraMetros();
+            if(viewId === 'obra-dashboard' && typeof renderDashboardObra === 'function') renderDashboardObra();
+            if(viewId === 'obra-relatorios' && typeof renderRelatoriosObra === 'function') renderRelatoriosObra();
             
             lucide.createIcons();
             window.scrollTo(0, 0); 
@@ -1369,7 +1401,9 @@
       
         function onDataLoaded() {
             if(!document.querySelector('.active-section')) {
-                navigate('quotes'); 
+                const segBoot = (ASSINATURA_ATUAL && ASSINATURA_ATUAL.segmento) || window.SEGMENTO_ATUAL || 'erp';
+                const adminBoot = !window.papeis || window.papeis.ehAdmin();
+                navigate(segBoot === 'obra' ? (adminBoot ? 'obra-dashboard' : 'obra-ponto') : 'quotes');
             } else {
                 const current = document.querySelector('.active-section').id.replace('view-','');
                 navigate(current);
@@ -4196,6 +4230,11 @@ function showFilteredExpenses() {
     </script>
     <script src="js/obra/equipe-core.js"></script>
     <script src="js/obra/api.js"></script>
+    <script src="js/obra/print.js"></script>
     <script src="js/obra/mobile-obra.js"></script>
+    <script>window.OBRA_UI_MOBILE = true;</script>
+    <script src="abas/obra/dashboard-obra.js"></script>
+    <script src="abas/obra/relatorios-obra.js"></script>
+    <div id="print-area" class="print-only"></div>
   </body>
 </html>
