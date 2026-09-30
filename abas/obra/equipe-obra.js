@@ -420,7 +420,7 @@
   function abrirModal(html, titulo, largura) {
     var m = el(MODAL);
     if (!m) { m = document.createElement('div'); m.id = MODAL; document.body.appendChild(m); }
-    m.className = 'fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4';
+    m.className = 'no-print fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4';
     m.innerHTML = '<div class="bg-white rounded-2xl shadow-2xl w-full ' + (largura || 'max-w-2xl') + ' max-h-[95vh] flex flex-col overflow-hidden">'
       + '<div class="p-4 border-b flex justify-between items-center shrink-0"><h3 class="font-bold text-slate-800">' + esc(titulo) + '</h3>'
       + '<button onclick="eqObraFecharModal()" class="text-slate-400"><i data-lucide="x"></i></button></div>'

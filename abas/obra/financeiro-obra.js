@@ -552,6 +552,7 @@
     if (el('ofin-modals')) return;
     var d = document.createElement('div');
     d.id = 'ofin-modals';
+    d.className = 'no-print';
     d.innerHTML = modalRevenueHtml() + modalExpenseHtml() + modalRecEditHtml() + modalPayExpenseHtml() + modalParcelHtml() + modalReceiptHtml();
     document.body.appendChild(d);
   }
