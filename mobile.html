@@ -290,20 +290,15 @@
           <div id="fin-extrato-list" class="flex flex-col gap-3 pb-6"></div>
       </div>
 
-      <div id="view-obra-ponto" class="hidden-section">
-          <h2 class="text-xl font-black text-slate-800 flex items-center gap-2 mb-4"><i data-lucide="clock" class="text-emerald-600"></i> Ponto</h2>
-          <div id="mob-ponto-body" class="text-sm text-slate-500">Carregando...</div>
-      </div>
+      <div id="view-obra-obras" class="hidden-section"></div>
 
-      <div id="view-obra-medicao" class="hidden-section">
-          <h2 class="text-xl font-black text-slate-800 flex items-center gap-2 mb-4"><i data-lucide="percent" class="text-emerald-600"></i> Medicao</h2>
-          <div id="mob-med-body" class="text-sm text-slate-500">Carregando...</div>
-      </div>
+      <div id="view-obra-equipe" class="hidden-section"></div>
 
-      <div id="view-obra-metros" class="hidden-section">
-          <h2 class="text-xl font-black text-slate-800 flex items-center gap-2 mb-4"><i data-lucide="ruler" class="text-emerald-600"></i> Metros</h2>
-          <div id="mob-metros-body" class="text-sm text-slate-500">Carregando...</div>
-      </div>
+      <div id="view-obra-fornecedores" class="hidden-section"></div>
+
+      <div id="view-obra-fin" class="hidden-section"></div>
+
+      <div id="view-obra-gerencial" class="hidden-section"></div>
 
       <div id="view-obra-dashboard" class="hidden-section"></div>
 
@@ -702,25 +697,33 @@
             <i data-lucide="users" class="mb-1 w-6 h-6"></i>
             <span class="text-[10px] uppercase font-medium">Clientes</span>
         </button>
-        <button onclick="navigate('obra-dashboard')" id="nav-obra-dashboard" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
-            <i data-lucide="layout-dashboard" class="mb-1 w-6 h-6"></i>
-            <span class="text-[10px] uppercase font-medium">Painel</span>
+        <button onclick="navigate('obra-dashboard')" id="nav-obra-dashboard" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 px-1 text-slate-400 transition-colors">
+            <i data-lucide="layout-dashboard" class="mb-1 w-5 h-5"></i>
+            <span class="text-[9px] leading-tight uppercase font-medium">Painel</span>
         </button>
-        <button onclick="navigate('obra-ponto')" id="nav-obra-ponto" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
-            <i data-lucide="clock" class="mb-1 w-6 h-6"></i>
-            <span class="text-[10px] uppercase font-medium">Ponto</span>
+        <button onclick="navigate('obra-obras')" id="nav-obra-obras" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 px-1 text-slate-400 transition-colors">
+            <i data-lucide="building" class="mb-1 w-5 h-5"></i>
+            <span class="text-[9px] leading-tight uppercase font-medium">Obras</span>
         </button>
-        <button onclick="navigate('obra-medicao')" id="nav-obra-medicao" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
-            <i data-lucide="percent" class="mb-1 w-6 h-6"></i>
-            <span class="text-[10px] uppercase font-medium">Medicao</span>
+        <button onclick="navigate('obra-equipe')" id="nav-obra-equipe" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 px-1 text-slate-400 transition-colors">
+            <i data-lucide="hard-hat" class="mb-1 w-5 h-5"></i>
+            <span class="text-[9px] leading-tight uppercase font-medium">Equipe</span>
         </button>
-        <button onclick="navigate('obra-metros')" id="nav-obra-metros" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
-            <i data-lucide="ruler" class="mb-1 w-6 h-6"></i>
-            <span class="text-[10px] uppercase font-medium">Metros</span>
+        <button onclick="navigate('obra-fornecedores')" id="nav-obra-fornecedores" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 px-1 text-slate-400 transition-colors">
+            <i data-lucide="truck" class="mb-1 w-5 h-5"></i>
+            <span class="text-[9px] leading-tight uppercase font-medium">Fornecedores</span>
         </button>
-        <button onclick="navigate('obra-relatorios')" id="nav-obra-relatorios" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 text-slate-400 transition-colors">
-            <i data-lucide="file-text" class="mb-1 w-6 h-6"></i>
-            <span class="text-[10px] uppercase font-medium">Relat\u00f3rios</span>
+        <button onclick="navigate('obra-fin')" id="nav-obra-fin" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 px-1 text-slate-400 transition-colors">
+            <i data-lucide="bar-chart-3" class="mb-1 w-5 h-5"></i>
+            <span class="text-[9px] leading-tight uppercase font-medium">Financeiro</span>
+        </button>
+        <button onclick="navigate('obra-gerencial')" id="nav-obra-gerencial" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 px-1 text-slate-400 transition-colors">
+            <i data-lucide="calculator" class="mb-1 w-5 h-5"></i>
+            <span class="text-[9px] leading-tight uppercase font-medium">Gerencial</span>
+        </button>
+        <button onclick="navigate('obra-relatorios')" id="nav-obra-relatorios" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 px-1 text-slate-400 transition-colors">
+            <i data-lucide="file-text" class="mb-1 w-5 h-5"></i>
+            <span class="text-[9px] leading-tight uppercase font-medium">Relat\u00f3rios</span>
         </button>
     </nav>
 
@@ -983,7 +986,7 @@
 
         // Assinatura/plano da empresa (gating de modulos no mobile)
         let ASSINATURA_ATUAL = null;
-        const RECURSOS_MOBILE = { quotes: 'orcamentos', reports: 'relatorios', fin: 'financeiro', prod: 'produtos', clients: 'clientes', pos: 'pdv', 'obra-dashboard': 'obras', 'obra-ponto': 'equipe', 'obra-medicao': 'equipe', 'obra-metros': 'equipe', 'obra-relatorios': 'relatorios' };
+        const RECURSOS_MOBILE = { quotes: 'orcamentos', reports: 'relatorios', fin: 'financeiro', prod: 'produtos', clients: 'clientes', pos: 'pdv', 'obra-dashboard': 'obras', 'obra-obras': 'obras', 'obra-equipe': 'equipe', 'obra-fornecedores': 'fornecedores', 'obra-fin': 'financeiro', 'obra-gerencial': 'gerencial', 'obra-relatorios': 'relatorios' };
 
         function recursoLiberado(recurso) {
             if (!ASSINATURA_ATUAL) return true;
@@ -1170,9 +1173,11 @@
             if(viewId === 'prod') renderProducts();
             if(viewId === 'clients') renderClients();
             if(viewId === 'fin') renderFinance();
-            if(viewId === 'obra-ponto' && typeof mobObraPonto === 'function') mobObraPonto();
-            if(viewId === 'obra-medicao' && typeof mobObraMedicao === 'function') mobObraMedicao();
-            if(viewId === 'obra-metros' && typeof mobObraMetros === 'function') mobObraMetros();
+            if(viewId === 'obra-obras' && typeof renderObras === 'function') renderObras();
+            if(viewId === 'obra-equipe' && typeof renderEquipeObra === 'function') renderEquipeObra();
+            if(viewId === 'obra-fornecedores' && typeof renderFornecedoresObra === 'function') renderFornecedoresObra();
+            if(viewId === 'obra-fin' && typeof renderFinObra === 'function') renderFinObra();
+            if(viewId === 'obra-gerencial' && typeof renderGerencialObra === 'function') renderGerencialObra();
             if(viewId === 'obra-dashboard' && typeof renderDashboardObra === 'function') renderDashboardObra();
             if(viewId === 'obra-relatorios' && typeof renderRelatoriosObra === 'function') renderRelatoriosObra();
             
@@ -1403,7 +1408,7 @@
             if(!document.querySelector('.active-section')) {
                 const segBoot = (ASSINATURA_ATUAL && ASSINATURA_ATUAL.segmento) || window.SEGMENTO_ATUAL || 'erp';
                 const adminBoot = !window.papeis || window.papeis.ehAdmin();
-                navigate(segBoot === 'obra' ? (adminBoot ? 'obra-dashboard' : 'obra-ponto') : 'quotes');
+                navigate(segBoot === 'obra' ? (adminBoot ? 'obra-dashboard' : 'obra-obras') : 'quotes');
             } else {
                 const current = document.querySelector('.active-section').id.replace('view-','');
                 navigate(current);
@@ -4233,6 +4238,11 @@ function showFilteredExpenses() {
     <script src="js/obra/print.js"></script>
     <script src="js/obra/mobile-obra.js"></script>
     <script>window.OBRA_UI_MOBILE = true;</script>
+    <script src="abas/obra/obras.js"></script>
+    <script src="abas/obra/equipe-obra.js"></script>
+    <script src="abas/obra/fornecedores.js"></script>
+    <script src="abas/obra/financeiro-obra.js"></script>
+    <script src="abas/obra/gerencial-obra.js"></script>
     <script src="abas/obra/dashboard-obra.js"></script>
     <script src="abas/obra/relatorios-obra.js"></script>
     <div id="print-area" class="print-only"></div>
