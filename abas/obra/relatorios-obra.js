@@ -12,7 +12,7 @@
   function isEst(r) { return A().isEstornado(r); }
   function icons() { A().icons(); }
 
-  var RE = { escopo: '__all__', ini: '', fim: '', tipo: 'resumo', dados: null };
+  var RE = { escopo: '__all__', ini: '', fim: '', tipo: 'resumo', cat: '', dados: null };
 
   function num(v) { return Number(v || 0); }
   function sum(a, f) { return (a || []).reduce(function (s, x) { return s + f(x); }, 0); }
@@ -32,7 +32,6 @@
   }
   function nomeObra(id) { var o = (RE.dados.obras || []).find(function (x) { return String(x.id) === String(id); }); return o ? o.nome : ''; }
   function nomeTerc(id) { var e = (RE.dados.terc || []).find(function (x) { return String(x.id) === String(id); }); return e ? e.nome : ''; }
-  function nomeForn(id) { var f = (RE.dados.forns || []).find(function (x) { return String(x.id) === String(id); }); return f ? f.nome : ''; }
 
   function logs() { return (RE.dados.logs || []).filter(function (l) { return obraOk(l.obra_id) && noPeriodo(l.data); }); }
   function desps() { return (RE.dados.desps || []).filter(function (d) { return obraOk(d.obra_id) && noPeriodo(d.data); }); }
@@ -82,20 +81,34 @@
       return { nome: eq.nome || ('#' + k), obra: nomeObra(arr[0].obra_id), pct: pct, contrato: num(eq.valor_contrato), pago: pago, pend: pend };
     }).sort(function (a, b) { return b.pago - a.pago; });
   }
-  function fornecedoresResumo() {
+  function catDesp(d) { return d.categoria || d.item || 'Outros'; }
+
+  function categoriasDespesas() {
+    var set = {};
+    (RE.dados.desps || []).forEach(function (d) {
+      if (obraOk(d.obra_id) && !isEst(d)) set[catDesp(d)] = true;
+    });
+    return Object.keys(set).sort(function (a, b) { return a.localeCompare(b); });
+  }
+
+  function despesasResumo() {
+    var lista = desps().filter(function (d) {
+      if (isEst(d)) return false;
+      if (RE.cat && catDesp(d) !== RE.cat) return false;
+      return true;
+    });
+    var total = sum(lista, function (d) { return num(d.custo); });
+    var pago = sum(lista, function (d) { return num(d.valor_pago); });
+    var aberto = sum(lista, function (d) { return Math.max(0, num(d.custo) - num(d.valor_pago)); });
     var map = {};
-    logs().filter(function (l) { return l.tipo === 'compra' && !isEst(l); }).forEach(function (l) {
-      var k = (l.fornecedor_id && nomeForn(l.fornecedor_id)) || 'Sem fornecedor';
-      var m = map[k] = map[k] || { oc: 0, desp: 0 };
-      m.oc += num(l.valor_total);
+    lista.forEach(function (d) {
+      var k = catDesp(d);
+      var m = map[k] = map[k] || { qtd: 0, total: 0 };
+      m.qtd += 1; m.total += num(d.custo);
     });
-    desps().filter(function (d) { return !isEst(d); }).forEach(function (d) {
-      var k = d.fornecedor || 'Sem fornecedor';
-      var m = map[k] = map[k] || { oc: 0, desp: 0 };
-      m.desp += num(d.custo);
-    });
-    return Object.keys(map).map(function (k) { return { k: k, oc: map[k].oc, desp: map[k].desp, total: map[k].oc + map[k].desp }; })
+    var porCat = Object.keys(map).map(function (k) { return { k: k, qtd: map[k].qtd, total: map[k].total }; })
       .sort(function (a, b) { return b.total - a.total; });
+    return { lista: lista, total: total, pago: pago, aberto: aberto, porCat: porCat };
   }
 
   // ---------- Montagem dos relatorios ----------
@@ -199,19 +212,30 @@
       return rep;
     }
 
-    if (RE.tipo === 'fornecedores') {
-      rep.title = 'Relatorio de Fornecedores';
-      var fr = fornecedoresResumo();
+    if (RE.tipo === 'despesas') {
+      rep.title = 'Relatorio de Despesas';
+      var dr = despesasResumo();
       rep.kpis = [
-        { label: 'Compras (OC)', value: money(sum(fr, function (f) { return f.oc; })) },
-        { label: 'Despesas', value: money(sum(fr, function (f) { return f.desp; })) },
-        { label: 'Fornecedores', value: String(fr.length) }
+        { label: 'Total lancado', value: money(dr.total) },
+        { label: 'Pago', value: money(dr.pago) },
+        { label: 'Em aberto', value: money(dr.aberto) },
+        { label: 'Lancamentos', value: String(dr.lista.length) }
       ];
       rep.tables.push({
-        heading: 'Compras por fornecedor', icon: 'truck',
-        cols: [{ label: 'Fornecedor' }, { label: 'Ordens de compra', align: 'right' }, { label: 'Despesas', align: 'right' }, { label: 'Total', align: 'right' }],
-        rows: fr.map(function (f) { return [esc(f.k), money(f.oc), money(f.desp), money(f.total)]; }),
-        empty: 'Sem compras no periodo.'
+        heading: 'Resumo por categoria', icon: 'tag',
+        cols: [{ label: 'Categoria' }, { label: 'Qtd', align: 'right' }, { label: 'Total', align: 'right' }, { label: '%', align: 'right' }],
+        rows: dr.porCat.map(function (c) {
+          return [esc(c.k), String(c.qtd), money(c.total), (dr.total > 0 ? Math.round(c.total / dr.total * 100) : 0) + '%'];
+        }),
+        empty: 'Sem despesas no periodo.'
+      });
+      rep.tables.push({
+        heading: 'Despesas lancadas' + (RE.cat ? ' - ' + esc(RE.cat) : ''), icon: 'receipt',
+        cols: [{ label: 'Data' }, { label: 'Categoria' }, { label: 'Descricao' }, { label: 'Obra' }, { label: 'Fornecedor' }, { label: 'Status' }, { label: 'Valor', align: 'right' }],
+        rows: dr.lista.slice().sort(function (a, b) { return String(b.data || '').localeCompare(String(a.data || '')); }).map(function (d) {
+          return [esc(dataBR(d.data)), esc(catDesp(d)), esc(d.item || '-'), esc(nomeObra(d.obra_id)), esc(d.fornecedor || '-'), esc(d.status || '-'), money(d.custo)];
+        }),
+        empty: 'Nenhuma despesa lancada no periodo.'
       });
       return rep;
     }
@@ -304,7 +328,10 @@
     var obraOpts = '<option value="__all__">Todas as obras</option>' + (RE.dados.obras || []).map(function (o) {
       return '<option value="' + esc(o.id) + '"' + (String(o.id) === String(RE.escopo) ? ' selected' : '') + '>' + esc(o.nome) + (o.ativo === false ? ' (finalizada)' : '') + '</option>';
     }).join('');
-    var tipos = [['resumo', 'Resumo geral'], ['financeiro', 'Financeiro'], ['custos', 'Custos'], ['equipe', 'Equipe e produ\u00e7\u00e3o'], ['fornecedores', 'Fornecedores']];
+    var tipos = [['resumo', 'Resumo geral'], ['financeiro', 'Financeiro'], ['custos', 'Custos'], ['despesas', 'Despesas'], ['equipe', 'Equipe e produ\u00e7\u00e3o']];
+    var catOpts = '<option value="">Todas as categorias</option>' + categoriasDespesas().map(function (c) {
+      return '<option value="' + esc(c) + '"' + (RE.cat === c ? ' selected' : '') + '>' + esc(c) + '</option>';
+    }).join('');
     var sel = 'p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500';
     var btn = 'px-3 py-2 rounded-lg text-sm font-semibold border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 transition';
 
@@ -320,6 +347,8 @@
       +     '<select id="re-tipo" onchange="reObraSet()" class="' + sel + '">' + tipos.map(function (t) { return '<option value="' + t[0] + '"' + (RE.tipo === t[0] ? ' selected' : '') + '>' + t[1] + '</option>'; }).join('') + '</select></div>'
       +   '<div class="min-w-[200px]"><label class="block text-[11px] uppercase font-bold text-slate-400 mb-1">Obra</label>'
       +     '<select id="re-escopo" onchange="reObraSet()" class="' + sel + ' w-full">' + obraOpts + '</select></div>'
+      +   '<div><label class="block text-[11px] uppercase font-bold text-slate-400 mb-1">Categoria de despesa</label>'
+      +     '<select id="re-cat" onchange="reObraSet()" class="' + sel + '">' + catOpts + '</select></div>'
       +   '<div><label class="block text-[11px] uppercase font-bold text-slate-400 mb-1">De</label>'
       +     '<input id="re-ini" type="date" value="' + esc(RE.ini) + '" onchange="reObraSet()" class="' + sel + '"></div>'
       +   '<div><label class="block text-[11px] uppercase font-bold text-slate-400 mb-1">At\u00e9</label>'
@@ -376,6 +405,11 @@
     RE.escopo = val('re-escopo') || '__all__';
     RE.ini = val('re-ini');
     RE.fim = val('re-fim');
+    RE.cat = val('re-cat');
+    if (RE.cat && RE.tipo !== 'despesas') {
+      RE.tipo = 'despesas';
+      var t = document.getElementById('re-tipo'); if (t) t.value = 'despesas';
+    }
     renderCorpo();
   };
   window.reObraAtalho = function (kind) {

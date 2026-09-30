@@ -9,7 +9,8 @@
   var A = function () { return window.obraApi || {}; };
 
   var METODOS_PGTO = ['Dinheiro', 'PIX', 'Carteira', 'Cartão Débito', 'Cartão Crédito', 'Boleto 21 dias', 'Boleto 30 dias', 'Boleto Programado', 'Cheque'];
-  var CATEGORIAS = ['FORNECEDOR', 'SALÁRIO', 'ENERGIA', 'ESCRITORIO', 'ÁGUA', 'INTERNET', 'IMPOSTO', 'SISTEMA', 'CONTABILIDADE', 'COMBUSTÍVEL', 'MAN. MAQUINAS', 'JUROS/TAXAS', 'VEÍCULOS', 'MARCENARIA', 'INSTALAÇÃO', 'PROLABORE', 'OUTROS'];
+  var CATEGORIAS = ['FORNECEDOR', 'SALÁRIO', 'ENERGIA', 'ESCRITORIO', 'ÁGUA', 'INTERNET', 'IMPOSTO', 'SISTEMA', 'CONTABILIDADE', 'COMBUSTÍVEL', 'MAN. MAQUINAS', 'JUROS/TAXAS', 'VEÍCULOS', 'EPI', 'INSTALAÇÃO', 'PROLABORE', 'OUTROS'];
+  var TIPOS_ENTRADA = ['Recebimento de Serviço prestado', 'Medição', 'Entrada Eventual', 'Capital de Giro'];
 
   var OFIN = {
     obraId: '',
@@ -67,6 +68,14 @@
   }
   function optionsCategorias(sel) {
     return CATEGORIAS.map(function (m) { return '<option' + (m === (sel || '') ? ' selected' : '') + '>' + m + '</option>'; }).join('');
+  }
+  function optionsTiposEntrada(sel) {
+    return TIPOS_ENTRADA.map(function (t) { return '<option' + (t === (sel || '') ? ' selected' : '') + '>' + t + '</option>'; }).join('');
+  }
+  function optionsObras(sel) {
+    return (OFIN.obras || []).map(function (o) {
+      return '<option value="' + esc(o.id) + '"' + (String(o.id) === String(sel || '') ? ' selected' : '') + '>' + esc(o.nome) + (o.ativo === false ? ' (finalizada)' : '') + '</option>';
+    }).join('');
   }
   function nomeObra(id) {
     var o = OFIN.obras.find(function (x) { return String(x.id) === String(id); });
@@ -564,11 +573,13 @@
 
   function modalRevenueHtml() {
     var body = ''
-      + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Descrição / Origem</label><input type="text" id="ofin-rev-desc" class="w-full p-3 border rounded-xl" placeholder="Ex: Mediçao, serviço extra..."></div>'
+      + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Tipo de Entrada</label><select id="ofin-rev-tipo" class="w-full p-3 border rounded-xl bg-white">' + optionsTiposEntrada() + '</select></div>'
+      + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Obra Vinculada</label><select id="ofin-rev-obra" class="w-full p-3 border rounded-xl bg-white"></select></div>'
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Nome do Cliente (opcional)</label><input type="text" id="ofin-rev-client" class="w-full p-3 border rounded-xl" placeholder="Ex: João Silva"></div>'
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Valor a Receber (R$)</label><input type="number" id="ofin-rev-val" class="w-full p-3 border rounded-xl font-bold text-indigo-700" placeholder="0.00"></div>'
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Data de Vencimento</label><input type="date" id="ofin-rev-due" class="w-full p-3 border rounded-xl"></div>'
-      + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Forma de Pagto Base</label><select id="ofin-rev-method" class="w-full p-3 border rounded-xl">' + optionsPgto('Dinheiro') + '</select></div>';
+      + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Forma de Pagto Base</label><select id="ofin-rev-method" class="w-full p-3 border rounded-xl">' + optionsPgto('Dinheiro') + '</select></div>'
+      + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Observação (opcional)</label><input type="text" id="ofin-rev-note" class="w-full p-3 border rounded-xl" placeholder="Ex: 1a medição, entrada de sinal..."></div>';
     var footer = '<button onclick="ofinCloseModal(\'ofin-modal-revenue\')" class="flex-1 py-3 bg-white border border-slate-300 rounded-xl font-bold text-slate-600">Cancelar</button>'
       + '<button onclick="ofinSaveRevenue()" class="flex-1 py-3 bg-indigo-700 rounded-xl font-bold text-white">Lançar Pendente</button>';
     return modalWrap('ofin-modal-revenue', 'Lançar Receita', 'plus-circle', 'bg-slate-50', body, footer);
@@ -654,31 +665,40 @@
 
   // ---------- receita (a receber) ----------
   function ofinOpenRevenue() {
-    if (!OFIN.obraId) return toast('Selecione uma obra.', true);
-    el('ofin-rev-desc').value = '';
+    if (!OFIN.obras.length) return toast('Cadastre uma obra antes de lançar receitas.', true);
+    var obSel = el('ofin-rev-obra');
+    if (obSel) {
+      var atual = (OFIN.obraId && OFIN.obraId !== '__all__') ? OFIN.obraId : (OFIN.obras[0] && OFIN.obras[0].id);
+      obSel.innerHTML = optionsObras(atual);
+    }
+    var t = el('ofin-rev-tipo'); if (t) t.value = TIPOS_ENTRADA[0];
     el('ofin-rev-client').value = '';
     el('ofin-rev-val').value = '';
+    el('ofin-rev-note').value = '';
     el('ofin-rev-due').value = getHojeLocalStr();
     el('ofin-rev-method').value = METODOS_PGTO[0];
     abrirModal('ofin-modal-revenue');
   }
 
   async function ofinSaveRevenue() {
-    var desc = val('ofin-rev-desc').trim();
+    var tipo = val('ofin-rev-tipo') || TIPOS_ENTRADA[0];
+    var obra = val('ofin-rev-obra');
     var client = val('ofin-rev-client').trim() || 'Consumidor Final';
     var v = parseFloat(val('ofin-rev-val')) || 0;
     var method = val('ofin-rev-method');
     var due = val('ofin-rev-due') || getHojeLocalStr();
-    if (!desc || !v) return toast('Preencha descrição e valor!', true);
+    var note = val('ofin-rev-note').trim();
+    if (!obra) return toast('Selecione a obra vinculada!', true);
+    if (!v) return toast('Informe o valor a receber!', true);
     loading(true);
     try {
       var payload = {
         id: await nextLogId(), uid: uidGen(), tipo: 'receita',
-        produto_nome: 'Receita Obra: ' + desc, quantidade: 1, data: getHojeLocalStr(),
-        observacao: 'Lançamento Financeiro Obra', valor_total: v, cliente_nome: client,
+        produto_nome: tipo, categoria: tipo, quantidade: 1, data: getHojeLocalStr(),
+        observacao: note || ('Receita de obra: ' + nomeObra(obra)), valor_total: v, cliente_nome: client,
         forma_pagamento: method, status: 'ATIVO', status_entrega: 'ENTREGUE', qtd_entregue: 1,
         desconto: 0, status_financeiro: 'PENDENTE', vencimento: due, valor_pago: 0,
-        endereco_entrega: '', obra_id: OFIN.obraId
+        endereco_entrega: '', obra_id: obra
       };
       var res = await sb.from('logs').insert([payload]);
       if (res.error) throw res.error;

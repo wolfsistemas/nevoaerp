@@ -18,7 +18,6 @@
     'nav-obra-dashboard': 'obras',
     'nav-obra-fases': 'fases',
     'nav-obra-equipe': 'equipe',
-    'nav-obra-fornecedores': 'fornecedores',
     'nav-obra-oc': 'oc',
     'nav-obra-fin': 'financeiro',
     'nav-obra-gerencial': 'gerencial',

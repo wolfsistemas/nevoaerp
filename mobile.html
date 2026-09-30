@@ -709,10 +709,6 @@
             <i data-lucide="hard-hat" class="mb-1 w-5 h-5"></i>
             <span class="text-[9px] leading-tight uppercase font-medium">Equipe</span>
         </button>
-        <button onclick="navigate('obra-fornecedores')" id="nav-obra-fornecedores" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 px-1 text-slate-400 transition-colors">
-            <i data-lucide="truck" class="mb-1 w-5 h-5"></i>
-            <span class="text-[9px] leading-tight uppercase font-medium">Fornecedores</span>
-        </button>
         <button onclick="navigate('obra-fin')" id="nav-obra-fin" data-segmento="obra" class="hidden flex-1 flex flex-col items-center justify-center py-3 px-1 text-slate-400 transition-colors">
             <i data-lucide="bar-chart-3" class="mb-1 w-5 h-5"></i>
             <span class="text-[9px] leading-tight uppercase font-medium">Financeiro</span>
@@ -986,7 +982,7 @@
 
         // Assinatura/plano da empresa (gating de modulos no mobile)
         let ASSINATURA_ATUAL = null;
-        const RECURSOS_MOBILE = { quotes: 'orcamentos', reports: 'relatorios', fin: 'financeiro', prod: 'produtos', clients: 'clientes', pos: 'pdv', 'obra-dashboard': 'obras', 'obra-obras': 'obras', 'obra-equipe': 'equipe', 'obra-fornecedores': 'fornecedores', 'obra-fin': 'financeiro', 'obra-gerencial': 'gerencial', 'obra-relatorios': 'relatorios' };
+        const RECURSOS_MOBILE = { quotes: 'orcamentos', reports: 'relatorios', fin: 'financeiro', prod: 'produtos', clients: 'clientes', pos: 'pdv', 'obra-dashboard': 'obras', 'obra-obras': 'obras', 'obra-equipe': 'equipe', 'obra-fin': 'financeiro', 'obra-gerencial': 'gerencial', 'obra-relatorios': 'relatorios' };
 
         function recursoLiberado(recurso) {
             if (!ASSINATURA_ATUAL) return true;
@@ -1027,7 +1023,7 @@
                 if (navBtn) navBtn.style.display = liberado ? '' : 'none';
                 const viewEl = document.getElementById('view-' + view);
                 if (!liberado && viewEl && viewEl.classList.contains('active-section')) {
-                    navigate(seg === 'obra' ? 'obra-ponto' : 'quotes');
+                    navigate(seg === 'obra' ? 'obra-dashboard' : 'quotes');
                 }
             });
             if (ASSINATURA_ATUAL && ASSINATURA_ATUAL.bloqueada && !document.getElementById('billing-aviso-mobile')) {

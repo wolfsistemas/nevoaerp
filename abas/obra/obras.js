@@ -113,11 +113,36 @@
     if (!payload.nome) return A().toast('Informe o nome.', true);
     var res = id
       ? await sb.from('obras').update(payload).eq('id', id)
-      : await sb.from('obras').insert([payload]);
+      : await sb.from('obras').insert([payload]).select();
     if (res.error) return A().toast(res.error.message, true);
-    A().toast('Obra salva.');
+    var novoId = id || (res.data && res.data[0] && res.data[0].id);
+    var lancouRecebimento = false;
+    if (!id && novoId && payload.valor_contrato > 0) {
+      try {
+        await criarRecebimentoContrato(novoId, payload);
+        lancouRecebimento = true;
+      } catch (e) { A().toast('Obra salva, mas o recebimento do contrato falhou: ' + (e.message || e), true); }
+    }
+    A().toast(id ? 'Obra salva.' : (lancouRecebimento ? 'Obra salva e recebimento do contrato lançado em Contas a Receber.' : 'Obra salva.'));
     obraFecharModal();
     renderObras();
+  }
+
+  async function criarRecebimentoContrato(obraId, obra) {
+    if (!obraId || !A().insertLog) return;
+    await A().insertLog({
+      tipo: 'receita',
+      produto_nome: 'Recebimento de Serviço prestado',
+      categoria: 'Recebimento de Serviço prestado',
+      valor_total: Number(obra.valor_contrato) || 0,
+      cliente_nome: obra.solicitante || 'Consumidor Final',
+      observacao: 'Contrato da obra ' + (obra.nome || ''),
+      vencimento: obra.data_inicio || A().hojeISO(),
+      status: 'ATIVO',
+      status_financeiro: 'PENDENTE',
+      valor_pago: 0,
+      obra_id: obraId
+    });
   }
 
   async function obraOpenFases(obraId) {
