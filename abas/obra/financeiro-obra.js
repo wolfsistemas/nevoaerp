@@ -305,6 +305,9 @@
   }
 
   function ofinTotalRecebido() {
+    // Soma o recebido dos titulos que existem. Baixas orfas (titulo excluido)
+    // nao entram, evitando inflar o caixa com registros fantasmas.
+    if (A().recebidoDe) return A().recebidoDe(scopedLogs());
     return scopedLogs().filter(function (l) { return l.tipo === 'recebimento' && !isEst(l); })
       .reduce(function (s, l) { return s + Number(l.valor_total || 0); }, 0);
   }
@@ -329,8 +332,9 @@
   function resumoObra(obraId) {
     var logs = onlyObraLogs(OFIN.logs, obraId);
     var desps = onlyObraDesp(OFIN.despesas, obraId);
-    var recebido = logs.filter(function (l) { return l.tipo === 'recebimento' && !isEst(l); })
-      .reduce(function (s, l) { return s + Number(l.valor_total || 0); }, 0);
+    var recebido = A().recebidoDe ? A().recebidoDe(logs)
+      : logs.filter(function (l) { return l.tipo === 'recebimento' && !isEst(l); })
+          .reduce(function (s, l) { return s + Number(l.valor_total || 0); }, 0);
     var pago = logs.filter(function (l) { return l.tipo === 'despesa' && !isEst(l) && String(l.status_financeiro || '').toUpperCase() === 'PAGO'; })
       .reduce(function (s, l) { return s + Number(l.valor_total || 0); }, 0);
     var aReceber = openARFrom(logs);
@@ -762,6 +766,9 @@
     var due = val('ofin-rec-due');
     var st = calcTituloObra(id);
     if (!st.rows.length) return toast('Registro não encontrado', true);
+    // Evita duplo clique / duplo envio criando baixas duplicadas.
+    if (OFIN.savingRec) return;
+    OFIN.savingRec = true;
     var formas = coletarPgto('ofin-rec-pgto-rows');
     var moneyTotal = formas.reduce(function (a, f) { return a + f.valor; }, 0);
     var desconto = num('ofin-rec-disc'), juros = num('ofin-rec-jur');
@@ -779,6 +786,11 @@
       var newMoney = pagoBase + moneyTotal;
       var newDisc = st.disc + desconto, newJur = st.jur + juros;
       var newSaldo = st.total + newJur - newDisc - newMoney;
+      // Não permite receber mais do que a conta deve (evita baixa duplicada / valor acima do saldo).
+      if (newSaldo < -0.005) {
+        loading(false);
+        return toast('O valor recebido (' + money(moneyTotal) + ') é maior que o saldo devedor (' + money(Math.max(0, st.saldo)) + '). Ajuste o valor, o desconto ou os juros.', true);
+      }
       var finStatus = newSaldo <= 0.005 ? 'PAGO' : (newMoney > 0 ? 'PARCIAL' : 'PENDENTE');
       var metodoPrincipal = formas.length ? formas[0].metodo : (st.rows[0].forma_pagamento || 'Dinheiro');
       for (var k = 0; k < formas.length; k++) {
@@ -803,6 +815,7 @@
       toast(moneyTotal > 0 ? 'Baixa registrada!' : 'Ajuste registrado!');
       await ofinCarregar(); loading(false);
     } catch (e) { loading(false); toast('Erro: ' + (e.message || e), true); }
+    finally { OFIN.savingRec = false; }
   }
 
   async function ofinEstornarRecebimento(id) {
@@ -832,13 +845,26 @@
   }
 
   async function ofinExcluirReceita(id) {
-    var ok = await confirmar('Excluir esta receita pendente permanentemente?', { danger: true, confirmText: 'Excluir' });
+    var st = calcTituloObra(id);
+    if (!st.rows.length) return toast('Registro não encontrado', true);
+    var msg = st.pago > 0
+      ? 'Esta conta já tem baixa(s) recebida(s) de ' + money(st.pago) + '. Excluir remove a conta E as baixas recebidas. Continuar?'
+      : 'Excluir esta receita pendente permanentemente?';
+    var ok = await confirmar(msg, { danger: true, confirmText: 'Excluir' });
     if (!ok) return;
     loading(true);
     try {
-      var res = await sb.from('logs').delete().eq('id', id).eq('tipo', 'receita');
-      if (res.error) throw res.error;
-      toast('Receita excluída!');
+      // Remove primeiro as baixas (recebimentos) vinculadas para não deixar órfãs.
+      for (var i = 0; i < st.baixas.length; i++) {
+        var rb = await sb.from('logs').delete().eq('uid', st.baixas[i].uid);
+        if (rb.error) throw rb.error;
+      }
+      // Exclui pelo uid (id não é único globalmente na tabela logs).
+      for (var j = 0; j < st.rows.length; j++) {
+        var res = await sb.from('logs').delete().eq('uid', st.rows[j].uid);
+        if (res.error) throw res.error;
+      }
+      toast('Receita e baixas excluídas!');
       await ofinCarregar(); loading(false);
     } catch (e) { loading(false); toast('Erro: ' + (e.message || e), true); }
   }

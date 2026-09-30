@@ -137,9 +137,11 @@
       var logsAtv = logs.filter(function (l) { return !isEst(l); });
       var despsAtv = desps.filter(function (d) { return !isEst(d); });
 
-      var recebido = sum(logsAtv.filter(function (l) { return l.tipo === 'recebimento'; }), function (l) { return num(l.valor_total); });
+      var recebido = A().recebidoDe ? A().recebidoDe(logsAtv)
+        : sum(logsAtv.filter(function (l) { return l.tipo === 'recebimento'; }), function (l) { return num(l.valor_total); });
       var pago = sum(logsAtv.filter(function (l) { return l.tipo === 'despesa' && String(l.status_financeiro || '').toUpperCase() === 'PAGO'; }), function (l) { return num(l.valor_total); });
-      var aReceber = sum(logsAtv.filter(function (l) { return l.tipo === 'recebimento' && String(l.status_financeiro || '').toUpperCase() !== 'PAGO'; }), function (l) { return num(l.valor_total); });
+      var aReceber = A().aReceberDe ? A().aReceberDe(logsAtv)
+        : sum(logsAtv.filter(function (l) { return l.tipo === 'recebimento' && String(l.status_financeiro || '').toUpperCase() !== 'PAGO'; }), function (l) { return num(l.valor_total); });
       var aPagar = sum(despsAtv.filter(function (d) { return String(d.status || '').toUpperCase() !== 'PAGO'; }), function (d) { return Math.max(0, num(d.custo) - num(d.valor_pago)); });
       var custo = sum(despsAtv, function (d) { return num(d.custo); }) + sum(logsAtv.filter(function (l) { return l.tipo === 'compra'; }), function (l) { return num(l.valor_total); });
       var contratos = sum(obras, function (o) { return num(o.valor_contrato); });

@@ -39,7 +39,11 @@
   function meds() { return (RE.dados.meds || []).filter(function (m) { return obraOk(m.obra_id) && noPeriodo(m.data_medicao); }); }
   function pontos() { return (RE.dados.pontos || []).filter(function (p) { return obraOk(p.obra_id) && noPeriodo(String(p.hora_registro || '').slice(0, 10)); }); }
 
-  function recObra(id) { return sum(logs().filter(function (l) { return String(l.obra_id) === String(id) && l.tipo === 'recebimento' && !isEst(l); }), function (l) { return num(l.valor_total); }); }
+  function recObra(id) {
+    var doObra = logs().filter(function (l) { return String(l.obra_id) === String(id); });
+    if (A().recebidoDe) return A().recebidoDe(doObra);
+    return sum(doObra.filter(function (l) { return l.tipo === 'recebimento' && !isEst(l); }), function (l) { return num(l.valor_total); });
+  }
   function custoObra(id) {
     var d = sum(desps().filter(function (x) { return String(x.obra_id) === String(id) && !isEst(x); }), function (x) { return num(x.custo); });
     var l = sum(logs().filter(function (x) { return String(x.obra_id) === String(id) && x.tipo === 'compra' && !isEst(x); }), function (x) { return num(x.valor_total); });
@@ -126,9 +130,11 @@
       var rec = L.filter(function (l) { return l.tipo === 'recebimento' && !isEst(l); });
       var despLog = L.filter(function (l) { return l.tipo === 'despesa' && !isEst(l); });
       var D = desps().filter(function (d) { return !isEst(d); });
+      var recTotal = A().recebidoDe ? A().recebidoDe(L) : sum(rec.filter(function (l) { return String(l.status_financeiro || '').toUpperCase() === 'PAGO'; }), function (l) { return num(l.valor_total); });
+      var recAberto = A().aReceberDe ? A().aReceberDe(L) : sum(rec.filter(function (l) { return String(l.status_financeiro || '').toUpperCase() !== 'PAGO'; }), function (l) { return num(l.valor_total); });
       rep.kpis = [
-        { label: 'Recebido', value: money(sum(rec.filter(function (l) { return String(l.status_financeiro || '').toUpperCase() === 'PAGO'; }), function (l) { return num(l.valor_total); })) },
-        { label: 'A receber', value: money(sum(rec.filter(function (l) { return String(l.status_financeiro || '').toUpperCase() !== 'PAGO'; }), function (l) { return num(l.valor_total); })) },
+        { label: 'Recebido', value: money(recTotal) },
+        { label: 'A receber', value: money(recAberto) },
         { label: 'Pago', value: money(sum(despLog.filter(function (l) { return String(l.status_financeiro || '').toUpperCase() === 'PAGO'; }), function (l) { return num(l.valor_total); })) },
         { label: 'A pagar', value: money(sum(D.filter(function (d) { return String(d.status || '').toUpperCase() !== 'PAGO'; }), function (d) { return Math.max(0, num(d.custo) - num(d.valor_pago)); })) }
       ];
@@ -243,7 +249,8 @@
 
     // resumo (default)
     rep.title = 'Resumo geral de obras';
-    var recAll = sum(logs().filter(function (l) { return l.tipo === 'recebimento' && !isEst(l); }), function (l) { return num(l.valor_total); });
+    var recAll = A().recebidoDe ? A().recebidoDe(logs())
+      : sum(logs().filter(function (l) { return l.tipo === 'recebimento' && !isEst(l); }), function (l) { return num(l.valor_total); });
     var custoAll = sum(obras, function (o) { return custoObra(o.id); });
     var contratoAll = sum(obras.filter(function (o) { return obraOk(o.id); }), function (o) { return num(o.valor_contrato); });
     rep.kpis = [

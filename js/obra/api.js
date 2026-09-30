@@ -46,6 +46,57 @@
     return st === 'ESTORNADO' || sf === 'ESTORNADO';
   }
 
+  // Extrai o id do titulo referenciado em uma baixa ("Ref Lanc #12").
+  function refId(observacao) {
+    var m = /#(\d+)/.exec(String(observacao || ''));
+    return m ? m[1] : '';
+  }
+
+  // Titulo a receber (receita/venda) + suas baixas (recebimento).
+  // Baixas orfas (cujo titulo nao existe mais) ficam de fora por construcao.
+  function calcTitulo(logs, parentId) {
+    var arr = logs || [];
+    var rows = arr.filter(function (l) {
+      return String(l.id) === String(parentId) && (l.tipo === 'venda' || l.tipo === 'receita') && !isEstornado(l);
+    });
+    var baixas = arr.filter(function (l) {
+      return l.tipo === 'recebimento' && !isEstornado(l) && refId(l.observacao) === String(parentId);
+    });
+    var total = rows.reduce(function (a, r) { return a + Number(r.valor_total || 0); }, 0);
+    var pago = baixas.reduce(function (a, l) { return a + Number(l.valor_total || 0); }, 0);
+    var disc = baixas.reduce(function (a, l) { return a + Number(l.desconto || 0); }, 0);
+    var jur = baixas.reduce(function (a, l) { return a + Number(l.acrescimo || 0); }, 0);
+    var saldo = total + jur - disc - pago;
+    var status = saldo <= 0.005 ? 'PAGO' : (pago > 0 ? 'PARCIAL' : 'PENDENTE');
+    return { rows: rows, baixas: baixas, total: total, pago: pago, disc: disc, jur: jur, saldo: saldo, status: status };
+  }
+
+  // Ids dos titulos que existem (ignora parcelas substituidas e estornados).
+  function idsTitulos(logs) {
+    var ids = {};
+    (logs || []).forEach(function (l) {
+      if ((l.tipo === 'venda' || l.tipo === 'receita') && !isEstornado(l) && String(l.status_financeiro || '').toUpperCase() !== 'PARCELADO') ids[l.id] = true;
+    });
+    return ids;
+  }
+
+  // Total efetivamente recebido, considerando SOMENTE baixas de titulos que
+  // ainda existem. Evita contar baixas orfas (titulo excluido) como receita.
+  function recebidoDe(logs) {
+    var ids = idsTitulos(logs);
+    var total = 0;
+    Object.keys(ids).forEach(function (id) { total += calcTitulo(logs, id).pago; });
+    return total;
+  }
+
+  // Saldo em aberto a receber dos titulos existentes.
+  function aReceberDe(logs) {
+    var ids = idsTitulos(logs);
+    var total = 0;
+    Object.keys(ids).forEach(function (id) { var c = calcTitulo(logs, id); if (c.saldo > 0.005) total += c.saldo; });
+    return total;
+  }
+
   var CAT_LABELS = {
     ponto: 'M.O. DI\u00c1RIA',
     terceirizado: 'M.O. METRAGEM',
@@ -208,6 +259,10 @@
     icons: icons,
     equipeId: equipeId,
     isEstornado: isEstornado,
+    refId: refId,
+    calcTitulo: calcTitulo,
+    recebidoDe: recebidoDe,
+    aReceberDe: aReceberDe,
     catLabel: catLabel,
     confirmar: confirmar,
     nextId: nextId,

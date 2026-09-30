@@ -111,21 +111,118 @@
       updated_at: new Date().toISOString()
     };
     if (!payload.nome) return A().toast('Informe o nome.', true);
+
+    // Guarda o valor/nome anteriores para sincronizar a conta a receber do contrato.
+    var antigo = null;
+    if (id) {
+      try {
+        var g = await sb.from('obras').select('nome, valor_contrato').eq('id', id).single();
+        antigo = g.data || null;
+      } catch (e) { antigo = null; }
+    }
+
+    // Avalia (e confirma) o efeito no contrato ANTES de gravar, para que o
+    // "cancelar" nao deixe a obra alterada com o financeiro desatualizado.
+    var plano = null;
+    if (id) {
+      var valorMudou = !antigo || Number(antigo.valor_contrato || 0) !== Number(payload.valor_contrato || 0);
+      var nomeMudou = !antigo || String(antigo.nome || '') !== String(payload.nome || '');
+      if (valorMudou || nomeMudou) {
+        try {
+          plano = await avaliarContrato(id, payload);
+        } catch (e) { return A().toast('Não foi possível conferir o contrato da obra: ' + (e.message || e), true); }
+        if (plano && plano.acao === 'cancelar') return A().toast('Edição cancelada: o valor do contrato não foi alterado.');
+      }
+    }
+
     var res = id
       ? await sb.from('obras').update(payload).eq('id', id)
       : await sb.from('obras').insert([payload]).select();
     if (res.error) return A().toast(res.error.message, true);
     var novoId = id || (res.data && res.data[0] && res.data[0].id);
-    var lancouRecebimento = false;
+
     if (!id && novoId && payload.valor_contrato > 0) {
       try {
         await criarRecebimentoContrato(novoId, payload);
-        lancouRecebimento = true;
+        A().toast('Obra salva e recebimento do contrato lançado em Contas a Receber.');
       } catch (e) { A().toast('Obra salva, mas o recebimento do contrato falhou: ' + (e.message || e), true); }
+    } else if (id && novoId) {
+      try {
+        var msg = await aplicarContrato(novoId, payload, plano);
+        A().toast(msg || 'Obra salva.');
+      } catch (e) { A().toast('Obra salva, mas a conta do contrato falhou: ' + (e.message || e), true); }
+    } else {
+      A().toast('Obra salva.');
     }
-    A().toast(id ? 'Obra salva.' : (lancouRecebimento ? 'Obra salva e recebimento do contrato lançado em Contas a Receber.' : 'Obra salva.'));
     obraFecharModal();
     renderObras();
+  }
+
+  // Le (somente) o estado da conta a receber do contrato e decide o que fazer
+  // quando o usuario edita o valor/nome da obra. Pode pedir confirmacao.
+  // Retorna { acao } onde acao = criar|ajustar|zerar|remover|nada|cancelar.
+  async function avaliarContrato(obraId, obra) {
+    var novo = Number(obra.valor_contrato) || 0;
+    var q = await sb.from('logs')
+      .select('uid,id,valor_total,valor_pago,status_financeiro,observacao,vencimento')
+      .eq('obra_id', obraId).eq('tipo', 'receita').like('observacao', 'Contrato da obra%');
+    if (q.error) throw q.error;
+    var contas = q.data || [];
+
+    if (!contas.length) return { acao: novo > 0 ? 'criar' : 'nada', novo: novo };
+
+    var conta = contas[0];
+    var venc = obra.data_termino || obra.data_inicio || A().hojeISO();
+    var obs = 'Contrato da obra ' + (obra.nome || '');
+
+    // Baixas ja recebidas vinculadas a esta conta (ignora estornadas).
+    var bq = await sb.from('logs').select('valor_total,status,status_financeiro,observacao')
+      .eq('obra_id', obraId).eq('tipo', 'recebimento');
+    if (bq.error) throw bq.error;
+    var pago = (bq.data || []).filter(function (l) {
+      var st = String(l.status || '').toUpperCase(), sf = String(l.status_financeiro || '').toUpperCase();
+      var m = /#(\d+)/.exec(String(l.observacao || ''));
+      return st !== 'ESTORNADO' && sf !== 'ESTORNADO' && m && m[1] === String(conta.id);
+    }).reduce(function (s, l) { return s + Number(l.valor_total || 0); }, 0);
+    var pagoBase = Math.max(pago, Number(conta.valor_pago) || 0);
+
+    var plano = { acao: 'ajustar', conta: conta, novo: novo, venc: venc, obs: obs, pagoBase: pagoBase };
+
+    if (novo === 0) {
+      if (pagoBase > 0) {
+        var ok = await A().confirmar('Há ' + A().money(pagoBase) + ' já recebido no contrato. Zerar o valor da obra deixa a conta quitada. Continuar?', { danger: true, confirmText: 'Zerar' });
+        if (!ok) return { acao: 'cancelar' };
+        plano.acao = 'zerar';
+      } else {
+        plano.acao = 'remover';
+      }
+      return plano;
+    }
+
+    if (pagoBase - novo > 0.005) {
+      var ok2 = await A().confirmar('O recebido no contrato (' + A().money(pagoBase) + ') é maior que o novo valor (' + A().money(novo) + '). A conta ficará quitada com saldo credor. Continuar?', { danger: true, confirmText: 'Continuar' });
+      if (!ok2) return { acao: 'cancelar' };
+    }
+    plano.status = pagoBase >= novo - 0.005 ? 'PAGO' : (pagoBase > 0 ? 'PARCIAL' : 'PENDENTE');
+    return plano;
+  }
+
+  async function aplicarContrato(obraId, obra, plano) {
+    if (!plano || plano.acao === 'nada' || plano.acao === 'cancelar') return 'Obra salva.';
+    if (plano.acao === 'criar') {
+      await criarRecebimentoContrato(obraId, obra);
+      return 'Obra salva e contrato de ' + A().money(Number(obra.valor_contrato) || 0) + ' lançado em Contas a Receber.';
+    }
+    if (plano.acao === 'remover') {
+      await sb.from('logs').delete().eq('uid', plano.conta.uid);
+      return 'Obra salva. Contrato removido de Contas a Receber (valor zerado).';
+    }
+    if (plano.acao === 'zerar') {
+      await sb.from('logs').update({ valor_total: 0, status_financeiro: 'PAGO', valor_pago: plano.pagoBase, vencimento: plano.venc, observacao: plano.obs }).eq('uid', plano.conta.uid);
+      return 'Obra salva. Contrato zerado (havia recebimento).';
+    }
+    await sb.from('logs').update({ valor_total: plano.novo, valor_pago: plano.pagoBase, status_financeiro: plano.status, vencimento: plano.venc, observacao: plano.obs }).eq('uid', plano.conta.uid);
+    return 'Obra salva. Contrato do recebimento atualizado para ' + A().money(plano.novo) + '.';
   }
 
   async function criarRecebimentoContrato(obraId, obra) {
