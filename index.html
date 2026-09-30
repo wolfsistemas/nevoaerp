@@ -199,9 +199,10 @@
             btn.disabled = true; btn.textContent = 'Enviando...';
             try {
                 // redirectTo volta para esta pagina; com PKCE o Supabase anexa ?code=...
-                await sb.auth.resetPasswordForEmail(email, {
+                const { error } = await sb.auth.resetPasswordForEmail(email, {
                     redirectTo: window.location.origin + window.location.pathname
                 });
+                if (error) throw error;
                 // Mensagem generica: nao revela se o e-mail existe na base.
                 resetMsg('Se o e-mail estiver cadastrado, o link chegara em instantes. Verifique tambem a caixa de spam.', false);
             } catch (err) {
