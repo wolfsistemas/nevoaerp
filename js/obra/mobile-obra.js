@@ -132,8 +132,11 @@
       +     lista.map(function (f) { return '<option value="' + f.id + '">' + A().esc(f.nome) + '</option>'; }).join('')
       +   '</select></div>'
       +   '<form onsubmit="mobObraLancarMedicao(event)" class="bg-white border rounded-xl p-3 space-y-2">'
+      +     '<input type="hidden" id="mob-med-contrato" value="0">'
       +     '<input type="date" id="mob-med-data" required value="' + A().hojeISO() + '" class="w-full p-3 border rounded-xl">'
-      +     '<input type="number" step="0.01" id="mob-med-pct" required placeholder="% medido" class="w-full p-3 border rounded-xl">'
+      +     '<input type="number" step="0.01" min="0" id="mob-med-pct" placeholder="% medido" oninput="mobObraMedSync(\'pct\')" class="w-full p-3 border rounded-xl">'
+      +     '<input type="number" step="0.01" min="0" id="mob-med-valor" placeholder="Valor medido (R$)" oninput="mobObraMedSync(\'valor\')" class="w-full p-3 border rounded-xl">'
+      +     '<p id="mob-med-hint" class="text-[10px] text-slate-500"></p>'
       +     '<input type="text" id="mob-med-desc" placeholder="Descricao" class="w-full p-3 border rounded-xl">'
       +     '<button class="w-full bg-emerald-600 text-white py-3 rounded-xl font-black">Lancar medicao</button>'
       +   '</form>'
@@ -151,6 +154,8 @@
     var rows = med.data || [];
     var vigentes = rows.filter(function (m) { return m.status !== 'ESTORNADO'; });
     var contrato = Number(func.valor_contrato || 0);
+    var contratoEl = document.getElementById('mob-med-contrato');
+    if (contratoEl) contratoEl.value = contrato;
     var pct = vigentes.reduce(function (s, m) { return s + Number(m.percentual || 0); }, 0);
     var valor = vigentes.reduce(function (s, m) { return s + Number(m.valor || 0); }, 0);
     var resumo = document.getElementById('mob-med-resumo');
@@ -168,17 +173,40 @@
     }).join('') : '<p class="text-center text-slate-400 py-4">Sem medicoes.</p>';
   }
 
+  function mobObraMedSync(src) {
+    var contrato = Number((document.getElementById('mob-med-contrato') || {}).value) || 0;
+    var pEl = document.getElementById('mob-med-pct');
+    var vEl = document.getElementById('mob-med-valor');
+    var hint = document.getElementById('mob-med-hint');
+    if (!pEl || !vEl) return;
+    if (src === 'pct') {
+      var p = Number(pEl.value) || 0;
+      vEl.value = (contrato > 0 && p > 0) ? (contrato * p / 100).toFixed(2) : '';
+    } else {
+      var v = Number(vEl.value) || 0;
+      pEl.value = (contrato > 0 && v > 0) ? (v / contrato * 100).toFixed(2) : '';
+    }
+    if (hint) {
+      var p2 = Number(pEl.value) || 0, v2 = Number(vEl.value) || 0;
+      hint.textContent = (contrato > 0 && (p2 > 0 || v2 > 0)) ? (p2.toFixed(2) + '% = ' + A().money(v2)) : '';
+    }
+  }
+
   async function mobObraLancarMedicao(ev) {
     ev.preventDefault();
     var funcId = Number(document.getElementById('mob-med-func').value);
     var func = (await sb.from('equipe').select('*').eq('id', funcId).single()).data;
+    var contrato = Number(func.valor_contrato || 0);
     var pct = Number(document.getElementById('mob-med-pct').value) || 0;
-    if (pct <= 0) return toast('Informe o percentual.', true);
+    var valor = Number(document.getElementById('mob-med-valor').value) || 0;
+    if (pct <= 0 && valor <= 0) return toast('Informe o percentual ou o valor medido.', true);
+    if (contrato <= 0) return toast('Defina o valor do contrato do empreiteiro.', true);
+    if (pct <= 0) pct = (valor / contrato) * 100;
+    if (valor <= 0) valor = (contrato * pct) / 100;
     var med = await sb.from('medicoes_empreita').select('percentual,status').eq('equipe_id', funcId);
     var ja = (med.data || []).filter(function (m) { return m.status !== 'ESTORNADO'; })
       .reduce(function (s, m) { return s + Number(m.percentual || 0); }, 0);
     if (ja + pct > 100.01) return toast('Percentual acumulado ultrapassa 100%.', true);
-    var valor = (Number(func.valor_contrato || 0) * pct) / 100;
     var res = await sb.from('medicoes_empreita').insert([{
       equipe_id: funcId,
       obra_id: func.obra_atual_id || null,
@@ -191,6 +219,7 @@
     if (res.error) return toast(res.error.message, true);
     toast('Medicao lancada.');
     document.getElementById('mob-med-pct').value = '';
+    document.getElementById('mob-med-valor').value = '';
     document.getElementById('mob-med-desc').value = '';
     mobObraCarregarMedicao();
   }
@@ -371,6 +400,7 @@
   window.mobObraMedicao = mobObraMedicao;
   window.mobObraCarregarMedicao = mobObraCarregarMedicao;
   window.mobObraLancarMedicao = mobObraLancarMedicao;
+  window.mobObraMedSync = mobObraMedSync;
   window.mobObraEstornarBatida = mobObraEstornarBatida;
   window.mobObraEstornarMedicao = mobObraEstornarMedicao;
   window.mobObraMetros = mobObraMetros;

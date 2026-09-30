@@ -853,13 +853,15 @@
       +   '<div><label class="text-[10px] font-bold text-slate-500 uppercase">Status</label><select id="eqe-status" onchange="eqObraSaldoEmpreitaRender()" class="w-full p-2 border rounded-lg text-sm"><option value="PENDENTE">Pendentes</option><option value="PAGO">Pagos</option><option value="TODOS">Todos</option></select></div>'
       + '</div>'
       + '<div id="eqe-lista" class="border rounded-lg overflow-hidden mb-3"></div>'
-      + '<div class="bg-slate-50 rounded-lg p-3 mb-3"><p class="text-xs font-bold text-slate-600 mb-2">Lancar medicao (% do contrato)</p>'
-      +   '<div class="grid grid-cols-4 gap-2">'
+      + '<div class="bg-slate-50 rounded-lg p-3 mb-3"><p class="text-xs font-bold text-slate-600 mb-2">Lancar medicao (% do contrato ou valor medido)</p>'
+      +   '<div class="grid grid-cols-2 md:grid-cols-5 gap-2">'
       +     '<input id="eqe-med-data" type="date" value="' + hojeISO() + '" class="p-2 border rounded-lg text-xs">'
-      +     '<input id="eqe-med-pct" type="number" step="0.01" min="0" max="100" placeholder="%" class="p-2 border rounded-lg text-xs">'
+      +     '<input id="eqe-med-pct" type="number" step="0.01" min="0" max="100" placeholder="% do contrato" oninput="eqObraEmpreitaSync(\'pct\')" class="p-2 border rounded-lg text-xs">'
+      +     '<input id="eqe-med-valor" type="number" step="0.01" min="0" placeholder="Valor medido (R$)" oninput="eqObraEmpreitaSync(\'valor\')" class="p-2 border rounded-lg text-xs">'
       +     '<input id="eqe-med-desc" type="text" placeholder="Servico medido" class="p-2 border rounded-lg text-xs">'
       +     '<button onclick="eqObraSaldoEmpreitaMedir()" class="bg-amber-700 text-white rounded-lg font-bold text-xs">Lancar</button>'
-      +   '</div></div>'
+      +   '</div>'
+      +   '<p id="eqe-med-hint" class="text-[10px] text-slate-500 mt-1">Informe o percentual ou o valor medido.</p></div>'
       + '<div class="flex items-center justify-between flex-wrap gap-2 border-t pt-3">'
       +   '<div>A pagar: <b id="eqe-tot" class="text-amber-800">R$ 0,00</b></div>'
       +   '<div class="flex gap-2">'
@@ -901,16 +903,43 @@
     if (el('eqe-tot')) el('eqe-tot').textContent = money(total);
   }
 
+  function eqObraEmpreitaSync(src) {
+    var eqId = val('eqe-id');
+    var c = CACHE.equipe.find(function (e) { return String(e.id) === String(eqId); });
+    var contrato = Number(c && c.valor_contrato || 0);
+    var pctEl = el('eqe-med-pct'), valEl = el('eqe-med-valor'), hint = el('eqe-med-hint');
+    if (!pctEl || !valEl) return;
+    if (src === 'pct') {
+      var p = Number(pctEl.value) || 0;
+      valEl.value = (contrato > 0 && p > 0) ? (contrato * p / 100).toFixed(2) : '';
+    } else {
+      var v = Number(valEl.value) || 0;
+      pctEl.value = (contrato > 0 && v > 0) ? (v / contrato * 100).toFixed(2) : '';
+    }
+    if (hint) {
+      var p2 = Number(pctEl.value) || 0, v2 = Number(valEl.value) || 0;
+      var ok = contrato > 0 && (p2 > 0 || v2 > 0);
+      hint.textContent = ok ? (p2.toFixed(2) + '% do contrato = ' + money(v2))
+        : (contrato > 0 ? 'Informe o percentual ou o valor medido.' : 'Defina o valor do contrato do empreiteiro.');
+      hint.className = 'text-[10px] mt-1 ' + (ok ? 'text-amber-700 font-bold' : 'text-slate-500');
+    }
+  }
+
   async function eqObraSaldoEmpreitaMedir() {
     var eqId = val('eqe-id');
     var data = val('eqe-med-data');
-    var pct = Number(val('eqe-med-pct')) || 0;
-    if (!data || pct <= 0) return toast('Informe data e percentual.', true);
     var c = CACHE.equipe.find(function (e) { return String(e.id) === String(eqId); });
     if (!c) return;
+    var contrato = Number(c.valor_contrato || 0);
+    var pct = Number(val('eqe-med-pct')) || 0;
+    var valor = Number(val('eqe-med-valor')) || 0;
+    if (!data) return toast('Informe a data.', true);
+    if (pct <= 0 && valor <= 0) return toast('Informe o percentual ou o valor medido.', true);
+    if (contrato <= 0) return toast('Defina o valor do contrato do empreiteiro.', true);
+    if (pct <= 0) pct = (valor / contrato) * 100;
+    if (valor <= 0) valor = (contrato * pct) / 100;
     var r = calcEmpreita(eqId);
     if (r.pctExec + pct > 100.01) return toast('Percentual acumulado ultrapassa 100%.', true);
-    var valor = (Number(c.valor_contrato || 0) * pct) / 100;
     var res = await sb.from('medicoes_empreita').insert([{
       equipe_id: eqId,
       obra_id: c.obra_atual_id || null,
@@ -922,6 +951,9 @@
     }]);
     if (res.error) return toast(res.error.message, true);
     toast('Medicao lancada.');
+    if (el('eqe-med-pct')) el('eqe-med-pct').value = '';
+    if (el('eqe-med-valor')) el('eqe-med-valor').value = '';
+    if (el('eqe-med-desc')) el('eqe-med-desc').value = '';
     await carregarDados();
     eqObraSaldoEmpreitaRender();
     eqObraRenderLista();
@@ -1351,6 +1383,7 @@
   window.eqObraSaldoEmpreitaFechar = eqObraSaldoEmpreitaFechar;
   window.eqObraSaldoEmpreitaEstornar = eqObraSaldoEmpreitaEstornar;
   window.eqObraSaldoEmpreitaRecibo = eqObraSaldoEmpreitaRecibo;
+  window.eqObraEmpreitaSync = eqObraEmpreitaSync;
   window.eqObraOpenForm = eqObraOpenForm;
   window.eqObraOnCat = eqObraOnCat;
   window.eqObraSalvar = eqObraSalvar;
