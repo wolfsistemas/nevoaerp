@@ -415,7 +415,7 @@
   async function carregar() {
     var res = await Promise.all([
       A().listObras(false),
-      sb.from('logs').select('uid,tipo,produto_nome,data,valor_total,status,status_financeiro,obra_id,categoria,observacao,vencimento,fornecedor_id,fase_id'),
+      sb.from('logs').select('uid,id,tipo,produto_nome,data,valor_total,desconto,acrescimo,status,status_financeiro,obra_id,categoria,observacao,vencimento,fornecedor_id,fase_id'),
       sb.from('despesas').select('uid,item,custo,data,status,obra_id,categoria,fornecedor,valor_pago,fase_id'),
       sb.from('producao_terc').select('id,terceirizado_id,obra_id,data_registro,metros,status'),
       sb.from('medicoes_empreita').select('id,equipe_id,obra_id,data_medicao,percentual,valor,status'),

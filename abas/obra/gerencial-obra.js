@@ -9,7 +9,7 @@
     try {
       var obras = await A().listObras(false);
       var desp = await sb.from('despesas').select('obra_id,fase_id,custo,categoria,status,item');
-      var logs = await sb.from('logs').select('obra_id,fase_id,valor_total,tipo,categoria,status,status_financeiro');
+      var logs = await sb.from('logs').select('id,obra_id,fase_id,valor_total,tipo,categoria,status,status_financeiro,observacao,desconto,acrescimo');
       var prod = await sb.from('producao_terc').select('obra_id,metros,status');
       var med = await sb.from('medicoes_empreita').select('obra_id,valor,percentual,status');
       var fasesQ = await sb.from('obras_fases').select('id,obra_id,nome,ordem,arquivada');

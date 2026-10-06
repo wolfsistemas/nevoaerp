@@ -119,7 +119,7 @@
     try {
       var res = await Promise.all([
         A().listObras(false),
-        sb.from('logs').select('uid,tipo,produto_nome,data,valor_total,status,status_financeiro,obra_id,categoria,observacao'),
+        sb.from('logs').select('uid,id,tipo,produto_nome,data,valor_total,desconto,acrescimo,status,status_financeiro,obra_id,categoria,observacao'),
         sb.from('despesas').select('uid,custo,status,obra_id,categoria,item,valor_pago'),
         sb.from('producao_terc').select('obra_id,metros,status'),
         sb.from('medicoes_empreita').select('obra_id,valor,status'),
