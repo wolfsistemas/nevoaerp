@@ -144,10 +144,6 @@
   }
 
   async function nextId(tabela) {
-    if (typeof getNextId === 'function' && typeof STATE !== 'undefined') {
-      if (tabela === 'despesas' && STATE.expenses) return getNextId(STATE.expenses);
-      if (tabela === 'logs' && STATE.logs) return getNextId(STATE.logs);
-    }
     var col = tabela === 'despesas' ? 'despesas' : 'logs';
     var res = await sb.from(col).select('id').order('id', { ascending: false }).limit(1);
     var max = (res.data && res.data[0] && res.data[0].id) ? Number(res.data[0].id) : 0;
@@ -189,28 +185,8 @@
 
   async function insertDespesaComLog(payload) {
     var desp = await insertDespesa(payload);
-    var obs = String(payload.observacao || payload.item || '');
-    if (obs.indexOf('Ref Despesa #') < 0) obs = (obs ? obs + ' | ' : '') + 'Ref Despesa #' + desp.id;
-    try {
-      var log = await insertLog({
-        tipo: 'despesa',
-        produto_nome: payload.item,
-        quantidade: 1,
-        valor_total: payload.custo,
-        observacao: obs,
-        status: 'ATIVO',
-        status_financeiro: payload.status || 'PENDENTE',
-        obra_id: payload.obra_id || null,
-        categoria: payload.categoria || null,
-        fornecedor_id: payload.fornecedor_id || null
-      });
-      await refreshState();
-      return { despesa: desp, log: log };
-    } catch (e) {
-      await sb.from('despesas').update({ status: 'ESTORNADO' }).eq('uid', desp.uid);
-      await refreshState();
-      throw e;
-    }
+    await refreshState();
+    return { despesa: desp, log: null };
   }
 
   async function estornarDespesaPorUid(uid) {

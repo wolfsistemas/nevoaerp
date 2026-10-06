@@ -620,12 +620,12 @@
         + '<td class="p-3">' + faseCell(e.fase_id) + '</td>'
         + '<td class="p-3"><div class="font-bold text-red-600">' + money(saldo > 0 ? saldo : 0) + '</div><div class="text-[10px] text-slate-400">Total ' + money(e.custo) + ' · Pago ' + money(e.valor_pago) + '</div></td>'
         + '<td class="p-3"><div class="flex items-center justify-end gap-1">'
-        +   (pago ? '' : '<button onclick="ofinPayExpense(\'' + e.id + '\')" class="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded shadow" title="Baixar / Pagar"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i></button>')
-        +   '<button onclick="ofinEditExpense(\'' + e.id + '\')" class="p-1.5 border border-blue-200 text-blue-600 rounded" title="Editar"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>'
-        +   '<button onclick="ofinDuplicarDespesa(\'' + e.id + '\')" class="p-1.5 border border-slate-200 text-slate-600 rounded" title="Duplicar (+30d)"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>'
-        +   (Number(e.valor_pago || 0) > 0 ? '<button onclick="ofinEstornarDespesa(\'' + e.id + '\')" class="p-1.5 border border-orange-200 text-orange-600 rounded" title="Estornar pagamento"><i data-lucide="undo-2" class="w-3.5 h-3.5"></i></button>' : '')
-        +   '<button onclick="ofinOpenReceiptFromExpense(\'' + e.id + '\')" class="p-1.5 border border-emerald-200 text-emerald-600 rounded" title="Recibo"><i data-lucide="file-text" class="w-3.5 h-3.5"></i></button>'
-        +   '<button onclick="ofinExcluirDespesa(\'' + e.id + '\')" class="p-1.5 border border-red-200 text-red-500 rounded" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>'
+        +   (pago ? '' : '<button onclick="ofinPayExpense(\'' + e.uid + '\')" class="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded shadow" title="Baixar / Pagar"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i></button>')
+        +   '<button onclick="ofinEditExpense(\'' + e.uid + '\')" class="p-1.5 border border-blue-200 text-blue-600 rounded" title="Editar"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>'
+        +   '<button onclick="ofinDuplicarDespesa(\'' + e.uid + '\')" class="p-1.5 border border-slate-200 text-slate-600 rounded" title="Duplicar (+30d)"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>'
+        +   (Number(e.valor_pago || 0) > 0 ? '<button onclick="ofinEstornarDespesa(\'' + e.uid + '\')" class="p-1.5 border border-orange-200 text-orange-600 rounded" title="Estornar pagamento"><i data-lucide="undo-2" class="w-3.5 h-3.5"></i></button>' : '')
+        +   '<button onclick="ofinOpenReceiptFromExpense(\'' + e.uid + '\')" class="p-1.5 border border-emerald-200 text-emerald-600 rounded" title="Recibo"><i data-lucide="file-text" class="w-3.5 h-3.5"></i></button>'
+        +   '<button onclick="ofinExcluirDespesa(\'' + e.uid + '\')" class="p-1.5 border border-red-200 text-red-500 rounded" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>'
         + '</div></td></tr>';
     }).join('');
     body.innerHTML = rows;
@@ -1064,10 +1064,10 @@
     abrirModal('ofin-modal-expense');
   }
 
-  function ofinEditExpense(id) {
-    var e = OFIN.despesas.find(function (x) { return String(x.id) === String(id); });
+  function ofinEditExpense(uid) {
+    var e = OFIN.despesas.find(function (x) { return String(x.uid) === String(uid); });
     if (!e) return toast('Despesa não encontrada', true);
-    el('ofin-exp-id').value = e.id;
+    el('ofin-exp-id').value = e.uid;
     el('ofin-exp-item').value = e.item || 'FORNECEDOR';
     el('ofin-exp-provider').value = e.fornecedor || '';
     el('ofin-exp-cost').value = e.custo || '';
@@ -1110,7 +1110,7 @@
         res = await sb.from('despesas').insert([Object.assign(make(cost, date, note), { id: await nextDespesaId() })]);
       } else {
         var upd = make(cost, date, note); delete upd.status; delete upd.valor_pago; delete upd.desconto_total; delete upd.acrescimo_total;
-        res = await sb.from('despesas').update(upd).eq('id', idVal);
+        res = await sb.from('despesas').update(upd).eq('uid', idVal);
       }
       if (res.error) throw res.error;
       fecharModal('ofin-modal-expense');
@@ -1139,13 +1139,13 @@
       + '<div class="pt-1 text-sm font-black ' + (saldo <= 0.005 ? 'text-green-700' : 'text-orange-600') + '">' + (saldo <= 0.005 ? 'Fica QUITADO' : 'Fica devendo ' + money(saldo)) + '</div>';
   }
 
-  function ofinPayExpense(id) {
-    var e = OFIN.despesas.find(function (x) { return String(x.id) === String(id); });
+  function ofinPayExpense(uid) {
+    var e = OFIN.despesas.find(function (x) { return String(x.uid) === String(uid); });
     if (!e) return toast('Despesa não encontrada', true);
     if (e.status === 'PAGO') return toast('Esta despesa já foi paga!', true);
     var saldo = Number(e.custo || 0) + Number(e.acrescimo_total || 0) - Number(e.desconto_total || 0) - Number(e.valor_pago || 0);
-    OFIN.despCtx = { id: e.id, custo: Number(e.custo || 0), saldoBase: saldo };
-    el('ofin-dexp-id').value = e.id;
+    OFIN.despCtx = { uid: e.uid, id: e.id, custo: Number(e.custo || 0), saldoBase: saldo };
+    el('ofin-dexp-id').value = e.uid;
     el('ofin-dexp-total-lbl').innerText = money(e.custo);
     el('ofin-dexp-rest-lbl').innerText = money(Math.max(0, saldo));
     el('ofin-dexp-disc').value = '';
@@ -1157,8 +1157,8 @@
   }
 
   async function ofinSavePayExpense() {
-    var id = val('ofin-dexp-id');
-    var e = OFIN.despesas.find(function (x) { return String(x.id) === String(id); });
+    var uid = (OFIN.despCtx && OFIN.despCtx.uid) || val('ofin-dexp-id');
+    var e = OFIN.despesas.find(function (x) { return String(x.uid) === String(uid); });
     if (!e) return toast('Despesa não encontrada', true);
     var formas = coletarPgto('ofin-dexp-pgto-rows');
     var moneyTotal = formas.reduce(function (a, f) { return a + f.valor; }, 0);
@@ -1183,7 +1183,7 @@
         }]);
         if (res.error) throw res.error;
       }
-      var upd = await sb.from('despesas').update({ valor_pago: newMoney, desconto_total: newDisc, acrescimo_total: newJur, status: novoStatus }).eq('id', id);
+      var upd = await sb.from('despesas').update({ valor_pago: newMoney, desconto_total: newDisc, acrescimo_total: newJur, status: novoStatus }).eq('uid', e.uid);
       if (upd.error) throw upd.error;
       fecharModal('ofin-modal-payexpense');
       toast(novoStatus === 'PAGO' ? 'Despesa baixada com sucesso!' : 'Pagamento parcial registrado!');
@@ -1191,12 +1191,13 @@
     } catch (e2) { loading(false); toast('Erro ao baixar despesa: ' + (e2.message || e2), true); }
   }
 
-  async function ofinEstornarDespesa(id) {
+  async function ofinEstornarDespesa(uid) {
+    var e = OFIN.despesas.find(function (x) { return String(x.uid) === String(uid); });
+    if (!e) return toast('Despesa não encontrada', true);
     var baixas = OFIN.logs.filter(function (l) {
-      return l.tipo === 'despesa' && !isEst(l) && String(l.status_financeiro || '').toUpperCase() === 'PAGO' && /#(\d+)/.test(l.observacao || '') && String((l.observacao.match(/#(\d+)/) || [])[1]) === String(id);
+      return l.tipo === 'despesa' && !isEst(l) && String(l.status_financeiro || '').toUpperCase() === 'PAGO' && /#(\d+)/.test(l.observacao || '') && String((l.observacao.match(/#(\d+)/) || [])[1]) === String(e.id);
     });
-    var porUid = OFIN.logs.find(function (l) { return l.tipo === 'despesa' && String(l.uid) === String(id); });
-    var alvo = porUid ? [porUid] : (function () {
+    var alvo = (function () {
       var datas = baixas.map(function (b) { return b.data || ''; }).sort();
       var ult = datas[datas.length - 1];
       return baixas.filter(function (b) { return String(b.data || '') === String(ult); });
@@ -1208,33 +1209,32 @@
     try {
       for (var i = 0; i < alvo.length; i++) { await sb.from('logs').update({ status: 'ESTORNADO', status_financeiro: 'ESTORNADO' }).eq('uid', alvo[i].uid); }
       var restantes = baixas.filter(function (l) { return !alvo.some(function (a) { return String(a.uid) === String(l.uid); }); });
-      var e = OFIN.despesas.find(function (x) { return String(x.id) === String(id); });
       var pago = restantes.reduce(function (a, l) { return a + Number(l.valor_total || 0); }, 0);
       var disc = restantes.reduce(function (a, l) { return a + Number(l.desconto || 0); }, 0);
       var jur = restantes.reduce(function (a, l) { return a + Number(l.acrescimo || 0); }, 0);
-      var saldo = Number(e ? e.custo : 0) + jur - disc - pago;
+      var saldo = Number(e.custo || 0) + jur - disc - pago;
       var novoStatus = restantes.length ? (saldo <= 0.005 ? 'PAGO' : 'PARCIAL') : 'PENDENTE';
-      var upd = await sb.from('despesas').update({ valor_pago: pago, desconto_total: disc, acrescimo_total: jur, status: novoStatus }).eq('id', id);
+      var upd = await sb.from('despesas').update({ valor_pago: pago, desconto_total: disc, acrescimo_total: jur, status: novoStatus }).eq('uid', e.uid);
       if (upd.error) throw upd.error;
       toast('Pagamento estornado!');
       await ofinCarregar(); loading(false);
     } catch (e2) { loading(false); toast('Erro ao estornar: ' + (e2.message || e2), true); }
   }
 
-  async function ofinExcluirDespesa(id) {
+  async function ofinExcluirDespesa(uid) {
     var ok = await confirmar('Excluir esta despesa permanentemente?', { danger: true, confirmText: 'Excluir' });
     if (!ok) return;
     loading(true);
     try {
-      var res = await sb.from('despesas').delete().eq('id', id);
+      var res = await sb.from('despesas').delete().eq('uid', uid);
       if (res.error) throw res.error;
       toast('Despesa excluída!');
       await ofinCarregar(); loading(false);
     } catch (e) { loading(false); toast('Erro ao excluir: ' + (e.message || e), true); }
   }
 
-  async function ofinDuplicarDespesa(id) {
-    var e = OFIN.despesas.find(function (x) { return String(x.id) === String(id); });
+  async function ofinDuplicarDespesa(uid) {
+    var e = OFIN.despesas.find(function (x) { return String(x.uid) === String(uid); });
     if (!e) return toast('Despesa não encontrada', true);
     var ok = await confirmar('Duplicar esta despesa (vencimento +30 dias)?', { confirmText: 'Duplicar' });
     if (!ok) return;
@@ -1262,8 +1262,8 @@
     abrirModal('ofin-modal-receipt');
   }
 
-  function ofinOpenReceiptFromExpense(id) {
-    var e = OFIN.despesas.find(function (x) { return String(x.id) === String(id); });
+  function ofinOpenReceiptFromExpense(uid) {
+    var e = OFIN.despesas.find(function (x) { return String(x.uid) === String(uid); });
     if (!e) return;
     el('ofin-receipt-client').value = e.fornecedor || '';
     el('ofin-receipt-amount').value = e.custo || '';
