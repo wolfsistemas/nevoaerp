@@ -23,12 +23,12 @@
   var PALETA = ['#059669', '#0ea5e9', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#f97316', '#64748b'];
 
   function kpi(icon, bg, fg, label, value, sub) {
-    return '<div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 hover:shadow-md transition-shadow">'
+    return '<div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 hover:shadow-md transition-shadow min-w-0 overflow-hidden">'
       + '<div class="w-10 h-10 rounded-xl flex items-center justify-center ' + bg + '">'
       +   '<i data-lucide="' + icon + '" class="w-5 h-5 ' + fg + '"></i></div>'
-      + '<div class="text-2xl font-extrabold text-slate-800 mt-3 leading-tight">' + value + '</div>'
-      + '<div class="text-[11px] uppercase font-bold text-slate-400 tracking-wide">' + esc(label) + '</div>'
-      + (sub ? '<div class="text-xs text-slate-500 mt-1">' + sub + '</div>' : '')
+      + '<div class="text-lg xl:text-xl font-extrabold text-slate-800 mt-3 leading-tight break-words tabular-nums">' + value + '</div>'
+      + '<div class="text-[11px] uppercase font-bold text-slate-400 tracking-wide truncate">' + esc(label) + '</div>'
+      + (sub ? '<div class="text-xs text-slate-500 mt-1 truncate">' + sub + '</div>' : '')
       + '</div>';
   }
 
@@ -182,7 +182,7 @@
         +       '<button onclick="navigate(\'obra-relatorios\')" class="bg-white text-emerald-700 hover:bg-emerald-50 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition"><i data-lucide="file-text" class="w-4 h-4"></i> Relat\u00f3rios</button>'
         +     '</div>'
         +   '</div>'
-        +   '<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">'
+        +   '<div class="grid grid-cols-2 md:grid-cols-3 gap-4">'
         +     kpi('building', 'bg-emerald-50', 'text-emerald-600', 'Obras ativas', ativas + '<span class="text-sm text-slate-300 font-bold">/' + obras.length + '</span>', 'contratos ' + money(contratos))
         +     kpi('trending-up', 'bg-sky-50', 'text-sky-600', 'Recebido', money(recebido), 'a receber ' + money(aReceber))
         +     kpi('wallet', 'bg-teal-50', 'text-teal-600', 'Saldo em caixa', money(saldo), 'pago ' + money(pago))
