@@ -8,6 +8,12 @@
     else A().toast(msg, err);
   }
 
+  function confirmar(msg, opts) {
+    if (A().confirmar) return A().confirmar(msg, opts);
+    if (typeof confirmDialog === 'function') return confirmDialog(msg, opts || {});
+    return Promise.resolve(window.confirm(msg));
+  }
+
   async function mobObraPonto() {
     var body = document.getElementById('mob-ponto-body');
     if (!body) return;
@@ -81,7 +87,9 @@
   }
 
   async function mobObraAjuste() {
-    var fracao = window.prompt('Fracao da diaria (0.5 ou 1):', '0.5');
+    var fracao = await promptDialog('Fração da diária', '0.5', {
+      title: 'Ajuste de diária', type: 'number', min: '0.5', step: '0.5', confirmText: 'Lançar'
+    });
     if (fracao == null) return;
     fracao = Number(fracao);
     if (fracao !== 0.5 && fracao !== 1) return toast('Use 0.5 ou 1.', true);
@@ -103,7 +111,7 @@
   }
 
   async function mobObraEstornarBatida(id) {
-    var ok = window.confirm('Estornar esta batida? O registro permanece.');
+    var ok = await confirmar('Estornar esta batida? O registro permanece.');
     if (!ok) return;
     var row = (await sb.from('ponto_diario').select('*').eq('id', id).single()).data;
     if (!row) return toast('Batida nao encontrada.', true);
@@ -225,7 +233,7 @@
   }
 
   async function mobObraEstornarMedicao(id) {
-    var ok = window.confirm('Estornar esta medicao? Nao apaga o historico.');
+    var ok = await confirmar('Estornar esta medicao? Nao apaga o historico.');
     if (!ok) return;
     var m = (await sb.from('medicoes_empreita').select('*').eq('id', id).single()).data;
     if (!m || m.status === 'ESTORNADO') return;
@@ -328,7 +336,7 @@
     var sel = document.getElementById('mob-metros-terc');
     var tercId = sel ? sel.value : '';
     if (!tercId) return;
-    var ok = window.confirm('Fechar producao pendente? Gera despesa e log no financeiro.');
+    var ok = await confirmar('Fechar producao pendente? Gera despesa e log no financeiro.');
     if (!ok) return;
     var t = (await sb.from('terceirizados').select('*').eq('id', tercId).single()).data || {};
     var prod = await sb.from('producao_terc').select('*').eq('terceirizado_id', tercId).eq('status', 'PENDENTE');
@@ -365,7 +373,7 @@
   }
 
   async function mobObraEstornarMetros(id) {
-    var ok = window.confirm('Estornar este lancamento de metros? Nao apaga.');
+    var ok = await confirmar('Estornar este lancamento de metros? Nao apaga.');
     if (!ok) return;
     var row = (await sb.from('producao_terc').select('*').eq('id', id).single()).data;
     if (!row || row.status !== 'PENDENTE') return toast('So lancamento pendente pode ser estornado aqui.', true);
@@ -376,7 +384,7 @@
   }
 
   async function mobObraEstornarPagamentoMetros(uid) {
-    var ok = window.confirm('Estornar este pagamento? Metros voltam a pendente. Despesa/log ficam ESTORNADO.');
+    var ok = await confirmar('Estornar este pagamento? Metros voltam a pendente. Despesa/log ficam ESTORNADO.');
     if (!ok) return;
     try {
       await A().estornarDespesaPorUid(uid);

@@ -90,9 +90,94 @@
     };
   }
 
+  // ----- Entrada moderna (Promise<string|null>) -----
+  // Substitui window.prompt. Uso:
+  //   var v = await promptDialog('Mensagem', valorAtual, { title, type:'date' });
+  if (typeof window.promptDialog !== 'function') {
+    window.promptDialog = function (message, defaultValue, opts) {
+      opts = opts || {};
+      return new Promise(function (resolve) {
+        var backdrop = document.createElement('div');
+        backdrop.className = 'fixed inset-0 bg-black/50 flex items-center justify-center p-4';
+        backdrop.style.zIndex = '2147483000';
+
+        var card = document.createElement('div');
+        card.className = 'bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden';
+
+        var body = document.createElement('div');
+        body.className = 'p-5';
+
+        var title = document.createElement('div');
+        title.className = 'font-bold text-slate-800';
+        title.textContent = opts.title || 'Informação';
+
+        var msgEl = document.createElement('div');
+        msgEl.className = 'text-sm text-slate-600 mt-1 whitespace-pre-line break-words';
+        msgEl.textContent = message || '';
+
+        var input = document.createElement('input');
+        input.type = opts.type || 'text';
+        input.className = 'w-full mt-3 p-3 bg-slate-50 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-medium';
+        input.value = defaultValue == null ? '' : String(defaultValue);
+        if (opts.placeholder) input.placeholder = opts.placeholder;
+        if (opts.min) input.min = opts.min;
+        if (opts.max) input.max = opts.max;
+        if (opts.step) input.step = opts.step;
+
+        body.appendChild(title);
+        body.appendChild(msgEl);
+        body.appendChild(input);
+
+        var footer = document.createElement('div');
+        footer.className = 'p-4 bg-slate-50 flex gap-2 justify-end';
+
+        var btnNo = document.createElement('button');
+        btnNo.type = 'button';
+        btnNo.className = 'px-4 py-2 rounded-lg font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 transition';
+        btnNo.textContent = opts.cancelText || 'Cancelar';
+
+        var btnYes = document.createElement('button');
+        btnYes.type = 'button';
+        btnYes.className = 'px-4 py-2 rounded-lg font-bold text-white transition bg-indigo-600 hover:bg-indigo-700';
+        btnYes.textContent = opts.confirmText || 'Confirmar';
+
+        footer.appendChild(btnNo);
+        footer.appendChild(btnYes);
+        card.appendChild(body);
+        card.appendChild(footer);
+        backdrop.appendChild(card);
+
+        var done = false;
+        function close(value) {
+          if (done) return;
+          done = true;
+          try { backdrop.remove(); } catch (e) { if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop); }
+          document.removeEventListener('keydown', onKey);
+          resolve(value);
+        }
+        function submit() {
+          var v = input.value;
+          if (opts.required !== false && String(v).trim() === '') return;
+          close(v);
+        }
+        function onKey(e) {
+          if (e.key === 'Escape') close(null);
+          else if (e.key === 'Enter') { e.preventDefault(); submit(); }
+        }
+
+        btnNo.addEventListener('click', function () { close(null); });
+        btnYes.addEventListener('click', submit);
+        backdrop.addEventListener('click', function (e) { if (e.target === backdrop) close(null); });
+        document.addEventListener('keydown', onKey);
+
+        document.body.appendChild(backdrop);
+        setTimeout(function () { try { input.focus(); input.select && input.select(); } catch (e) {} }, 30);
+      });
+    };
+  }
+
   // Alias usado em telas que nao tem showToast carregado.
-  if (typeof window.uiAlert !== 'function') {
-    window.uiAlert = function (message, isError) {
+  if (typeof window.uiAlert !== 'function') {    window.uiAlert = function (message, isError) {
       if (typeof window.showToast === 'function') window.showToast(message, !!isError);
       else window.alert(message);
     };

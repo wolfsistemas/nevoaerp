@@ -262,9 +262,13 @@ class AgendaManager {
   async reagendarAgenda(agendaId) {
     const agenda = this.agendamentos.find(a => a.id == agendaId);
     if (!agenda) return;
-    const novaData = prompt('Nova data (YYYY-MM-DD):', agenda.data_agendada);
+    const novaData = await promptDialog('Nova data', String(agenda.data_agendada || '').slice(0, 10), {
+      title: 'Reagendar instalação', type: 'date', confirmText: 'Continuar'
+    });
     if (!novaData) return;
-    const novoHorario = prompt('Novo horário (HH:MM):', agenda.horario.slice(0,5));
+    const novoHorario = await promptDialog('Novo horário', String(agenda.horario || '').slice(0, 5), {
+      title: 'Reagendar instalação', type: 'time', confirmText: 'Salvar'
+    });
     if (!novoHorario) return;
 
     const { error } = await this.supabase
