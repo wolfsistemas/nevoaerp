@@ -21,7 +21,8 @@
     clients: [],
     showCards: true,
     recCtx: null,
-    despCtx: null
+    despCtx: null,
+    guardSnap: {}
   };
 
   // ---------- helpers ----------
@@ -94,7 +95,12 @@
   }
 
   // ---------- modal base ----------
-  function abrirModal(id) { var m = el(id); if (m) m.classList.remove('hidden'); }
+  function abrirModal(id) {
+    var m = el(id);
+    if (!m) return;
+    m.classList.remove('hidden');
+    if (window.obraModalGuard) OFIN.guardSnap[id] = window.obraModalGuard.capturar(m);
+  }
   function fecharModal(id) { var m = el(id); if (m) m.classList.add('hidden'); }
 
   // ---------- render ----------
@@ -767,7 +773,30 @@
     return modalWrap('ofin-modal-receipt', 'Gerar Recibo', 'file-text', 'bg-slate-50', body, footer);
   }
 
-  function ofinCloseModal(id) { fecharModal(id); }
+  function ofinCloseModal(id) {
+    var m = el(id);
+    if (!m) return;
+    if (window.obraModalGuard) {
+      window.obraModalGuard.fecharComGuarda(m, OFIN.guardSnap[id], function () { fecharModal(id); });
+      return;
+    }
+    fecharModal(id);
+  }
+
+  var OFIN_MODAIS = ['ofin-modal-revenue', 'ofin-modal-expense', 'ofin-modal-receivable-receive', 'ofin-modal-payexpense', 'ofin-modal-parcel-rec', 'ofin-modal-receipt'];
+  function ofinModalAberto() {
+    for (var i = 0; i < OFIN_MODAIS.length; i++) {
+      var m = el(OFIN_MODAIS[i]);
+      if (m && !m.classList.contains('hidden')) return OFIN_MODAIS[i];
+    }
+    return null;
+  }
+  if (window.obraModalGuard) {
+    window.obraModalGuard.registrar({
+      visivel: function () { return !!ofinModalAberto(); },
+      pedirFechar: function () { var id = ofinModalAberto(); if (id) ofinCloseModal(id); }
+    });
+  }
 
   // ---------- receita (a receber) ----------
   function ofinOpenRevenue() {

@@ -8,6 +8,7 @@
   var A = function () { return window.obraApi || {}; };
   var CACHE = { equipe: [], terc: [], obras: [], ponto: [], producao: [], medicoes: [] };
   var MODAL = 'eqobra-modal';
+  var MODAL_SNAP = null;
 
   function esc(v) { return A().esc(v); }
   function money(v) { return A().money(v); }
@@ -426,8 +427,24 @@
       + '<button onclick="eqObraFecharModal()" class="text-slate-400"><i data-lucide="x"></i></button></div>'
       + '<div class="p-4 overflow-y-auto">' + html + '</div></div>';
     icons();
+    MODAL_SNAP = window.obraModalGuard ? window.obraModalGuard.capturar(m) : null;
   }
-  function fecharModal() { var m = el(MODAL); if (m) m.remove(); }
+  function fecharModal() { var m = el(MODAL); if (m) m.remove(); MODAL_SNAP = null; }
+
+  function eqObraFecharModal() {
+    var m = el(MODAL);
+    if (window.obraModalGuard && m) {
+      window.obraModalGuard.fecharComGuarda(m, MODAL_SNAP, fecharModal);
+      return;
+    }
+    fecharModal();
+  }
+  if (window.obraModalGuard) {
+    window.obraModalGuard.registrar({
+      visivel: function () { return !!el(MODAL); },
+      pedirFechar: function () { eqObraFecharModal(); }
+    });
+  }
 
   // ---------- Saldo Diaria ----------
   function eqObraSaldo(id, origem) {
@@ -1393,6 +1410,6 @@
   window.eqObraChecagem = eqObraChecagem;
   window.eqObraFolhaAbrir = eqObraFolhaAbrir;
   window.eqObraFolhaImprimir = eqObraFolhaImprimir;
-  window.eqObraFecharModal = fecharModal;
+  window.eqObraFecharModal = eqObraFecharModal;
   window.calcularResumoEmpreita = calcularResumoEmpreita;
 })();

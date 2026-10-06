@@ -97,4 +97,83 @@
       else window.alert(message);
     };
   }
+
+  // ----- Guarda de modais do modulo Obra: fechar com ESC + confirmar campos nao salvos -----
+  // Uso:
+  //   var snap = obraModalGuard.capturar(modalEl);          // logo apos montar/abrir
+  //   obraModalGuard.registrar({ visivel, pedirFechar });    // uma vez por modulo
+  //   obraModalGuard.fecharComGuarda(modalEl, snap, fechar); // no X/Cancelar/ESC
+  if (typeof window.obraModalGuard !== 'function') {
+    (function () {
+      var gerentes = [];
+      var escLigado = false;
+      var confirmando = false;
+
+      function capturar(el) {
+        var out = [];
+        if (!el) return out;
+        var campos = el.querySelectorAll('input, textarea, select');
+        for (var i = 0; i < campos.length; i++) {
+          var c = campos[i];
+          if (c.type === 'hidden') continue;
+          out.push(c.type === 'checkbox' || c.type === 'radio'
+            ? (c.checked ? '1' : '0')
+            : String(c.value == null ? '' : c.value));
+        }
+        return out;
+      }
+
+      function mudou(el, snap) {
+        if (!el || !snap) return false;
+        var agora = capturar(el);
+        if (agora.length !== snap.length) return true;
+        for (var i = 0; i < agora.length; i++) {
+          if (agora[i] !== snap[i]) return true;
+        }
+        return false;
+      }
+
+      async function fecharComGuarda(el, snap, doClose) {
+        if (mudou(el, snap) && typeof window.confirmDialog === 'function') {
+          confirmando = true;
+          var ok = false;
+          try {
+            ok = await window.confirmDialog(
+              'Existem campos não salvos, tem certeza que deseja fechar?',
+              { title: 'Campos não salvos', confirmText: 'Fechar', cancelText: 'Cancelar', danger: true }
+            );
+          } finally {
+            confirmando = false;
+          }
+          if (!ok) return;
+        }
+        if (typeof doClose === 'function') doClose();
+      }
+
+      function ligarEsc() {
+        if (escLigado) return;
+        escLigado = true;
+        document.addEventListener('keydown', function (event) {
+          if (event.key !== 'Escape' && event.key !== 'Esc') return;
+          if (confirmando) return; // deixa o confirmDialog tratar o ESC
+          var tag = (document.activeElement && document.activeElement.tagName || '').toLowerCase();
+          if (tag === 'input' || tag === 'textarea' || tag === 'select') return; // nao fecha digitando
+          for (var i = gerentes.length - 1; i >= 0; i--) {
+            var g = gerentes[i];
+            if (g && g.visivel && g.visivel()) {
+              if (g.pedirFechar) g.pedirFechar();
+              return;
+            }
+          }
+        });
+      }
+
+      window.obraModalGuard = {
+        capturar: capturar,
+        mudou: mudou,
+        fecharComGuarda: fecharComGuarda,
+        registrar: function (gerente) { gerentes.push(gerente); ligarEsc(); return gerente; }
+      };
+    })();
+  }
 })();

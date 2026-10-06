@@ -2,6 +2,7 @@
   'use strict';
 
   var A = function () { return window.obraApi || {}; };
+  var OBRA_SNAP = null;
 
   async function renderObras() {
     var c = document.getElementById('view-obra-obras');
@@ -156,7 +157,7 @@
     } else {
       A().toast('Obra salva.');
     }
-    obraFecharModal();
+    obraFecharModalRaw();
     renderObras();
   }
 
@@ -300,11 +301,28 @@
       + '<button onclick="obraFecharModal()" class="text-slate-400"><i data-lucide="x"></i></button></div>'
       + '<div class="p-4">' + html + '</div></div>';
     A().icons();
+    OBRA_SNAP = window.obraModalGuard ? window.obraModalGuard.capturar(el) : null;
+  }
+
+  function obraFecharModalRaw() {
+    var el = document.getElementById('obra-modal');
+    if (el) el.remove();
+    OBRA_SNAP = null;
   }
 
   function obraFecharModal() {
     var el = document.getElementById('obra-modal');
-    if (el) el.remove();
+    if (window.obraModalGuard && el) {
+      window.obraModalGuard.fecharComGuarda(el, OBRA_SNAP, obraFecharModalRaw);
+      return;
+    }
+    obraFecharModalRaw();
+  }
+  if (window.obraModalGuard) {
+    window.obraModalGuard.registrar({
+      visivel: function () { return !!document.getElementById('obra-modal'); },
+      pedirFechar: function () { obraFecharModal(); }
+    });
   }
 
   async function obraFinalizar(id) {
