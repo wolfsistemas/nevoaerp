@@ -561,7 +561,7 @@
         + '<div class="text-[10px] font-bold uppercase ' + (pago ? 'text-green-600' : (vencido ? 'text-red-600' : 'text-orange-500')) + '">' + esc(r.calc.status) + aviso + '</div></td>'
         + '<td class="p-3"><div class="font-bold text-slate-700 text-sm">' + esc(r.clientName) + '</div><div class="text-xs text-slate-500">' + esc(r.desc) + '</div></td>'
         + '<td class="p-3">' + faseCell(r.faseId) + '</td>'
-        + '<td class="p-3"><div class="font-bold text-indigo-700">' + money(saldo) + '</div><div class="text-[10px] text-slate-400">Total ' + money(r.calc.total + r.calc.jur - r.calc.disc) + ' · Pago ' + money(r.calc.pago) + '</div></td>'
+        + '<td class="p-3"><div class="font-bold text-indigo-700">' + money(r.calc.total + r.calc.jur - r.calc.disc) + '</div><div class="text-[10px] text-slate-400">Recebido ' + money(r.calc.pago) + (saldo > 0.005 ? ' · Falta ' + money(saldo) : ' · Quitado') + '</div></td>'
         + '<td class="p-3"><div class="flex items-center justify-end gap-1">'
         +   zap
         +   '<button onclick="ofinEditReceivable(\'' + r.id + '\')" class="p-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow" title="Baixar / Editar"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>'
@@ -571,7 +571,7 @@
         + '</div></td></tr>';
     }).join('');
     body.innerHTML = rows
-      + '<tr class="bg-slate-100 font-black text-slate-700"><td class="p-3" colspan="3">Totais</td><td class="p-3">' + money(totalVal - totalPago) + '</td><td class="p-3 text-right text-[10px] text-slate-500">Recebido ' + money(totalPago) + ' de ' + money(totalVal) + '</td></tr>';
+      + '<tr class="bg-slate-100 font-black text-slate-700"><td class="p-3" colspan="3">Totais</td><td class="p-3">' + money(totalVal) + '</td><td class="p-3 text-right text-[10px] text-slate-500">Recebido ' + money(totalPago) + ' · Falta ' + money(Math.max(totalVal - totalPago, 0)) + '</td></tr>';
     icons();
   }
 
@@ -618,7 +618,7 @@
         + '<td class="p-3 text-center text-xs text-slate-500 font-bold">#' + esc(e.id) + '</td>'
         + '<td class="p-3"><div class="font-bold text-slate-700 text-sm">' + esc(e.fornecedor || '—') + '</div><div class="text-xs text-slate-500">' + esc(e.item || '') + (e.observacao ? ' · ' + esc(e.observacao) : '') + '</div></td>'
         + '<td class="p-3">' + faseCell(e.fase_id) + '</td>'
-        + '<td class="p-3"><div class="font-bold text-red-600">' + money(saldo > 0 ? saldo : 0) + '</div><div class="text-[10px] text-slate-400">Total ' + money(e.custo) + ' · Pago ' + money(e.valor_pago) + '</div></td>'
+        + '<td class="p-3"><div class="font-bold text-red-600">' + money(Number(e.custo || 0) + Number(e.acrescimo_total || 0) - Number(e.desconto_total || 0)) + '</div><div class="text-[10px] text-slate-400">Pago ' + money(e.valor_pago) + (saldo > 0.005 ? ' · Falta ' + money(saldo) : ' · Quitado') + '</div></td>'
         + '<td class="p-3"><div class="flex items-center justify-end gap-1">'
         +   (pago ? '' : '<button onclick="ofinPayExpense(\'' + e.uid + '\')" class="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded shadow" title="Baixar / Pagar"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i></button>')
         +   '<button onclick="ofinEditExpense(\'' + e.uid + '\')" class="p-1.5 border border-blue-200 text-blue-600 rounded" title="Editar"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>'

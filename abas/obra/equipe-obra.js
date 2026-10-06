@@ -403,7 +403,7 @@
         + '<td class="p-3 text-center text-xs font-black ' + (pend ? 'text-indigo-600' : 'text-slate-400') + '">' + prodTxt + '</td>'
         + '<td class="p-3 text-right font-black text-sm ' + (pend ? 'text-green-700' : 'text-slate-400') + '">' + money(c._pend || 0) + '</td>'
         + '<td class="p-3 text-center"><span class="px-2 py-1 rounded text-[9px] font-bold ' + (pend ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700') + '">' + c.status_pagamento + '</span></td>'
-        + '<td class="p-3"><div class="flex items-center justify-center gap-1">'
+        + '<td class="p-3"><div class="flex items-center justify-start gap-1">'
         +   '<button onclick="eqObraSaldo(\'' + c.id + '\',\'' + c.origem + '\')" class="px-2 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="calculator" class="w-3 h-3"></i> CALCULAR</button>'
         +   '<button onclick="eqObraOpenForm(\'' + c.id + '\',\'' + c.origem + '\')" class="p-1.5 border border-blue-200 text-blue-600 rounded" title="Editar"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>'
         +   '<button onclick="eqObraToggle(\'' + c.id + '\',\'' + c.origem + '\',' + (c.ativo ? 'true' : 'false') + ')" class="p-1.5 border ' + (c.ativo ? 'border-red-200 text-red-500' : 'border-green-200 text-green-600') + ' rounded" title="' + (c.ativo ? 'Desativar' : 'Reativar') + '"><i data-lucide="power" class="w-3.5 h-3.5"></i></button>'
