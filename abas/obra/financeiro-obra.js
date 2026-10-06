@@ -541,6 +541,7 @@
       var dv = (r.dueDate || '').split('T')[0];
       var vencido = dv && dv < hoje && r.calc.status !== 'PAGO';
       var pago = r.calc.status === 'PAGO';
+      var temBaixa = r.calc.pago > 0.005;
       var bg = vencido ? 'bg-red-50/50' : (pago ? 'bg-green-50/50 opacity-80' : '');
       var aviso = vencido ? '<span class="text-[9px] bg-red-500 text-white px-1 rounded ml-1">VENCIDO</span>' : '';
       var saldo = r.calc.saldo;
@@ -564,7 +565,10 @@
         + '<td class="p-3"><div class="font-bold text-indigo-700">' + money(r.calc.total + r.calc.jur - r.calc.disc) + '</div><div class="text-[10px] text-slate-400">Recebido ' + money(r.calc.pago) + (saldo > 0.005 ? ' · Falta ' + money(saldo) : ' · Quitado') + '</div></td>'
         + '<td class="p-3"><div class="flex items-center justify-end gap-1">'
         +   zap
-        +   '<button onclick="ofinEditReceivable(\'' + r.id + '\')" class="p-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow" title="Baixar / Editar"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>'
+        +   (pago ? '' : '<button onclick="ofinBaixarRecebimento(\'' + r.id + '\')" class="p-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow" title="Baixar / Receber"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i></button>')
+        +   (temBaixa
+            ? '<button disabled class="p-1.5 border border-slate-200 text-slate-300 rounded cursor-not-allowed" title="Conta já baixada — estorne o recebimento para editar"><i data-lucide="lock" class="w-3.5 h-3.5"></i></button>'
+            : '<button onclick="ofinEditReceivable(\'' + r.id + '\')" class="p-1.5 border border-blue-200 text-blue-600 rounded" title="Editar"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>')
         +   (r.calc.status !== 'PAGO' ? '<button onclick="ofinOpenParcelarReceber(\'' + r.id + '\')" class="p-1.5 border border-amber-200 text-amber-600 rounded" title="Parcelar"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>' : '')
         +   (r.calc.pago > 0 ? '<button onclick="ofinEstornarRecebimento(\'' + r.id + '\')" class="p-1.5 border border-orange-200 text-orange-600 rounded" title="Estornar baixa"><i data-lucide="undo-2" class="w-3.5 h-3.5"></i></button>' : '')
         +   '<button onclick="ofinExcluirReceita(\'' + r.id + '\')" class="p-1.5 border border-red-200 text-red-500 rounded" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>'
@@ -608,6 +612,7 @@
     var rows = lista.map(function (e) {
       var dt = String(e.data || '').split('T')[0];
       var pago = e.status === 'PAGO';
+      var temBaixa = Number(e.valor_pago || 0) > 0.005;
       var vencido = !pago && dt < hoje;
       var saldo = Number(e.custo || 0) + Number(e.acrescimo_total || 0) - Number(e.desconto_total || 0) - Number(e.valor_pago || 0);
       var bg = vencido ? 'bg-red-50/50' : (pago ? 'bg-green-50/50 opacity-80' : '');
@@ -621,7 +626,9 @@
         + '<td class="p-3"><div class="font-bold text-red-600">' + money(Number(e.custo || 0) + Number(e.acrescimo_total || 0) - Number(e.desconto_total || 0)) + '</div><div class="text-[10px] text-slate-400">Pago ' + money(e.valor_pago) + (saldo > 0.005 ? ' · Falta ' + money(saldo) : ' · Quitado') + '</div></td>'
         + '<td class="p-3"><div class="flex items-center justify-end gap-1">'
         +   (pago ? '' : '<button onclick="ofinPayExpense(\'' + e.uid + '\')" class="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded shadow" title="Baixar / Pagar"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i></button>')
-        +   '<button onclick="ofinEditExpense(\'' + e.uid + '\')" class="p-1.5 border border-blue-200 text-blue-600 rounded" title="Editar"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>'
+        +   (temBaixa
+            ? '<button disabled class="p-1.5 border border-slate-200 text-slate-300 rounded cursor-not-allowed" title="Despesa já baixada — estorne o pagamento para editar"><i data-lucide="lock" class="w-3.5 h-3.5"></i></button>'
+            : '<button onclick="ofinEditExpense(\'' + e.uid + '\')" class="p-1.5 border border-blue-200 text-blue-600 rounded" title="Editar"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>')
         +   '<button onclick="ofinDuplicarDespesa(\'' + e.uid + '\')" class="p-1.5 border border-slate-200 text-slate-600 rounded" title="Duplicar (+30d)"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>'
         +   (Number(e.valor_pago || 0) > 0 ? '<button onclick="ofinEstornarDespesa(\'' + e.uid + '\')" class="p-1.5 border border-orange-200 text-orange-600 rounded" title="Estornar pagamento"><i data-lucide="undo-2" class="w-3.5 h-3.5"></i></button>' : '')
         +   '<button onclick="ofinOpenReceiptFromExpense(\'' + e.uid + '\')" class="p-1.5 border border-emerald-200 text-emerald-600 rounded" title="Recibo"><i data-lucide="file-text" class="w-3.5 h-3.5"></i></button>'
@@ -654,14 +661,14 @@
     var d = document.createElement('div');
     d.id = 'ofin-modals';
     d.className = 'no-print';
-    d.innerHTML = modalRevenueHtml() + modalExpenseHtml() + modalRecEditHtml() + modalPayExpenseHtml() + modalParcelHtml() + modalReceiptHtml();
+    d.innerHTML = modalRevenueHtml() + modalExpenseHtml() + modalRecReceiveHtml() + modalPayExpenseHtml() + modalParcelHtml() + modalReceiptHtml();
     document.body.appendChild(d);
   }
 
   function modalWrap(id, title, icon, color, body, footer) {
     return '<div id="' + id + '" class="hidden fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">'
       + '<div class="bg-white rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">'
-      + '<div class="p-5 border-b flex justify-between items-center ' + color + '"><h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i data-lucide="' + icon + '"></i> ' + title + '</h3>'
+      + '<div class="p-5 border-b flex justify-between items-center ' + color + '"><h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i data-lucide="' + icon + '"></i> <span id="' + id + '-title">' + title + '</span></h3>'
       + '<button onclick="ofinCloseModal(\'' + id + '\')" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button></div>'
       + '<div class="p-6 space-y-4 overflow-y-auto">' + body + '</div>'
       + '<div class="p-5 border-t bg-slate-50 flex gap-3">' + footer + '</div>'
@@ -670,6 +677,7 @@
 
   function modalRevenueHtml() {
     var body = ''
+      + '<input type="hidden" id="ofin-rev-id">'
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Tipo de Entrada</label><select id="ofin-rev-tipo" class="w-full p-3 border rounded-xl bg-white">' + optionsTiposEntrada() + '</select></div>'
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Fase (opcional)</label><select id="ofin-rev-fase" class="w-full p-3 border rounded-xl bg-white"></select></div>'
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Nome do Cliente (opcional)</label><input type="text" id="ofin-rev-client" class="w-full p-3 border rounded-xl" placeholder="Ex: João Silva"></div>'
@@ -678,7 +686,7 @@
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Forma de Pagto Base</label><select id="ofin-rev-method" class="w-full p-3 border rounded-xl">' + optionsPgto('Dinheiro') + '</select></div>'
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Observação (opcional)</label><input type="text" id="ofin-rev-note" class="w-full p-3 border rounded-xl" placeholder="Ex: 1a medição, entrada de sinal..."></div>';
     var footer = '<button onclick="ofinCloseModal(\'ofin-modal-revenue\')" class="flex-1 py-3 bg-white border border-slate-300 rounded-xl font-bold text-slate-600">Cancelar</button>'
-      + '<button onclick="ofinSaveRevenue()" class="flex-1 py-3 bg-indigo-700 rounded-xl font-bold text-white">Lançar Pendente</button>';
+      + '<button id="ofin-rev-submit" onclick="ofinSaveRevenue()" class="flex-1 py-3 bg-indigo-700 rounded-xl font-bold text-white">Lançar Pendente</button>';
     return modalWrap('ofin-modal-revenue', 'Lançar Receita', 'plus-circle', 'bg-slate-50', body, footer);
   }
 
@@ -698,21 +706,21 @@
     return modalWrap('ofin-modal-expense', 'Registrar Saída', 'minus-circle', 'bg-slate-50', body, footer);
   }
 
-  function modalRecEditHtml() {
+  function modalRecReceiveHtml() {
     var body = ''
       + '<input type="hidden" id="ofin-rec-id">'
       + '<div class="flex justify-between items-center bg-slate-100 p-3 rounded"><span class="text-sm font-bold text-slate-600">Total: <span id="ofin-rec-total-lbl" class="text-indigo-700"></span></span>'
       + '<span class="text-sm font-bold text-slate-600">Restante: <span id="ofin-rec-pending-lbl" class="text-red-600"></span></span></div>'
-      + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Data Vencimento</label><input type="date" id="ofin-rec-due" class="w-full p-3 border rounded-xl"></div>'
+      + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Data do Recebimento</label><input type="date" id="ofin-rec-pay-date" class="w-full p-3 border rounded-xl"></div>'
       + '<div class="pt-3 border-t mt-2"><div class="flex justify-between items-center mb-2"><label class="block text-sm font-bold text-green-700">Receber (formas de pagamento)</label>'
       + '<button type="button" onclick="ofinAddRecRow()" class="text-xs font-bold text-green-700 bg-green-100 px-2.5 py-1.5 rounded-lg">+ Adicionar forma</button></div>'
-      + '<div id="ofin-rec-pgto-rows" class="space-y-2"></div><p class="text-[11px] text-slate-400 mt-1">*Para editar apenas data/vencimento, deixe sem formas de pagamento.</p></div>'
+      + '<div id="ofin-rec-pgto-rows" class="space-y-2"></div><p class="text-[11px] text-slate-400 mt-1">*Pagamento parcial deixa o restante pendente (PARCIAL).</p></div>'
       + '<div class="grid grid-cols-2 gap-3 pt-2"><div><label class="block text-sm font-bold text-slate-700 mb-1">Desconto (R$)</label><input type="number" id="ofin-rec-disc" value="0" min="0" step="0.01" class="w-full p-3 border rounded-xl" oninput="ofinAtualizarResumoRec(true)"></div>'
       + '<div><label class="block text-sm font-bold text-slate-700 mb-1">Juros/Multa (R$)</label><input type="number" id="ofin-rec-jur" value="0" min="0" step="0.01" class="w-full p-3 border rounded-xl" oninput="ofinAtualizarResumoRec(true)"></div></div>'
       + '<div id="ofin-rec-summary" class="bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-xs font-bold text-slate-600 space-y-0.5"></div>';
-    var footer = '<button onclick="ofinCloseModal(\'ofin-modal-receivable-edit\')" class="flex-1 py-3 bg-white border border-slate-300 rounded-xl font-bold text-slate-600">Cancelar</button>'
-      + '<button onclick="ofinSaveReceivableEdit()" class="flex-1 py-3 bg-indigo-700 rounded-xl font-bold text-white">Salvar / Baixar</button>';
-    return modalWrap('ofin-modal-receivable-edit', 'Editar / Baixar', 'edit', 'bg-slate-50', body, footer);
+    var footer = '<button onclick="ofinCloseModal(\'ofin-modal-receivable-receive\')" class="flex-1 py-3 bg-white border border-slate-300 rounded-xl font-bold text-slate-600">Cancelar</button>'
+      + '<button onclick="ofinSaveReceivableReceive()" class="flex-1 py-3 bg-indigo-700 rounded-xl font-bold text-white">Confirmar Recebimento</button>';
+    return modalWrap('ofin-modal-receivable-receive', 'Baixar Recebimento', 'check-circle', 'bg-indigo-50', body, footer);
   }
 
   function modalPayExpenseHtml() {
@@ -764,34 +772,58 @@
   // ---------- receita (a receber) ----------
   function ofinOpenRevenue() {
     if (!OFIN.obraId || OFIN.obraId === '__all__') return toast('Selecione uma obra especifica no topo para lançar receitas.', true);
-    var t = el('ofin-rev-tipo'); if (t) t.value = TIPOS_ENTRADA[0];
+    el('ofin-rev-id').value = '';
+    setSelectValue(el('ofin-rev-tipo'), TIPOS_ENTRADA[0]);
     preencherFaseSelect('ofin-rev-fase', '');
     el('ofin-rev-client').value = '';
     el('ofin-rev-val').value = '';
     el('ofin-rev-note').value = '';
     el('ofin-rev-due').value = getHojeLocalStr();
-    el('ofin-rev-method').value = METODOS_PGTO[0];
+    setSelectValue(el('ofin-rev-method'), METODOS_PGTO[0]);
+    var ttl = el('ofin-modal-revenue-title'); if (ttl) ttl.innerText = 'Lançar Receita';
+    var sub = el('ofin-rev-submit'); if (sub) sub.innerText = 'Lançar Pendente';
     abrirModal('ofin-modal-revenue');
   }
 
   async function ofinSaveRevenue() {
     if (!OFIN.obraId || OFIN.obraId === '__all__') return toast('Selecione uma obra especifica no topo.', true);
+    var editId = val('ofin-rev-id');
     var tipo = val('ofin-rev-tipo') || TIPOS_ENTRADA[0];
     var client = val('ofin-rev-client').trim() || 'Consumidor Final';
     var v = parseFloat(val('ofin-rev-val')) || 0;
     var method = val('ofin-rev-method');
     var due = val('ofin-rev-due') || getHojeLocalStr();
     var note = val('ofin-rev-note').trim();
+    var fase = val('ofin-rev-fase') || null;
     if (!v) return toast('Informe o valor a receber!', true);
     loading(true);
     try {
+      if (editId) {
+        var st = calcTituloObra(editId);
+        if (!st.rows.length) { loading(false); return toast('Registro não encontrado', true); }
+        var pagoEfetivo = Math.max.apply(null, [st.pago].concat(st.rows.map(function (r) { return Number(r.valor_pago) || 0; })));
+        if (pagoEfetivo > 0.005) { loading(false); return toast('Esta conta já tem baixa registrada. Estorne o recebimento antes de editar.', true); }
+        for (var i = 0; i < st.rows.length; i++) {
+          var upd = await sb.from('logs').update({
+            produto_nome: tipo, categoria: tipo, cliente_nome: client, valor_total: v,
+            vencimento: due, forma_pagamento: method, observacao: note, fase_id: fase
+          }).eq('uid', st.rows[i].uid);
+          if (upd.error) throw upd.error;
+        }
+        el('ofin-rev-id').value = '';
+        fecharModal('ofin-modal-revenue');
+        toast('Receita atualizada!');
+        await ofinCarregar();
+        loading(false);
+        return;
+      }
       var payload = {
         id: await nextLogId(), uid: uidGen(), tipo: 'receita',
         produto_nome: tipo, categoria: tipo, quantidade: 1, data: getHojeLocalStr(),
         observacao: note || ('Receita de obra: ' + nomeObra(OFIN.obraId)), valor_total: v, cliente_nome: client,
         forma_pagamento: method, status: 'ATIVO', status_entrega: 'ENTREGUE', qtd_entregue: 1,
         desconto: 0, status_financeiro: 'PENDENTE', vencimento: due, valor_pago: 0,
-        endereco_entrega: '', obra_id: OFIN.obraId, fase_id: val('ofin-rev-fase') || null
+        endereco_entrega: '', obra_id: OFIN.obraId, fase_id: fase
       };
       var res = await sb.from('logs').insert([payload]);
       if (res.error) throw res.error;
@@ -843,45 +875,68 @@
       + '<div class="pt-1 text-sm font-black ' + (saldo <= 0.005 ? 'text-green-700' : 'text-orange-600') + '">' + (saldo <= 0.005 ? 'Fica QUITADO' : 'Fica devendo ' + money(saldo)) + '</div>';
   }
 
-  function ofinEditReceivable(id) {
+  function ofinBaixarRecebimento(id) {
     var st = calcTituloObra(id);
     if (!st.rows.length) return toast('Registro não encontrado', true);
     var r0 = st.rows[0];
     var pagoEfetivo = Math.max.apply(null, [st.pago].concat(st.rows.map(function (r) { return Number(r.valor_pago) || 0; })));
     var saldoBase = st.total + st.jur - st.disc - pagoEfetivo;
+    if (saldoBase <= 0.005) return toast('Esta conta já está quitada.', true);
     OFIN.recCtx = { id: id, saldoBase: saldoBase };
     el('ofin-rec-id').value = id;
     el('ofin-rec-total-lbl').innerText = money(st.total);
     el('ofin-rec-pending-lbl').innerText = money(Math.max(0, saldoBase));
-    el('ofin-rec-due').value = String(r0.vencimento || '').split('T')[0] || '';
+    el('ofin-rec-pay-date').value = getHojeLocalStr();
     el('ofin-rec-disc').value = '';
     el('ofin-rec-jur').value = '';
     el('ofin-rec-pgto-rows').innerHTML = '';
     ofinAddRecRow(r0.forma_pagamento || METODOS_PGTO[0], saldoBase > 0 ? saldoBase : '');
-    abrirModal('ofin-modal-receivable-edit');
+    abrirModal('ofin-modal-receivable-receive');
   }
 
-  async function ofinSaveReceivableEdit() {
+  function setSelectValue(sel, value) {
+    if (!sel) return;
+    sel.value = value;
+    if (value && sel.value !== value) {
+      var o = document.createElement('option');
+      o.value = value; o.textContent = value;
+      sel.appendChild(o); sel.value = value;
+    }
+  }
+
+  function ofinEditReceivable(id) {
+    var st = calcTituloObra(id);
+    if (!st.rows.length) return toast('Registro não encontrado', true);
+    var pagoEfetivo = Math.max.apply(null, [st.pago].concat(st.rows.map(function (r) { return Number(r.valor_pago) || 0; })));
+    if (pagoEfetivo > 0.005) return toast('Esta conta já tem baixa registrada. Estorne o recebimento antes de editar.', true);
+    var r0 = st.rows[0];
+    el('ofin-rev-id').value = id;
+    setSelectValue(el('ofin-rev-tipo'), r0.categoria || r0.produto_nome || TIPOS_ENTRADA[0]);
+    preencherFaseSelect('ofin-rev-fase', r0.fase_id || '');
+    el('ofin-rev-client').value = r0.cliente_nome || '';
+    el('ofin-rev-val').value = Number(r0.valor_total || 0) || '';
+    el('ofin-rev-due').value = String(r0.vencimento || '').split('T')[0] || getHojeLocalStr();
+    setSelectValue(el('ofin-rev-method'), r0.forma_pagamento || METODOS_PGTO[0]);
+    el('ofin-rev-note').value = r0.observacao || '';
+    var ttl = el('ofin-modal-revenue-title'); if (ttl) ttl.innerText = 'Editar Receita';
+    var sub = el('ofin-rev-submit'); if (sub) sub.innerText = 'Salvar Alterações';
+    abrirModal('ofin-modal-revenue');
+  }
+
+  async function ofinSaveReceivableReceive() {
     var id = val('ofin-rec-id');
-    var due = val('ofin-rec-due');
+    var dataPgto = val('ofin-rec-pay-date') || getHojeLocalStr();
     var st = calcTituloObra(id);
     if (!st.rows.length) return toast('Registro não encontrado', true);
     // Evita duplo clique / duplo envio criando baixas duplicadas.
     if (OFIN.savingRec) return;
-    OFIN.savingRec = true;
     var formas = coletarPgto('ofin-rec-pgto-rows');
     var moneyTotal = formas.reduce(function (a, f) { return a + f.valor; }, 0);
     var desconto = num('ofin-rec-disc'), juros = num('ofin-rec-jur');
+    if (moneyTotal <= 0) return toast('Informe o valor recebido (pelo menos uma forma).', true);
+    OFIN.savingRec = true;
     loading(true);
     try {
-      if (moneyTotal <= 0 && desconto <= 0 && juros <= 0) {
-        for (var i = 0; i < st.rows.length; i++) {
-          var u = {}; if (due) u.vencimento = due;
-          await sb.from('logs').update(u).eq('uid', st.rows[i].uid);
-        }
-        fecharModal('ofin-modal-receivable-edit');
-        toast('Conta atualizada!'); await ofinCarregar(); loading(false); return;
-      }
       var pagoBase = Math.max.apply(null, [st.pago].concat(st.rows.map(function (r) { return Number(r.valor_pago) || 0; })));
       var newMoney = pagoBase + moneyTotal;
       var newDisc = st.disc + desconto, newJur = st.jur + juros;
@@ -891,13 +946,13 @@
         loading(false);
         return toast('O valor recebido (' + money(moneyTotal) + ') é maior que o saldo devedor (' + money(Math.max(0, st.saldo)) + '). Ajuste o valor, o desconto ou os juros.', true);
       }
-      var finStatus = newSaldo <= 0.005 ? 'PAGO' : (newMoney > 0 ? 'PARCIAL' : 'PENDENTE');
-      var metodoPrincipal = formas.length ? formas[0].metodo : (st.rows[0].forma_pagamento || 'Dinheiro');
+      var finStatus = newSaldo <= 0.005 ? 'PAGO' : 'PARCIAL';
+      var metodoPrincipal = formas[0].metodo;
       for (var k = 0; k < formas.length; k++) {
         var f = formas[k]; var isPrimeira = (k === 0);
         var res = await sb.from('logs').insert([{
           id: await nextLogId(), uid: uidGen(), tipo: 'recebimento', produto_nome: 'Baixa de Conta',
-          quantidade: 0, data: getHojeLocalStr(), observacao: 'Ref Lanc #' + id, valor_total: f.valor,
+          quantidade: 0, data: dataPgto, observacao: 'Ref Lanc #' + id, valor_total: f.valor,
           desconto: isPrimeira ? desconto : 0, acrescimo: isPrimeira ? juros : 0,
           cliente_nome: st.rows[0].cliente_nome, cliente_id: st.rows[0].cliente_id || null,
           forma_pagamento: f.metodo, status: 'ATIVO', status_financeiro: 'PAGO', valor_pago: f.valor,
@@ -906,13 +961,11 @@
         if (res.error) throw res.error;
       }
       for (var j = 0; j < st.rows.length; j++) {
-        var upd = { valor_pago: newMoney, status_financeiro: finStatus };
-        if (formas.length) upd.forma_pagamento = metodoPrincipal;
-        if (due) upd.vencimento = due;
+        var upd = { valor_pago: newMoney, status_financeiro: finStatus, forma_pagamento: metodoPrincipal };
         await sb.from('logs').update(upd).eq('uid', st.rows[j].uid);
       }
-      fecharModal('ofin-modal-receivable-edit');
-      toast(moneyTotal > 0 ? 'Baixa registrada!' : 'Ajuste registrado!');
+      fecharModal('ofin-modal-receivable-receive');
+      toast(newSaldo <= 0.005 ? 'Conta quitada!' : 'Recebimento parcial registrado!');
       await ofinCarregar(); loading(false);
     } catch (e) { loading(false); toast('Erro: ' + (e.message || e), true); }
     finally { OFIN.savingRec = false; }
@@ -1067,6 +1120,7 @@
   function ofinEditExpense(uid) {
     var e = OFIN.despesas.find(function (x) { return String(x.uid) === String(uid); });
     if (!e) return toast('Despesa não encontrada', true);
+    if (Number(e.valor_pago || 0) > 0.005) return toast('Esta despesa já tem baixa registrada. Estorne o pagamento antes de editar.', true);
     el('ofin-exp-id').value = e.uid;
     el('ofin-exp-item').value = e.item || 'FORNECEDOR';
     el('ofin-exp-provider').value = e.fornecedor || '';
@@ -1082,6 +1136,10 @@
   async function ofinSaveExpense() {
     var idVal = val('ofin-exp-id');
     var isNew = !idVal;
+    if (!isNew) {
+      var atual = OFIN.despesas.find(function (x) { return String(x.uid) === String(idVal); });
+      if (atual && Number(atual.valor_pago || 0) > 0.005) return toast('Esta despesa já tem baixa registrada. Estorne o pagamento antes de editar.', true);
+    }
     var item = val('ofin-exp-item');
     var provider = val('ofin-exp-provider').trim();
     var cost = parseFloat(val('ofin-exp-cost'));
@@ -1385,8 +1443,9 @@
   window.ofinAddRecRow = ofinAddRecRow;
   window.ofinRemovePgtoRow = ofinRemovePgtoRow;
   window.ofinAtualizarResumoRec = ofinAtualizarResumoRec;
+  window.ofinBaixarRecebimento = ofinBaixarRecebimento;
+  window.ofinSaveReceivableReceive = ofinSaveReceivableReceive;
   window.ofinEditReceivable = ofinEditReceivable;
-  window.ofinSaveReceivableEdit = ofinSaveReceivableEdit;
   window.ofinEstornarRecebimento = ofinEstornarRecebimento;
   window.ofinExcluirReceita = ofinExcluirReceita;
   window.ofinOpenParcelarReceber = ofinOpenParcelarReceber;
