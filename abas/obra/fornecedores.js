@@ -44,6 +44,7 @@
     if (!el) { el = document.createElement('div'); el.id = 'obra-modal'; document.body.appendChild(el); }
     el.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
     el.innerHTML = '<div class="bg-white rounded-2xl w-full max-w-lg"><div class="p-4 border-b flex justify-between"><h3 class="font-bold">' + (id ? 'Editar' : 'Novo') + ' fornecedor</h3><button onclick="obraFecharModal()">x</button></div><div class="p-4">' + html + '</div></div>';
+    if (window.obraSnapshotModal) window.obraSnapshotModal();
   }
 
   async function fornSalvar(ev) {
@@ -58,7 +59,7 @@
     var res = id ? await sb.from('fornecedores').update(payload).eq('id', id) : await sb.from('fornecedores').insert([payload]);
     if (res.error) return A().toast(res.error.message, true);
     A().toast('Fornecedor salvo.');
-    if (typeof obraFecharModal === 'function') obraFecharModal();
+    if (typeof window.obraFecharModalRaw === 'function') window.obraFecharModalRaw();
     renderFornecedoresObra();
   }
 

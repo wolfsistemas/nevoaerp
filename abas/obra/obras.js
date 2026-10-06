@@ -301,7 +301,15 @@
       + '<button onclick="obraFecharModal()" class="text-slate-400"><i data-lucide="x"></i></button></div>'
       + '<div class="p-4">' + html + '</div></div>';
     A().icons();
-    OBRA_SNAP = window.obraModalGuard ? window.obraModalGuard.capturar(el) : null;
+    obraSnapshotModal();
+  }
+
+  // Captura o estado dos campos do modal compartilhado (#obra-modal) para a
+  // guarda de "campos nao salvos". Usado tambem por oc.js e fornecedores.js,
+  // que montam o mesmo modal mas nao passam por abrirModal.
+  function obraSnapshotModal() {
+    var el = document.getElementById('obra-modal');
+    OBRA_SNAP = (window.obraModalGuard && el) ? window.obraModalGuard.capturar(el) : null;
   }
 
   function obraFecharModalRaw() {
@@ -357,4 +365,6 @@
   window.obraFinalizar = obraFinalizar;
   window.obraReabrir = obraReabrir;
   window.obraFecharModal = obraFecharModal;
+  window.obraFecharModalRaw = obraFecharModalRaw;
+  window.obraSnapshotModal = obraSnapshotModal;
 })();

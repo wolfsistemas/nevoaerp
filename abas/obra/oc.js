@@ -66,6 +66,7 @@
     if (!el) { el = document.createElement('div'); el.id = 'obra-modal'; document.body.appendChild(el); }
     el.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
     el.innerHTML = '<div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"><div class="p-4 border-b flex justify-between"><h3 class="font-bold">Nova ordem de compra</h3><button onclick="obraFecharModal()">x</button></div><div class="p-4">' + html + '</div></div>';
+    if (window.obraSnapshotModal) window.obraSnapshotModal();
   }
 
   function ocAddItem() {
@@ -113,7 +114,7 @@
     var it = await sb.from('ordens_compra_itens').insert(itens);
     if (it.error) return A().toast(it.error.message, true);
     A().toast('OC salva como rascunho.');
-    if (typeof obraFecharModal === 'function') obraFecharModal();
+    if (typeof window.obraFecharModalRaw === 'function') window.obraFecharModalRaw();
     renderOC();
   }
 
