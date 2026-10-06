@@ -22,6 +22,34 @@
     } catch (e) { return false; }
   }
 
+  // ----- ESC + confirmacao de "valores nao salvos" nos modais dinamicos -----
+  var EQ_SNAP = {};
+  var EQ_MODAIS = ['modal-folha', 'modal-vale', 'modal-func'];
+  function eqSnapshotModal(id) {
+    var m = document.getElementById(id);
+    EQ_SNAP[id] = (window.modalGuard && m) ? window.modalGuard.capturar(m) : null;
+  }
+  window.eqFecharModal = function (id) {
+    var m = document.getElementById(id);
+    if (!m) return;
+    var doClose = function () { m.remove(); EQ_SNAP[id] = null; };
+    if (window.modalGuard) { window.modalGuard.fecharComGuarda(m, EQ_SNAP[id], doClose); return; }
+    doClose();
+  };
+  if (window.modalGuard) {
+    window.modalGuard.registrar({
+      visivel: function () {
+        for (var i = 0; i < EQ_MODAIS.length; i++) { if (document.getElementById(EQ_MODAIS[i])) return true; }
+        return false;
+      },
+      pedirFechar: function () {
+        for (var i = EQ_MODAIS.length - 1; i >= 0; i--) {
+          if (document.getElementById(EQ_MODAIS[i])) { window.eqFecharModal(EQ_MODAIS[i]); return; }
+        }
+      }
+    });
+  }
+
   // Notificacao padronizada: usa o toast do sistema (com fallback para o modal
   // de aviso) evitando os dialogos nativos do navegador.
   function notificar(msg, isError) {
@@ -245,7 +273,7 @@
         <div class="bg-white rounded-2xl w-full max-w-4xl shadow-2xl flex flex-col max-h-[85vh]">
           <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-2xl">
             <h3 class="font-bold text-lg text-slate-800"><i data-lucide="file-plus" class="inline w-5 h-5 text-emerald-600 mr-1"></i> Criar Folha – ${mesRef}</h3>
-            <button onclick="document.getElementById('modal-folha').remove()" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button>
+            <button onclick="eqFecharModal('modal-folha')" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button>
           </div>
           <div class="p-4 overflow-y-auto flex-1">
             <table class="w-full text-sm">
@@ -285,7 +313,7 @@
           ${algumBloqueado ? `<p class="text-xs text-amber-600 font-bold mt-2"><i data-lucide="alert-triangle" class="w-3 h-3 inline"></i> Funcionários marcados como "Já lançada" já possuem folha neste mês e não serão duplicados. Exclua a folha existente em Lançamentos caso queira recriá-la.</p>` : ''}
           </div>
           <div class="p-4 border-t bg-slate-50 rounded-b-2xl flex gap-2">
-            <button onclick="document.getElementById('modal-folha').remove()" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg font-bold text-slate-700">Cancelar</button>
+            <button onclick="eqFecharModal('modal-folha')" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg font-bold text-slate-700">Cancelar</button>
             <button onclick="salvarFolha('${mesRef}')" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow">Salvar Folha</button>
           </div>
         </div>
@@ -293,6 +321,7 @@
     document.body.insertAdjacentHTML('beforeend', html);
     lucide.createIcons();
     showLoading(false);
+    eqSnapshotModal('modal-folha');
   }
 
   window.recalcularFolhaItem = function(id) {
@@ -374,7 +403,7 @@
         <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
           <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-2xl">
             <h3 class="font-bold text-lg"><i data-lucide="minus-circle" class="inline w-5 h-5 text-amber-600 mr-1"></i>Lançar Vale</h3>
-            <button onclick="document.getElementById('modal-vale').remove()" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button>
+            <button onclick="eqFecharModal('modal-vale')" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button>
           </div>
           <div class="p-4 space-y-4">
             <div>
@@ -391,13 +420,14 @@
             </div>
           </div>
           <div class="p-4 border-t bg-slate-50 flex gap-2 rounded-b-2xl">
-            <button onclick="document.getElementById('modal-vale').remove()" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg font-bold">Cancelar</button>
+            <button onclick="eqFecharModal('modal-vale')" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg font-bold">Cancelar</button>
             <button onclick="salvarVale()" class="flex-1 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold shadow">Salvar</button>
           </div>
         </div>
       </div>`;
     document.body.insertAdjacentHTML('beforeend', html);
     lucide.createIcons();
+    eqSnapshotModal('modal-vale');
   }
 
   async function salvarVale() {
@@ -940,7 +970,7 @@
         <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
           <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-2xl">
             <h3 class="font-bold text-lg">${titulo}</h3>
-            <button onclick="document.getElementById('modal-func').remove()" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button>
+            <button onclick="eqFecharModal('modal-func')" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button>
           </div>
           <div class="p-4 space-y-3">
             <input type="hidden" id="func-id" value="${id || ''}">
@@ -969,7 +999,7 @@
             </div>
           </div>
           <div class="p-4 border-t bg-slate-50 flex gap-2 rounded-b-2xl">
-            <button onclick="document.getElementById('modal-func').remove()" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg font-bold">Cancelar</button>
+            <button onclick="eqFecharModal('modal-func')" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg font-bold">Cancelar</button>
             <button onclick="salvarFuncionario()" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow">Salvar</button>
           </div>
         </div>
@@ -977,6 +1007,7 @@
     document.body.insertAdjacentHTML('beforeend', html);
     lucide.createIcons();
     if (id) preencherFormFuncionario(id);
+    else eqSnapshotModal('modal-func');
   };
 
   window.toggleCamposValor = function() {
@@ -995,6 +1026,7 @@
     document.getElementById('func-valor-diaria').value = data.valor_diaria || '';
     document.getElementById('func-pix').value = data.chave_pix || '';
     toggleCamposValor();
+    eqSnapshotModal('modal-func');
   }
 
   window.salvarFuncionario = async function() {

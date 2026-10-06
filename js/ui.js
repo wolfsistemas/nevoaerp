@@ -98,16 +98,22 @@
     };
   }
 
-  // ----- Guarda de modais do modulo Obra: fechar com ESC + confirmar campos nao salvos -----
-  // Uso:
-  //   var snap = obraModalGuard.capturar(modalEl);          // logo apos montar/abrir
-  //   obraModalGuard.registrar({ visivel, pedirFechar });    // uma vez por modulo
-  //   obraModalGuard.fecharComGuarda(modalEl, snap, fechar); // no X/Cancelar/ESC
-  if (typeof window.obraModalGuard !== 'function') {
+  // ----- modalGuard: fechar com ESC + confirmar valores nao salvos -----
+  // Compartilhado por todo o sistema (desktop e mobile).
+  // Uso dinamico (modulo monta o modal em JS):
+  //   var snap = modalGuard.capturar(modalEl);            // logo apos abrir
+  //   modalGuard.registrar({ visivel, pedirFechar });      // uma vez por modulo
+  //   modalGuard.fecharComGuarda(modalEl, snap, fechar);   // no X/Cancelar/ESC
+  // Uso estatico (modal no HTML com classe 'hidden'):
+  //   modalGuard.registrarEstatico('id-do-modal', { proteger: true, fechar: fn });
+  //   modalGuard.fechar('id-do-modal');                    // no X/Cancelar
+  if (typeof window.modalGuard !== 'function') {
     (function () {
       var gerentes = [];
+      var estaticos = {};
       var escLigado = false;
       var confirmando = false;
+      var MSG = 'Existem valores não salvos, deseja sair mesmo assim?';
 
       function capturar(el) {
         var out = [];
@@ -133,21 +139,62 @@
         return false;
       }
 
-      async function fecharComGuarda(el, snap, doClose) {
-        if (mudou(el, snap) && typeof window.confirmDialog === 'function') {
+      async function confirmarSaida(doClose) {
+        if (typeof window.confirmDialog === 'function') {
           confirmando = true;
           var ok = false;
           try {
-            ok = await window.confirmDialog(
-              'Existem campos não salvos, tem certeza que deseja fechar?',
-              { title: 'Campos não salvos', confirmText: 'Fechar', cancelText: 'Cancelar', danger: true }
-            );
+            ok = await window.confirmDialog(MSG, {
+              title: 'Valores não salvos',
+              confirmText: 'Sim',
+              cancelText: 'Cancelar',
+              danger: true
+            });
           } finally {
             confirmando = false;
           }
           if (!ok) return;
         }
         if (typeof doClose === 'function') doClose();
+      }
+
+      function fecharComGuarda(el, snap, doClose) {
+        if (mudou(el, snap)) return confirmarSaida(doClose);
+        if (typeof doClose === 'function') doClose();
+      }
+
+      function estaAberto(el) { return !!(el && !el.classList.contains('hidden')); }
+
+      function registrarEstatico(id, opts) {
+        opts = opts || {};
+        var el = document.getElementById(id);
+        if (!el) return;
+        var reg = {
+          el: el,
+          snap: null,
+          proteger: opts.proteger !== false,
+          fechar: opts.fechar || function () { el.classList.add('hidden'); }
+        };
+        estaticos[id] = reg;
+        try {
+          var obs = new MutationObserver(function () {
+            if (estaAberto(el)) reg.snap = capturar(el);
+          });
+          obs.observe(el, { attributes: true, attributeFilter: ['class'] });
+        } catch (e) {}
+        gerentes.push({
+          visivel: function () { return estaAberto(el); },
+          pedirFechar: function () { fecharEstatico(id); }
+        });
+        ligarEsc();
+      }
+
+      function fecharEstatico(id) {
+        var reg = estaticos[id];
+        if (!reg) return;
+        var doClose = function () { reg.fechar(); reg.snap = null; };
+        if (!reg.proteger) { doClose(); return; }
+        return fecharComGuarda(reg.el, reg.snap, doClose);
       }
 
       function ligarEsc() {
@@ -168,12 +215,16 @@
         });
       }
 
-      window.obraModalGuard = {
+      window.modalGuard = {
         capturar: capturar,
         mudou: mudou,
         fecharComGuarda: fecharComGuarda,
-        registrar: function (gerente) { gerentes.push(gerente); ligarEsc(); return gerente; }
+        registrar: function (gerente) { gerentes.push(gerente); ligarEsc(); return gerente; },
+        registrarEstatico: registrarEstatico,
+        fechar: function (id) { return fecharEstatico(id); }
       };
+      // Compatibilidade com os modulos do modulo Obra ja publicados.
+      window.obraModalGuard = window.modalGuard;
     })();
   }
 })();

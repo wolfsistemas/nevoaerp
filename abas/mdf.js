@@ -1085,7 +1085,7 @@ class OrcamentosMDF {
               <i data-lucide="file-text" class="text-emerald-600"></i>
               <span id="modal-titulo-mdf">Novo Orçamento</span>
             </h3>
-            <button onclick="if(window.mdfOrcamentosManager) window.mdfOrcamentosManager.fecharModal()" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button>
+            <button onclick="window.modalGuard.fechar('modal-orcamento-mdf')" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button>
           </div>
           <div class="p-6 space-y-4">
             <input type="hidden" id="orcamento-id-mdf">
@@ -1144,7 +1144,7 @@ class OrcamentosMDF {
             </div>
           </div>
           <div class="p-5 border-t bg-slate-50 rounded-b-2xl flex justify-end gap-3">
-            <button onclick="if(window.mdfOrcamentosManager) window.mdfOrcamentosManager.fecharModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 font-bold hover:bg-slate-100 transition">Cancelar</button>
+            <button onclick="window.modalGuard.fechar('modal-orcamento-mdf')" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 font-bold hover:bg-slate-100 transition">Cancelar</button>
             <button onclick="if(window.mdfOrcamentosManager) window.mdfOrcamentosManager.salvarOrcamento()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-bold shadow flex items-center gap-2">
               <i data-lucide="save"></i> Salvar Orçamento
             </button>
@@ -1160,6 +1160,13 @@ class OrcamentosMDF {
     `;
     this.renderizarOrcamentos();
     if (typeof lucide !== 'undefined') lucide.createIcons();
+    if (window.modalGuard && !window._mdfOrcamentoGuard) {
+      window._mdfOrcamentoGuard = true;
+      window.modalGuard.registrarEstatico('modal-orcamento-mdf', {
+        proteger: true,
+        fechar: function () { if (window.mdfOrcamentosManager) window.mdfOrcamentosManager.fecharModal(); }
+      });
+    }
   }
 
   buscarDebounce() {
@@ -2425,3 +2432,17 @@ if (document.readyState === 'loading') {
     };
   }
 }
+
+// Fecha os modais dinamicos do MDF (agenda e busca de clientes) com ESC.
+(function () {
+  if (!window.modalGuard) return;
+  window.modalGuard.registrar({
+    visivel: function () {
+      return !!(document.getElementById('modal-agenda-mdf') || document.getElementById('modal-busca-clientes-mdf'));
+    },
+    pedirFechar: function () {
+      var m = document.getElementById('modal-busca-clientes-mdf') || document.getElementById('modal-agenda-mdf');
+      if (m) window.modalGuard.fecharComGuarda(m, null, function () { m.remove(); });
+    }
+  });
+})();

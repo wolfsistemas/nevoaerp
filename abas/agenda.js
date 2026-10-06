@@ -158,6 +158,7 @@ class AgendaManager {
 
     // Criar modal
     const modal = document.createElement('div');
+    modal.id = 'modal-detalhes-instalacao';
     modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-4';
     modal.style.backdropFilter = 'blur(2px)';
     modal.innerHTML = `
@@ -320,3 +321,15 @@ class AgendaManager {
 
 // Expor globalmente se necessário
 window.AgendaManager = AgendaManager;
+
+// Fecha o modal de detalhes da instalacao com ESC (conteudo somente leitura).
+(function () {
+  if (!window.modalGuard) return;
+  window.modalGuard.registrar({
+    visivel: function () { return !!document.getElementById('modal-detalhes-instalacao'); },
+    pedirFechar: function () {
+      var m = document.getElementById('modal-detalhes-instalacao');
+      if (m) window.modalGuard.fecharComGuarda(m, null, function () { m.remove(); });
+    }
+  });
+})();
