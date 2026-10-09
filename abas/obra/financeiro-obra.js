@@ -668,7 +668,10 @@
         +   '<button onclick="ofinExcluirDespesa(\'' + e.uid + '\')" class="p-1.5 border border-red-200 text-red-500 rounded" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>'
         + '</div></td></tr>';
     }).join('');
-    body.innerHTML = rows;
+    var totalVal = lista.reduce(function (a, e) { return a + Number(e.custo || 0) + Number(e.acrescimo_total || 0) - Number(e.desconto_total || 0); }, 0);
+    var totalPago = lista.reduce(function (a, e) { return a + Math.max(Number(e.valor_pago || 0), 0); }, 0);
+    body.innerHTML = rows
+      + '<tr class="bg-slate-100 font-black text-slate-700"><td class="p-3" colspan="4">Totais</td><td class="p-3">' + money(totalVal) + '</td><td class="p-3 text-right text-[10px] text-slate-500">Pago ' + money(totalPago) + ' · Falta ' + money(Math.max(totalVal - totalPago, 0)) + '</td></tr>';
     icons();
   }
 
