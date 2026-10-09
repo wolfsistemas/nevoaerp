@@ -585,9 +585,9 @@
     icons();
   }
 
-  function ofinRenderPagar() {
-    var body = el('ofin-expenses-list');
-    if (!body) return;
+  // Lista de despesas a pagar ja filtrada/ordenada conforme os filtros da tela.
+  // Reutilizada pelo render da tabela e pela impressao (mesmo resultado da tela).
+  function ofinPagarFiltradas() {
     var term = normalizeSearch(el('ofin-exp-search') ? el('ofin-exp-search').value : '');
     var st = el('ofin-exp-status') ? el('ofin-exp-status').value : '';
     var ini = el('ofin-exp-start') ? el('ofin-exp-start').value : '';
@@ -610,6 +610,33 @@
       return true;
     });
     lista.sort(function (a, b) { return String(b.data || '').localeCompare(String(a.data || '')); });
+    return lista;
+  }
+
+  // Texto dos filtros ativos, exibido no cabecalho da impressao.
+  function ofinPagarFiltrosTexto() {
+    var out = [];
+    var st = el('ofin-exp-status') ? el('ofin-exp-status').value : '';
+    var ini = el('ofin-exp-start') ? el('ofin-exp-start').value : '';
+    var fim = el('ofin-exp-end') ? el('ofin-exp-end').value : '';
+    var cat = el('ofin-exp-category') ? el('ofin-exp-category').value : '';
+    var term = el('ofin-exp-search') ? el('ofin-exp-search').value : '';
+    var faseEl = el('ofin-exp-fase-filter');
+    var fase = (faseEl && faseEl.value) ? (faseEl.options[faseEl.selectedIndex] ? faseEl.options[faseEl.selectedIndex].text : faseEl.value) : '';
+    if (st) out.push('Status: ' + (st === 'PENDENTE' ? 'Pendentes' : st === 'PAGO' ? 'Pagos' : 'Vencidos'));
+    if (cat) out.push('Categoria: ' + cat);
+    if (ini) out.push('De: ' + dataBR(ini));
+    if (fim) out.push('Ate: ' + dataBR(fim));
+    if (term) out.push('Busca: "' + term + '"');
+    if (fase) out.push('Fase: ' + fase);
+    return out;
+  }
+
+  function ofinRenderPagar() {
+    var body = el('ofin-expenses-list');
+    if (!body) return;
+    var hoje = getHojeLocalStr();
+    var lista = ofinPagarFiltradas();
 
     if (!lista.length) {
       body.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Nenhum registro encontrado.</td></tr>';
@@ -1422,22 +1449,33 @@
 
   function ofinPrintPagar() {
     var P = window.obraPrint;
-    if (!P) return;
-    var hoje = getHojeLocalStr();
-    var lista = OFIN.despesas.filter(function (e) { return !isEst(e); })
-      .sort(function (a, b) { return String(a.data || '').localeCompare(String(b.data || '')); });
+    var lista = ofinPagarFiltradas();
     if (!lista.length) return toast('Nenhum registro para imprimir.', true);
-    var total = lista.reduce(function (s, e) { return s + Math.max(0, saldoDespesa(e)); }, 0);
+    var hoje = getHojeLocalStr();
     var rows = lista.map(function (e) {
       var dv = String(e.data || '').split('T')[0];
       var sit = String(e.status || '').toUpperCase() === 'PAGO' ? 'PAGO' : (dv && dv < hoje ? 'VENCIDO' : 'PENDENTE');
-      return [P.dataBR(e.data), esc((e.fornecedor || '-') + ' - ' + (e.item || '')), sit, P.money(Math.max(0, saldoDespesa(e)))];
+      var valor = Number(e.custo || 0) + Number(e.acrescimo_total || 0) - Number(e.desconto_total || 0);
+      return {
+        data: e.data,
+        item: e.item,
+        fornecedor: e.fornecedor,
+        obs: e.observacao,
+        status: sit,
+        valor: valor > 0 ? valor : 0
+      };
     });
-    var body = P.table(
-      [{ label: 'Vencimento' }, { label: 'Fornecedor / Item' }, { label: 'Situacao', align: 'center' }, { label: 'Saldo', align: 'right' }],
-      rows
-    ) + docTotalRow('TOTAL A PAGAR', total);
-    printHtml(P.doc({ title: 'Contas a Pagar', meta: dataBR(hoje), subtitle: 'Obra: <b>' + esc(scopeLabel()) + '</b>', body: body }));
+    var total = rows.reduce(function (s, r) { return s + Number(r.valor || 0); }, 0);
+    if (P && typeof P.contasPagar === 'function') {
+      return P.contasPagar({
+        subtitle: 'Obra: <b>' + esc(scopeLabel()) + '</b>',
+        filters: ofinPagarFiltrosTexto(),
+        rows: rows,
+        total: total,
+        totalLabel: 'TOTAL A PAGAR'
+      });
+    }
+    return toast('Recurso de impressao indisponivel.', true);
   }
 
   function ofinPrintOverview() {

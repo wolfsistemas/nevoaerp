@@ -90,6 +90,47 @@
     setTimeout(function () { window.print(); }, 300);
   }
 
+  // Relatorio padrao de Contas a Pagar, compartilhado pelos modos Obra e ERP.
+  // opts: {
+  //   title, subtitle, filters (string|array),
+  //   rows: [{ data, item, fornecedor, obs, status, valor }],
+  //   total, totalLabel, valorLabel
+  // }
+  function contasPagar(opts) {
+    opts = opts || {};
+    var filterText = Array.isArray(opts.filters) ? opts.filters.join('  |  ') : (opts.filters || '');
+    var cols = [
+      { label: 'Data' },
+      { label: 'Categoria / Item' },
+      { label: 'Fornecedor' },
+      { label: 'Descricao (Observacao)' },
+      { label: 'Status', align: 'center' },
+      { label: opts.valorLabel || 'Valor', align: 'right' }
+    ];
+    var rows = (opts.rows || []).map(function (r) {
+      return [
+        dataBR(r.data),
+        esc(r.item || '-'),
+        esc(r.fornecedor || '-'),
+        esc(r.obs || '-'),
+        esc(r.status || '-'),
+        money(r.valor || 0)
+      ];
+    });
+    var body = table(cols, rows, { empty: 'Sem registros.' })
+      + '<div style="display:flex;justify-content:space-between;border:1px solid #000;border-top:none;padding:10px;background:#fef2f2;font-weight:bold;font-size:13px;">'
+      + '<span>' + esc(opts.totalLabel || 'TOTAL A PAGAR') + '</span><span>' + money(opts.total || 0) + '</span></div>';
+    var html = doc({
+      title: opts.title || 'Contas a Pagar',
+      meta: dataBR(hojeISO()),
+      subtitle: opts.subtitle || '',
+      filters: filterText ? ('<strong>Filtros aplicados:</strong> ' + esc(filterText)) : '',
+      body: body
+    });
+    print(html);
+    return html;
+  }
+
   global.obraPrint = {
     esc: esc,
     company: company,
@@ -99,6 +140,7 @@
     header: header,
     doc: doc,
     table: table,
+    contasPagar: contasPagar,
     print: print
   };
 })(typeof window !== 'undefined' ? window : globalThis);
