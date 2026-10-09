@@ -6,7 +6,7 @@
   'use strict';
 
   var A = function () { return window.obraApi || {}; };
-  var CACHE = { equipe: [], terc: [], obras: [], ponto: [], producao: [], medicoes: [] };
+  var CACHE = { equipe: [], terc: [], obras: [], ponto: [], producao: [], medicoes: [], vales: [] };
   var MODAL = 'eqobra-modal';
   var MODAL_SNAP = null;
 
@@ -187,7 +187,8 @@
       sb.from('obras').select('*').order('nome'),
       sb.from('ponto_diario').select('*').order('hora_registro', { ascending: false }),
       sb.from('producao_terc').select('*').order('data_registro', { ascending: false }),
-      sb.from('medicoes_empreita').select('*').order('data_medicao', { ascending: false })
+      sb.from('medicoes_empreita').select('*').order('data_medicao', { ascending: false }),
+      sb.from('obra_vales').select('*').order('data', { ascending: true })
     ]);
     var erro = res.find(function (r) { return r && r.error; });
     if (erro) throw erro.error;
@@ -197,6 +198,24 @@
     CACHE.ponto = res[3].data || [];
     CACHE.producao = res[4].data || [];
     CACHE.medicoes = res[5].data || [];
+    CACHE.vales = res[6].data || [];
+  }
+
+  // Vales abertos (saldo > 0) de uma pessoa, em ordem FIFO.
+  function valesAbertosPessoa(origem, id) {
+    if (A().filtrarValesAbertos) return A().filtrarValesAbertos(CACHE.vales, origem, id);
+    var campo = origem === 'terceirizado' ? 'terceirizado_id' : 'equipe_id';
+    return (CACHE.vales || []).filter(function (v) {
+      return String(v[campo]) === String(id) && String(v.status).toUpperCase() === 'ABERTO' && Number(v.valor_aberto != null ? v.valor_aberto : v.valor || 0) > 0;
+    });
+  }
+  function somaVales(vales) {
+    if (A().somaVales) return A().somaVales(vales);
+    return (vales || []).reduce(function (s, v) { return s + Number(v.valor_aberto != null ? v.valor_aberto : v.valor || 0); }, 0);
+  }
+  function simularVales(vales, bruto) {
+    if (A().simularAbatimentos) return A().simularAbatimentos(vales, bruto);
+    return { total: 0, itens: [], liquido: Number(bruto) || 0 };
   }
 
   function colaboradores() {
@@ -218,7 +237,8 @@
         obra_atual_id: e.obra_atual_id,
         ativo: e.ativo !== false,
         data_contrato: e.data_contrato,
-        contrato_assinado: !!e.contrato_assinado
+        contrato_assinado: !!e.contrato_assinado,
+        vales_abertos: somaVales(valesAbertosPessoa('equipe', e.id))
       };
     });
     CACHE.terc.forEach(function (t) {
@@ -238,7 +258,8 @@
         obra_atual_id: t.obra_atual_id,
         ativo: t.ativo !== false,
         data_contrato: t.data_contrato,
-        contrato_assinado: !!t.contrato_assinado
+        contrato_assinado: !!t.contrato_assinado,
+        vales_abertos: somaVales(valesAbertosPessoa('terceirizado', t.id))
       });
     });
     return lista;
@@ -288,20 +309,25 @@
   }
 
   function producaoTxt(c, ini, fim) {
+    var vales = (c.tipo === 'empreita') ? 0 : Number(c.vales_abertos || 0);
+    c._vales = vales;
     if (c.tipo === 'diaria') {
       var d = calcDiaria(c.id, ini, fim);
-      c._pend = d.diarias * c.valor_base;
+      c._bruto = d.diarias * c.valor_base;
+      c._pend = Math.max(0, c._bruto - vales);
       c.status_pagamento = d.diarias > 0 ? 'PENDENTE' : 'EM DIA';
       return d.diarias.toFixed(2) + ' dias';
     }
     if (c.tipo === 'empreita') {
       var r = calcEmpreita(c.id, ini, fim);
+      c._bruto = r.pend;
       c._pend = r.pend;
       c.status_pagamento = r.pend > 0 ? 'PENDENTE' : 'EM DIA';
       return r.pctPend.toFixed(1) + '% medido';
     }
     var m = calcMetros(c.id, ini, fim);
-    c._pend = m.pend * c.valor_base;
+    c._bruto = m.pend * c.valor_base;
+    c._pend = Math.max(0, c._bruto - vales);
     c.status_pagamento = m.pend > 0 ? 'PENDENTE' : 'EM DIA';
     return m.pend.toFixed(2) + ' m';
   }
@@ -326,9 +352,9 @@
       +   '<div class="bg-white rounded-xl border shadow-sm overflow-hidden"><div class="overflow-x-auto">'
       +     '<table class="w-full text-sm text-left whitespace-nowrap"><thead class="bg-slate-100 text-slate-700 border-b"><tr>'
       +       '<th class="p-3">Colaborador / Categoria</th><th class="p-3">Obra</th><th class="p-3 text-center">Valor</th>'
-      +       '<th class="p-3 text-center">Producao</th><th class="p-3 text-right">Total a Pagar</th>'
+      +       '<th class="p-3 text-center">Producao</th><th class="p-3 text-right">Vales</th><th class="p-3 text-right">Total a Pagar</th>'
       +       '<th class="p-3 text-center">Status</th><th class="p-3 text-center">Acoes</th>'
-      +     '</tr></thead><tbody id="eqobra-list" class="divide-y"><tr><td colspan="7" class="p-6 text-center text-slate-400">Carregando...</td></tr></tbody></table>'
+      +     '</tr></thead><tbody id="eqobra-list" class="divide-y"><tr><td colspan="8" class="p-6 text-center text-slate-400">Carregando...</td></tr></tbody></table>'
       +   '</div></div>'
       + '</div>';
     montarFiltros();
@@ -337,7 +363,7 @@
       await carregarDados();
     } catch (e) {
       var body = el('eqobra-list');
-      if (body) body.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-red-600">' + esc(e.message || e) + '</td></tr>';
+      if (body) body.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-red-600">' + esc(e.message || e) + '</td></tr>';
       return;
     }
     eqObraRenderLista();
@@ -402,16 +428,20 @@
         + '<td class="p-3 text-xs font-bold text-blue-700">' + esc(obra ? obra.nome : '-') + '</td>'
         + '<td class="p-3 text-center text-xs font-bold text-slate-700">' + valorTxt + '</td>'
         + '<td class="p-3 text-center text-xs font-black ' + (pend ? 'text-indigo-600' : 'text-slate-400') + '">' + prodTxt + '</td>'
+        + '<td class="p-3 text-right text-xs font-bold ' + ((c._vales || 0) > 0 ? 'text-rose-600' : 'text-slate-300') + '">' + ((c._vales || 0) > 0 ? money(c._vales) : '-') + '</td>'
         + '<td class="p-3 text-right font-black text-sm ' + (pend ? 'text-green-700' : 'text-slate-400') + '">' + money(c._pend || 0) + '</td>'
         + '<td class="p-3 text-center"><span class="px-2 py-1 rounded text-[9px] font-bold ' + (pend ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700') + '">' + c.status_pagamento + '</span></td>'
         + '<td class="p-3"><div class="flex items-center justify-start gap-1">'
         +   '<button onclick="eqObraSaldo(\'' + c.id + '\',\'' + c.origem + '\')" class="px-2 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="calculator" class="w-3 h-3"></i> CALCULAR</button>'
+        +   (c.tipo === 'empreita'
+              ? '<button disabled class="p-1.5 border border-slate-200 text-slate-300 rounded cursor-not-allowed" title="Vale nao disponivel para empreita"><i data-lucide="banknote" class="w-3.5 h-3.5"></i></button>'
+              : '<button onclick="eqObraValeAbrir(\'' + c.id + '\',\'' + c.origem + '\')" class="p-1.5 border border-rose-200 text-rose-600 rounded" title="Lancar vale"><i data-lucide="banknote" class="w-3.5 h-3.5"></i></button>')
         +   '<button onclick="eqObraOpenForm(\'' + c.id + '\',\'' + c.origem + '\')" class="p-1.5 border border-blue-200 text-blue-600 rounded" title="Editar"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>'
         +   '<button onclick="eqObraToggle(\'' + c.id + '\',\'' + c.origem + '\',' + (c.ativo ? 'true' : 'false') + ')" class="p-1.5 border ' + (c.ativo ? 'border-red-200 text-red-500' : 'border-green-200 text-green-600') + ' rounded" title="' + (c.ativo ? 'Desativar' : 'Reativar') + '"><i data-lucide="power" class="w-3.5 h-3.5"></i></button>'
         +   (wpp ? '<a href="https://wa.me/55' + wpp + '" target="_blank" class="p-1.5 border border-green-200 text-green-600 bg-green-50/50 rounded" title="WhatsApp"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></a>' : '')
         + '</div></td></tr>';
     });
-    body.innerHTML = html || '<tr><td colspan="7" class="p-6 text-center text-slate-400">Nenhum colaborador.</td></tr>';
+    body.innerHTML = html || '<tr><td colspan="8" class="p-6 text-center text-slate-400">Nenhum colaborador.</td></tr>';
     var total = el('eqobra-total');
     if (total) total.innerHTML = 'Total geral (filtro): <span class="font-bold text-slate-700">' + money(soma) + '</span>';
     icons();
@@ -446,6 +476,287 @@
     });
   }
 
+  // ---------- Vales / adiantamentos (padrao RV: saldo em aberto) ----------
+  var MODAL_VALE = 'eqvale-modal';
+  var VALE_SNAP = null;
+
+  function valeAbrir(html) {
+    var m = el(MODAL_VALE);
+    if (!m) { m = document.createElement('div'); m.id = MODAL_VALE; document.body.appendChild(m); }
+    m.className = 'no-print fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4';
+    m.innerHTML = html;
+    icons();
+    VALE_SNAP = window.obraModalGuard ? window.obraModalGuard.capturar(m) : null;
+  }
+  function valeFecharDireto() { var m = el(MODAL_VALE); if (m) m.remove(); VALE_SNAP = null; }
+  function eqObraValeFechar() {
+    var m = el(MODAL_VALE);
+    if (window.obraModalGuard && m) { window.obraModalGuard.fecharComGuarda(m, VALE_SNAP, valeFecharDireto); return; }
+    valeFecharDireto();
+  }
+  if (window.obraModalGuard) {
+    window.obraModalGuard.registrar({
+      visivel: function () { return !!el(MODAL_VALE); },
+      pedirFechar: function () { eqObraValeFechar(); }
+    });
+  }
+
+  function colaboradoresVale() {
+    return colaboradores().filter(function (c) { return c.tipo !== 'empreita'; });
+  }
+  function pessoaInfoVale(pessoaTipo, id) {
+    return colaboradores().find(function (x) { return x.origem === pessoaTipo && String(x.id) === String(id); }) || null;
+  }
+  function nomeVale(v) {
+    var c = colaboradores().find(function (x) {
+      return v.terceirizado_id
+        ? (x.origem === 'terceirizado' && String(x.id) === String(v.terceirizado_id))
+        : (x.origem === 'equipe' && String(x.id) === String(v.equipe_id));
+    });
+    return c ? c.nome : '\u2014';
+  }
+
+  function valePessoaSelectOptions(sel) {
+    return '<option value="">-- Selecione o colaborador --</option>' + colaboradoresVale().map(function (c) {
+      var chosen = sel && String(sel.id) === String(c.id) && sel.origem === c.origem;
+      return '<option value="' + c.origem + ':' + escAttr(c.id) + '"' + (chosen ? ' selected' : '') + '>'
+        + esc(c.nome) + ' (' + esc(c.categoria) + (c.ativo ? '' : ' - desativado') + ')</option>';
+    }).join('');
+  }
+
+  function eqObraValeAbrir(id, origem) {
+    var cols = colaboradoresVale();
+    if (!cols.length) return toast('Cadastre um colaborador de diaria ou metragem.', true);
+    var sel = (id != null && origem) ? { id: id, origem: origem } : null;
+    var html = ''
+      + '<div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col overflow-hidden">'
+      +   '<div class="bg-rose-700 p-4 text-white flex justify-between items-center shrink-0">'
+      +     '<h3 class="font-black text-lg flex items-center gap-2"><i data-lucide="hand-coins" class="w-5 h-5"></i> <span id="eqvale-title">Lancar Vale / Adiantamento</span></h3>'
+      +     '<button onclick="eqObraValeFechar()" class="text-white hover:bg-white/20 p-2 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>'
+      +   '</div>'
+      +   '<div class="p-5 overflow-y-auto flex-1 bg-slate-50">'
+      +     '<input type="hidden" id="eqvale-edit-id">'
+      +     '<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">'
+      +       '<div class="md:col-span-2" id="eqvale-colab-wrap"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Colaborador</label>'
+      +         '<select id="eqvale-pessoa" onchange="eqObraValeOnChange()" class="w-full p-2 border rounded-lg text-sm font-bold bg-slate-50">' + valePessoaSelectOptions(sel) + '</select></div>'
+      +       '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data</label><input type="date" id="eqvale-data" value="' + hojeISO() + '" class="w-full p-2 border rounded-lg text-sm font-bold bg-slate-50"></div>'
+      +       '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Valor (R$)</label><input type="number" step="0.01" min="0" id="eqvale-valor" placeholder="0,00" class="w-full p-2 border rounded-lg text-sm font-black bg-slate-50"></div>'
+      +       '<div class="md:col-span-2"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Observacao (opcional)</label><input type="text" id="eqvale-obs" placeholder="Ex: Adiantamento em dinheiro" class="w-full p-2 border rounded-lg text-sm bg-slate-50"></div>'
+      +       '<div class="md:col-span-2 flex justify-end"><button onclick="eqObraValeSalvar()" id="eqvale-save-btn" class="bg-rose-700 hover:bg-rose-800 text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2"><i data-lucide="save" class="w-4 h-4"></i> Lancar Vale</button></div>'
+      +     '</div>'
+      +     '<div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">'
+      +       '<div class="px-4 py-2 bg-slate-100 flex justify-between items-center">'
+      +         '<span class="text-xs font-bold text-slate-600 uppercase">Vales do colaborador</span>'
+      +         '<span class="text-xs font-black text-rose-700">Em aberto: <span id="eqvale-total-aberto">R$ 0,00</span></span>'
+      +       '</div>'
+      +       '<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-slate-50 text-slate-500 border-b"><tr>'
+      +         '<th class="p-2 text-left text-xs font-bold uppercase">Data</th>'
+      +         '<th class="p-2 text-center text-xs font-bold uppercase">Valor</th>'
+      +         '<th class="p-2 text-center text-xs font-bold uppercase">Em aberto</th>'
+      +         '<th class="p-2 text-center text-xs font-bold uppercase">Status</th>'
+      +         '<th class="p-2 text-center text-xs font-bold uppercase">Acoes</th>'
+      +       '</tr></thead><tbody id="eqvale-lista-body" class="divide-y"></tbody></table></div>'
+      +       '<div id="eqvale-sem-registros" class="p-6 text-center text-slate-400 text-sm hidden">Nenhum vale lancado.</div>'
+      +     '</div>'
+      +   '</div>'
+      + '</div>';
+    valeAbrir(html);
+    if (sel) { var wrap = el('eqvale-colab-wrap'); if (wrap) wrap.style.display = 'none'; }
+    eqObraValeRenderLista();
+  }
+
+  function eqObraValeOnChange() {
+    var parts = String(val('eqvale-pessoa') || '').split(':');
+    var c = parts[1] ? pessoaInfoVale(parts[0], parts[1]) : null;
+    var wrap = el('eqvale-colab-wrap');
+    if (wrap) wrap.style.display = c ? 'none' : '';
+    eqObraValeRenderLista();
+  }
+
+  function eqObraValeColabAtual() {
+    var parts = String(val('eqvale-pessoa') || '').split(':');
+    return parts[1] ? { pessoaTipo: parts[0], id: parts[1] } : null;
+  }
+
+  function eqObraValeRenderLista() {
+    var tbody = el('eqvale-lista-body');
+    if (!tbody) return;
+    var cur = eqObraValeColabAtual();
+    var campo = cur ? (cur.pessoaTipo === 'terceirizado' ? 'terceirizado_id' : 'equipe_id') : null;
+    var lista = (CACHE.vales || []).filter(function (v) {
+      if (String(v.status).toUpperCase() === 'ESTORNADO') return false;
+      if (!cur) return true;
+      return String(v[campo]) === String(cur.id);
+    });
+    lista.sort(function (a, b) { return String(b.data || '').localeCompare(String(a.data || '')); });
+    var totalAberto = 0;
+    var html = '';
+    lista.forEach(function (v) {
+      var aberto = Number(v.valor_aberto != null ? v.valor_aberto : v.valor || 0);
+      totalAberto += aberto;
+      var st = String(v.status).toUpperCase();
+      var badge = st === 'ABATIDO'
+        ? '<span class="px-2 py-1 rounded text-[9px] font-bold bg-green-100 text-green-700">ABATIDO</span>'
+        : '<span class="px-2 py-1 rounded text-[9px] font-bold bg-orange-100 text-orange-700">ABERTO</span>';
+      var podeEditar = aberto >= Number(v.valor || 0) - 0.005;
+      var acoes =
+        '<button onclick="eqObraValeRecibo(\'' + v.id + '\')" class="text-slate-500 hover:text-rose-700 p-1" title="Recibo"><i data-lucide="receipt" class="w-4 h-4"></i></button>'
+        + (podeEditar ? '<button onclick="eqObraValeEditar(\'' + v.id + '\')" class="text-slate-500 hover:text-blue-600 p-1" title="Editar"><i data-lucide="edit-3" class="w-4 h-4"></i></button>' : '')
+        + '<button onclick="eqObraValeEstornar(\'' + v.id + '\')" class="text-slate-500 hover:text-red-600 p-1" title="Estornar"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>';
+      html += '<tr class="hover:bg-slate-50' + (st === 'ABATIDO' ? ' opacity-70' : '') + '">'
+        + '<td class="p-2 text-xs font-bold text-slate-700">' + dataBR(v.data) + (cur ? '' : '<div class="text-[10px] font-normal text-slate-400">' + esc(nomeVale(v)) + '</div>') + '</td>'
+        + '<td class="p-2 text-center text-xs font-bold text-slate-700">' + money(v.valor) + '</td>'
+        + '<td class="p-2 text-center text-xs font-black text-rose-700">' + money(aberto) + '</td>'
+        + '<td class="p-2 text-center">' + badge + '</td>'
+        + '<td class="p-2 text-center"><div class="flex items-center justify-center gap-1">' + acoes + '</div></td></tr>';
+    });
+    tbody.innerHTML = html;
+    var sem = el('eqvale-sem-registros');
+    if (sem) sem.classList.toggle('hidden', lista.length > 0);
+    if (el('eqvale-total-aberto')) el('eqvale-total-aberto').textContent = money(totalAberto);
+    icons();
+  }
+
+  async function eqObraValeSalvar() {
+    var editId = val('eqvale-edit-id');
+    var parts = String(val('eqvale-pessoa') || '').split(':');
+    var origem = parts[0], id = parts[1];
+    var valor = Number(val('eqvale-valor')) || 0;
+    var data = val('eqvale-data') || hojeISO();
+    var obs = val('eqvale-obs') || '';
+    if (!id) return toast('Selecione o colaborador.', true);
+    if (!(valor > 0)) return toast('Informe um valor valido.', true);
+    var c = pessoaInfoVale(origem, id);
+    loading(true);
+    try {
+      if (editId) {
+        await A().atualizarVale(editId, { valor: valor, data: data, observacao: obs });
+        toast('Vale atualizado.');
+      } else {
+        await A().criarVale({
+          pessoa_tipo: origem,
+          equipe_id: origem === 'equipe' ? id : null,
+          terceirizado_id: origem === 'terceirizado' ? id : null,
+          nome: c ? c.nome : '',
+          valor: valor, data: data, observacao: obs,
+          obra_id: c ? c.obra_atual_id : null
+        });
+        toast('Vale lancado! Despesa criada como pendente no financeiro.');
+      }
+      await carregarDados();
+      var eId = el('eqvale-edit-id'); if (eId) eId.value = '';
+      var vEl = el('eqvale-valor'); if (vEl) vEl.value = '';
+      var oEl = el('eqvale-obs'); if (oEl) oEl.value = '';
+      var tEl = el('eqvale-title'); if (tEl) tEl.textContent = 'Lancar Vale / Adiantamento';
+      var bEl = el('eqvale-save-btn'); if (bEl) bEl.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Lancar Vale';
+      eqObraValeRenderLista();
+      eqObraRenderLista();
+      if (el('eqs-id')) eqObraSaldoRender();
+      if (el('eqm-id')) eqObraSaldoMetrosRender();
+    } catch (e) {
+      toast(e.message || e, true);
+    } finally { loading(false); }
+  }
+
+  function eqObraValeEditar(id) {
+    var v = (CACHE.vales || []).find(function (x) { return String(x.id) === String(id); });
+    if (!v) return toast('Vale nao encontrado.', true);
+    if (Number(v.valor_aberto != null ? v.valor_aberto : v.valor) < Number(v.valor || 0) - 0.005)
+      return toast('Vale ja utilizado em fechamento. Estorne o fechamento antes.', true);
+    var origem = v.terceirizado_id ? 'terceirizado' : 'equipe';
+    var pid = v.terceirizado_id || v.equipe_id;
+    if (!el('eqvale-edit-id')) eqObraValeAbrir();
+    var s = el('eqvale-pessoa');
+    if (s) s.value = origem + ':' + pid;
+    var wrap = el('eqvale-colab-wrap'); if (wrap) wrap.style.display = 'none';
+    el('eqvale-edit-id').value = v.id;
+    el('eqvale-data').value = String(v.data || '').slice(0, 10) || hojeISO();
+    el('eqvale-valor').value = v.valor;
+    el('eqvale-obs').value = v.observacao || '';
+    var t = el('eqvale-title'); if (t) t.textContent = 'Editar Vale / Adiantamento';
+    var btn = el('eqvale-save-btn'); if (btn) btn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Atualizar Vale';
+    eqObraValeRenderLista();
+    icons();
+  }
+
+  async function eqObraValeEstornar(id) {
+    var v = (CACHE.vales || []).find(function (x) { return String(x.id) === String(id); });
+    if (!v) return toast('Vale nao encontrado.', true);
+    if (String(v.status).toUpperCase() === 'ESTORNADO') return toast('Vale ja estornado.', true);
+    if (Number(v.valor_aberto != null ? v.valor_aberto : v.valor) < Number(v.valor || 0) - 0.005)
+      return toast('Vale ja utilizado em fechamento. Estorne o fechamento antes.', true);
+    var ok = await confirmar('Estornar o vale de ' + money(v.valor) + ' de ' + nomeVale(v) + '? A despesa sera cancelada no financeiro.', { danger: true, confirmText: 'Estornar' });
+    if (!ok) return;
+    loading(true);
+    try {
+      await A().estornarVale(id);
+      toast('Vale estornado.');
+      await carregarDados();
+      eqObraValeRenderLista();
+      eqObraRenderLista();
+      if (el('eqs-id')) eqObraSaldoRender();
+      if (el('eqm-id')) eqObraSaldoMetrosRender();
+    } catch (e) {
+      toast(e.message || e, true);
+    } finally { loading(false); }
+  }
+
+  function eqObraValeRecibo(id) {
+    var v = (CACHE.vales || []).find(function (x) { return String(x.id) === String(id); });
+    if (!v) return toast('Vale nao encontrado.', true);
+    var c = pessoaInfoVale(v.terceirizado_id ? 'terceirizado' : 'equipe', v.terceirizado_id || v.equipe_id) || {};
+    var emp = (typeof getCompany === 'function') ? getCompany() : { name: 'NEVOA' };
+    var nomeEmp = emp.name || emp.nome || 'NEVOA';
+    printRecibo(reciboPadrao({
+      titulo: 'Recibo de Vale / Adiantamento',
+      funcionario: c.nome || '',
+      doc: c.cpf || '',
+      obra: nomeObraPorId(v.obra_id || c.obra_atual_id),
+      periodo: dataBR(v.data),
+      linhas: [['Vale / Adiantamento', money(v.valor)], ['Em aberto', money(v.valor_aberto != null ? v.valor_aberto : v.valor)]],
+      valor: money(v.valor),
+      valorLabel: 'Valor do vale',
+      declaracao: 'Recebi de <b>' + esc(nomeEmp) + '</b> a importancia de <b>' + money(v.valor) + '</b>, a titulo de <b>vale / adiantamento</b>, que sera descontado no proximo fechamento de pagamento.' + (v.observacao ? ' Obs: ' + esc(v.observacao) : ''),
+      assinatura: c.nome || ''
+    }));
+  }
+
+  function eqObraSaldoVale() {
+    var funcId = val('eqs-id');
+    if (funcId) eqObraValeAbrir(funcId, 'equipe');
+  }
+  function eqObraSaldoMetrosVale() {
+    var tercId = val('eqm-id');
+    if (tercId) eqObraValeAbrir(tercId, 'terceirizado');
+  }
+
+  // Caixa-resumo de vales exibida dentro das modais de fechamento.
+  function eqObraValeResumo(containerId, pessoaTipo, id, bruto) {
+    var box = el(containerId);
+    var abertos = valesAbertosPessoa(pessoaTipo, id);
+    var sim = simularVales(abertos, bruto);
+    if (!box) return sim;
+    var linhas = abertos.map(function (v) {
+      return '<div class="flex justify-between text-xs py-0.5"><span class="text-slate-600">' + dataBR(v.data) + ' - Vale</span>'
+        + '<span class="font-bold text-rose-700">' + money(v.valor_aberto != null ? v.valor_aberto : v.valor) + '</span></div>';
+    }).join('') || '<div class="text-xs text-slate-400">Nenhum vale em aberto.</div>';
+    var totalAberto = somaVales(abertos);
+    box.innerHTML =
+      '<div class="border border-rose-200 bg-rose-50 rounded-xl p-3">'
+      + '<div class="flex items-center justify-between mb-1">'
+      +   '<span class="text-xs font-black text-rose-800 uppercase flex items-center gap-1"><i data-lucide="hand-coins" class="w-4 h-4"></i> Vales / Adiantamentos</span>'
+      +   '<button type="button" onclick="' + (pessoaTipo === 'terceirizado' ? 'eqObraSaldoMetrosVale()' : 'eqObraSaldoVale()') + '" class="text-[10px] bg-rose-700 hover:bg-rose-800 text-white px-2 py-1 rounded font-bold">+ Lancar Vale</button>'
+      + '</div>'
+      + linhas
+      + '<div class="border-t border-rose-200 mt-2 pt-2 text-xs">'
+      +   '<div class="flex justify-between"><span class="text-slate-600">Vales em aberto:</span><span class="font-bold text-rose-700">' + money(totalAberto) + '</span></div>'
+      +   '<div class="flex justify-between"><span class="text-slate-600">Abatimento neste fechamento:</span><span class="font-bold text-rose-700">- ' + money(sim.total) + '</span></div>'
+      +   '<div class="flex justify-between text-sm"><span class="font-bold text-slate-700">Liquido a pagar:</span><span class="font-black text-green-700">' + money(sim.liquido) + '</span></div>'
+      + '</div></div>';
+    icons();
+    return sim;
+  }
+
   // ---------- Saldo Diaria ----------
   function eqObraSaldo(id, origem) {
     if (origem === 'terceirizado') return eqObraSaldoMetros(id);
@@ -472,8 +783,9 @@
       +     '<input id="eqs-aj-desc" type="text" placeholder="Justificativa" class="p-2 border rounded-lg text-xs">'
       +     '<button onclick="eqObraSaldoAjuste()" class="bg-indigo-600 text-white rounded-lg font-bold text-xs">Lancar</button>'
       +   '</div></div>'
+      + '<div id="eqs-vale-box" class="mb-3"></div>'
       + '<div class="flex items-center justify-between flex-wrap gap-2 border-t pt-3">'
-      +   '<div>Diarias: <b id="eqs-tot" class="text-indigo-700">0.00</b> - Valor: <b id="eqs-val" class="text-green-600">R$ 0,00</b></div>'
+      +   '<div class="text-xs">Diarias: <b id="eqs-tot" class="text-indigo-700">0.00</b> &middot; Bruto: <b id="eqs-bruto" class="text-slate-700">R$ 0,00</b> &middot; Vales abatidos: <b id="eqs-vales" class="text-rose-600">R$ 0,00</b> &middot; Liquido: <b id="eqs-val" class="text-green-600">R$ 0,00</b></div>'
       +   '<div class="flex gap-2">'
       +     '<button onclick="eqObraSaldoRecibo()" class="bg-slate-700 text-white px-3 py-2 rounded-lg font-bold text-xs">Recibo</button>'
       +     '<button onclick="eqObraSaldoEstornar()" class="bg-amber-600 text-white px-3 py-2 rounded-lg font-bold text-xs">Estornar ultimo</button>'
@@ -521,8 +833,12 @@
     var lista = el('eqs-lista');
     if (lista) lista.innerHTML = '<table class="w-full"><thead class="bg-slate-100"><tr class="text-left text-slate-500 text-[10px] uppercase"><th class="p-2">Dia</th><th class="p-2">Marcacoes</th><th class="p-2 text-center">Fracao</th><th class="p-2 text-center">Status</th><th class="p-2 text-center">Acoes</th></tr></thead><tbody>'
       + (linhas || '<tr><td colspan="5" class="p-4 text-center text-slate-400 text-xs">Sem registros no periodo.</td></tr>') + '</tbody></table>';
+    var bruto = total * Number(c.valor_diaria || 0);
+    var sim = eqObraValeResumo('eqs-vale-box', 'equipe', funcId, bruto);
     if (el('eqs-tot')) el('eqs-tot').textContent = total.toFixed(2);
-    if (el('eqs-val')) el('eqs-val').textContent = money(total * Number(c.valor_diaria || 0));
+    if (el('eqs-bruto')) el('eqs-bruto').textContent = money(bruto);
+    if (el('eqs-vales')) el('eqs-vales').textContent = money(sim.total);
+    if (el('eqs-val')) el('eqs-val').textContent = money(sim.liquido);
   }
 
   async function eqObraSaldoBatida(tipo) {
@@ -573,18 +889,25 @@
     if (!c) return;
     var calc = calcDiaria(funcId, ini, fim);
     if (calc.diarias <= 0) return toast('Nada a fechar neste periodo.', true);
-    var valor = calc.diarias * Number(c.valor_diaria || 0);
+    var bruto = calc.diarias * Number(c.valor_diaria || 0);
+    var sim = simularVales(valesAbertosPessoa('equipe', funcId), bruto);
+    var valor = sim.liquido;
     var per = dataBR(ini) + ' a ' + dataBR(fim);
-    var ok = await confirmar('Fechar ' + calc.diarias.toFixed(2) + ' diarias = ' + money(valor) + '? Gera despesa no financeiro.', { confirmText: 'Fechar' });
+    var msg = 'Fechar ' + calc.diarias.toFixed(2) + ' diarias = ' + money(bruto);
+    if (sim.total > 0) msg += ' - vales ' + money(sim.total) + ' = ' + money(valor);
+    msg += '? Gera despesa no financeiro.';
+    var ok = await confirmar(msg, { confirmText: 'Fechar' });
     if (!ok) return;
     loading(true);
     try {
+      var obs = 'Periodo ' + per + ' - ' + calc.diarias.toFixed(2) + ' diarias';
+      if (sim.total > 0) obs += ' | Bruto ' + money(bruto) + ' - vales ' + money(sim.total) + ' = ' + money(valor);
       var chain = await A().insertDespesaComLog({
         item: 'DIARIA OBRA',
         equipe_id: c.id,
         fornecedor: c.nome,
         custo: valor,
-        observacao: 'Periodo ' + per + ' - ' + calc.diarias.toFixed(2) + ' diarias',
+        observacao: obs,
         status: 'PENDENTE',
         obra_id: c.obra_atual_id || null,
         categoria: 'ponto'
@@ -599,6 +922,10 @@
         await A().estornarDespesaPorUid(chain.despesa.uid);
         loading(false);
         return toast('Fechamento desfeito: ' + upd.error.message, true);
+      }
+      if (sim.itens.length) {
+        try { await A().registrarAbatimentosVale(chain.despesa.uid, sim.itens); }
+        catch (ve) { toast('Fechado, mas falhou ao abater os vales: ' + (ve.message || ve), true); }
       }
       toast('Periodo fechado. Despesa e log gerados.');
       await carregarDados();
@@ -627,6 +954,7 @@
       var upd = await sb.from('ponto_diario').update({ pago_em_fechamento: false, fechamento_uid: null, despesa_uid: null })
         .eq('fechamento_uid', d.uid);
       if (upd.error) throw upd.error;
+      await A().reverterAbatimentosVale(d.uid);
       toast('Fechamento estornado. Batidas reabertas.');
       await carregarDados();
       eqObraSaldoRender();
@@ -642,18 +970,22 @@
     if (!c) return;
     var total = val('eqs-tot') || '0';
     var valor = el('eqs-val') ? el('eqs-val').textContent : '';
+    var valesSum = somaVales(valesAbertosPessoa('equipe', funcId));
     var emp = (typeof getCompany === 'function') ? getCompany() : { name: 'NEVOA' };
     var nomeEmp = emp.name || emp.nome || 'NEVOA';
+    var linhas = [['Diarias', total], ['Valor da diaria', money(c.valor_diaria || 0)]];
+    if (valesSum > 0) linhas.push(['Vales (adiantamentos)', '- ' + money(valesSum)]);
     printRecibo(reciboPadrao({
       titulo: 'Recibo de Diarias',
       funcionario: c.nome || '',
       doc: c.cpf || '',
       obra: nomeObraPorId(c.obra_atual_id),
       periodo: periodoTexto('eqs-ini', 'eqs-fim'),
-      linhas: [['Diarias', total], ['Valor da diaria', money(c.valor_diaria || 0)]],
+      linhas: linhas,
       valor: valor,
-      valorLabel: 'Total a receber',
-      declaracao: 'Recebi de <b>' + esc(nomeEmp) + '</b> a importancia de <b>' + esc(valor) + '</b>, referente a <b>' + esc(total) + ' diarias</b>, com a diaria acordada em <b>' + money(c.valor_diaria || 0) + '</b>.',
+      valorLabel: valesSum > 0 ? 'Liquido a receber' : 'Total a receber',
+      declaracao: 'Recebi de <b>' + esc(nomeEmp) + '</b> a importancia de <b>' + esc(valor) + '</b>, referente a <b>' + esc(total) + ' diarias</b>, com a diaria acordada em <b>' + money(c.valor_diaria || 0) + '</b>'
+        + (valesSum > 0 ? ', ja descontados <b>' + money(valesSum) + '</b> de vales/adiantamentos' : '') + '.',
       assinatura: c.nome || ''
     }));
   }
@@ -702,8 +1034,9 @@
       +     '<input id="eqm-aj-desc" type="text" placeholder="Justificativa" class="p-2 border rounded-lg text-xs">'
       +     '<button onclick="eqObraSaldoMetrosLancar()" class="bg-indigo-600 text-white rounded-lg font-bold text-xs">Lancar</button>'
       +   '</div></div>'
+      + '<div id="eqm-vale-box" class="mb-3"></div>'
       + '<div class="flex items-center justify-between flex-wrap gap-2 border-t pt-3">'
-      +   '<div>Metros: <b id="eqm-tot" class="text-indigo-700">0.00</b> - Valor: <b id="eqm-val" class="text-green-600">R$ 0,00</b></div>'
+      +   '<div class="text-xs">Metros: <b id="eqm-tot" class="text-indigo-700">0.00</b> &middot; Bruto: <b id="eqm-bruto" class="text-slate-700">R$ 0,00</b> &middot; Vales abatidos: <b id="eqm-vales" class="text-rose-600">R$ 0,00</b> &middot; Liquido: <b id="eqm-val" class="text-green-600">R$ 0,00</b></div>'
       +   '<div class="flex gap-2">'
       +     '<button onclick="eqObraSaldoMetrosRecibo()" class="bg-slate-700 text-white px-3 py-2 rounded-lg font-bold text-xs">Recibo</button>'
       +     '<button onclick="eqObraSaldoMetrosEstornar()" class="bg-amber-600 text-white px-3 py-2 rounded-lg font-bold text-xs">Estornar ultimo</button>'
@@ -734,8 +1067,12 @@
     var lista = el('eqm-lista');
     if (lista) lista.innerHTML = '<table class="w-full"><thead class="bg-slate-100"><tr class="text-left text-slate-500 text-[10px] uppercase"><th class="p-2">Data</th><th class="p-2 text-center">Metros</th><th class="p-2 text-center">Status</th><th class="p-2 text-center">Acoes</th></tr></thead><tbody>'
       + (linhas || '<tr><td colspan="4" class="p-4 text-center text-slate-400 text-xs">Sem registros.</td></tr>') + '</tbody></table>';
+    var bruto = total * Number(t.valor_metro || 0);
+    var sim = eqObraValeResumo('eqm-vale-box', 'terceirizado', tercId, bruto);
     if (el('eqm-tot')) el('eqm-tot').textContent = total.toFixed(2);
-    if (el('eqm-val')) el('eqm-val').textContent = money(total * Number(t.valor_metro || 0));
+    if (el('eqm-bruto')) el('eqm-bruto').textContent = money(bruto);
+    if (el('eqm-vales')) el('eqm-vales').textContent = money(sim.total);
+    if (el('eqm-val')) el('eqm-val').textContent = money(sim.liquido);
   }
 
   async function eqObraSaldoMetrosLancar() {
@@ -769,16 +1106,23 @@
     var regs = calc.registros.filter(function (p) { return p.status !== 'PAGO'; });
     var metros = regs.reduce(function (s, p) { return s + Number(p.metros || 0); }, 0);
     if (metros <= 0) return toast('Nada pendente.', true);
-    var valor = metros * Number(t.valor_metro || 0);
-    var ok = await confirmar('Fechar ' + metros.toFixed(2) + ' m = ' + money(valor) + '?', { confirmText: 'Fechar' });
+    var bruto = metros * Number(t.valor_metro || 0);
+    var desc = simularVales(valesAbertosPessoa('terceirizado', tercId), bruto);
+    var valor = desc.liquido;
+    var msg = 'Fechar ' + metros.toFixed(2) + ' m = ' + money(bruto);
+    if (desc.total > 0) msg += ' - vales ' + money(desc.total) + ' = ' + money(valor);
+    msg += '?';
+    var ok = await confirmar(msg, { confirmText: 'Fechar' });
     if (!ok) return;
     loading(true);
     try {
+      var obs = 'Producao ' + metros.toFixed(2) + ' m - ' + t.nome;
+      if (desc.total > 0) obs += ' | Bruto ' + money(bruto) + ' - vales ' + money(desc.total) + ' = ' + money(valor);
       var chain = await A().insertDespesaComLog({
         item: 'TERCEIRIZADO',
         fornecedor: t.nome,
         custo: valor,
-        observacao: 'Producao ' + metros.toFixed(2) + ' m - ' + t.nome,
+        observacao: obs,
         status: 'PENDENTE',
         obra_id: t.obra_atual_id || null,
         categoria: 'terceirizado'
@@ -793,6 +1137,10 @@
         await A().estornarDespesaPorUid(chain.despesa.uid);
         loading(false);
         return toast('Pagamento desfeito: ' + upd.error.message, true);
+      }
+      if (desc.itens.length) {
+        try { await A().registrarAbatimentosVale(chain.despesa.uid, desc.itens); }
+        catch (ve) { toast('Fechado, mas falhou ao abater os vales: ' + (ve.message || ve), true); }
       }
       toast('Producao paga. Despesa e log gerados.');
       await carregarDados();
@@ -821,6 +1169,7 @@
       var upd = await sb.from('producao_terc').update({ status: 'PENDENTE', fechamento_uid: null, despesa_uid: null })
         .eq('fechamento_uid', d.uid).eq('status', 'PAGO');
       if (upd.error) throw upd.error;
+      await A().reverterAbatimentosVale(d.uid);
       toast('Pagamento estornado. Metros reabertos.');
       await carregarDados();
       eqObraSaldoMetrosRender();
@@ -838,16 +1187,20 @@
     var nomeEmp = emp.name || emp.nome || 'NEVOA';
     var valor = el('eqm-val') ? el('eqm-val').textContent : '';
     var total = el('eqm-tot') ? el('eqm-tot').textContent : '0';
+    var valesSum = somaVales(valesAbertosPessoa('terceirizado', tercId));
+    var linhas = [['Metros', total], ['Valor do metro', money(t.valor_metro || 0)]];
+    if (valesSum > 0) linhas.push(['Vales (adiantamentos)', '- ' + money(valesSum)]);
     printRecibo(reciboPadrao({
       titulo: 'Recibo de Metragem',
       funcionario: t.nome || '',
       doc: t.cpf_cnpj || '',
       obra: nomeObraPorId(t.obra_atual_id),
       periodo: periodoTexto('eqm-ini', 'eqm-fim'),
-      linhas: [['Metros', total], ['Valor do metro', money(t.valor_metro || 0)]],
+      linhas: linhas,
       valor: valor,
-      valorLabel: 'Total a receber',
-      declaracao: 'Recebi de <b>' + esc(nomeEmp) + '</b> a importancia de <b>' + esc(valor) + '</b>, referente a <b>' + esc(total) + ' metros</b>, ao valor de <b>' + money(t.valor_metro || 0) + '/m</b>.',
+      valorLabel: valesSum > 0 ? 'Liquido a receber' : 'Total a receber',
+      declaracao: 'Recebi de <b>' + esc(nomeEmp) + '</b> a importancia de <b>' + esc(valor) + '</b>, referente a <b>' + esc(total) + ' metros</b>, ao valor de <b>' + money(t.valor_metro || 0) + '/m</b>'
+        + (valesSum > 0 ? ', ja descontados <b>' + money(valesSum) + '</b> de vales/adiantamentos' : '') + '.',
       assinatura: t.nome || ''
     }));
   }
@@ -1287,61 +1640,136 @@
     printDoc({ title: 'Planilha de Checagem', meta: dataBR(hojeISO()), subtitle: 'Periodo: <b>' + esc(per) + '</b>', body: body });
   }
 
-  // ---------- Folha + PIX ----------
+  // ---------- Folha + PIX (padrao RV) ----------
   async function eqObraFolhaAbrir() {
+    var obras = CACHE.obras.map(function (o) { return '<option value="' + escAttr(o.id) + '">' + esc(o.nome) + '</option>'; }).join('');
     var html = ''
       + '<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">'
       +   '<div><label class="text-[10px] font-bold text-slate-500 uppercase">Status</label>'
       +   '<select id="eqfolha-status" class="w-full p-2 border rounded-lg text-sm"><option value="PENDENTE">Pendentes</option><option value="PAGO">Pagos</option><option value="TODOS">Todos</option></select></div>'
+      +   '<div><label class="text-[10px] font-bold text-slate-500 uppercase">Obra</label>'
+      +   '<select id="eqfolha-obra" class="w-full p-2 border rounded-lg text-sm"><option value="">Todas as obras</option>' + obras + '</select></div>'
       +   '<div><label class="text-[10px] font-bold text-slate-500 uppercase">Inicio</label><input id="eqfolha-ini" type="date" value="' + firstDay() + '" class="w-full p-2 border rounded-lg text-sm"></div>'
       +   '<div><label class="text-[10px] font-bold text-slate-500 uppercase">Fim</label><input id="eqfolha-fim" type="date" value="' + lastDay() + '" class="w-full p-2 border rounded-lg text-sm"></div>'
-      +   '<div class="flex items-end"><button onclick="eqObraFolhaImprimir()" class="w-full bg-blue-700 text-white py-2 rounded-lg font-bold">Gerar e imprimir</button></div>'
       + '</div>'
-      + '<p class="text-xs text-slate-500">Lista os fechamentos (despesas de mao de obra) no periodo, com a chave PIX de cada colaborador.</p>';
-    abrirModal(html, 'Folha de Pagamento', 'max-w-xl');
+      + '<div class="flex justify-end mb-2"><button onclick="eqObraFolhaImprimir()" class="bg-blue-700 hover:bg-blue-800 text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2"><i data-lucide="printer" class="w-4 h-4"></i> Gerar e imprimir</button></div>'
+      + '<p class="text-xs text-slate-500">Agrupa os fechamentos de mao de obra por colaborador, com PIX, valor bruto, vales abatidos e liquido a pagar.</p>';
+    abrirModal(html, 'Folha de Pagamento', 'max-w-2xl');
   }
 
   async function eqObraFolhaImprimir() {
     var status = val('eqfolha-status') || 'PENDENTE';
+    var obraF = val('eqfolha-obra') || '';
     var ini = val('eqfolha-ini');
     var fim = val('eqfolha-fim');
-    var q = sb.from('despesas').select('id,uid,item,custo,observacao,data,status,equipe_id,fornecedor,categoria')
+    var q = sb.from('despesas').select('uid,item,custo,observacao,data,status,equipe_id,fornecedor,categoria,obra_id')
       .in('categoria', ['ponto', 'terceirizado', 'empreita']).neq('status', 'ESTORNADO');
     if (status !== 'TODOS') q = q.eq('status', status);
-    var res = await q.order('data', { ascending: false });
+    var res = await q.order('data', { ascending: true });
     if (res.error) return toast(res.error.message, true);
     var rows = (res.data || []).filter(function (d) {
       var dia = String(d.data || '').slice(0, 10);
       if (ini && dia < ini) return false;
       if (fim && dia > fim) return false;
+      if (obraF && String(d.obra_id || '') !== String(obraF)) return false;
       return true;
     });
     if (!rows.length) return toast('Nenhum registro com os filtros.', true);
+
+    var uids = rows.map(function (d) { return d.uid; }).filter(Boolean);
+    var abat = {};
+    if (uids.length) {
+      var ab = await sb.from('obra_vale_abatimentos').select('fechamento_uid,valor').in('fechamento_uid', uids);
+      if (!ab.error) (ab.data || []).forEach(function (a) { abat[a.fechamento_uid] = (abat[a.fechamento_uid] || 0) + Number(a.valor || 0); });
+    }
+
     var cols = colaboradores();
-    var emp = (typeof getCompany === 'function') ? getCompany() : { name: 'NEVOA' };
-    var per = (ini || fim) ? (dataBR(ini) + ' a ' + dataBR(fim)) : 'Todos os periodos';
-    var soma = 0;
-    var P = window.obraPrint;
-    var linhas = rows.map(function (d) {
+    var grupos = {};
+    var ordem = [];
+    rows.forEach(function (d) {
       var c = cols.find(function (x) {
         if (d.equipe_id != null && x.origem === 'equipe') return String(x.id) === String(d.equipe_id);
-        return d.fornecedor && x.nome === d.fornecedor;
+        return x.origem === 'terceirizado' && d.fornecedor && x.nome === d.fornecedor;
       });
-      var pix = c ? (c.chave_pix || 'Nao informado') : 'Nao informado';
-      soma += Number(d.custo || 0);
-      var tipo = d.categoria === 'ponto' ? 'Diaria' : (d.categoria === 'empreita' ? 'Empreita' : 'Metro');
-      return [
-        '<b>' + esc((d.fornecedor || '-').toUpperCase()) + '</b><div style="font-size:11px;color:#1d4ed8">PIX: ' + esc(pix) + '</div>',
-        tipo, esc(d.observacao || ''), money(d.custo)
-      ];
+      var vales = abat[d.uid] || 0;
+      var bruto = Number(d.custo || 0) + vales;
+      var unit = c ? Number((d.categoria === 'empreita' ? c.valor_contrato : c.valor_base) || 0) : 0;
+      var tipo, unidade, qtd;
+      if (d.categoria === 'ponto') { tipo = 'Diaria'; unidade = 'dias'; qtd = unit > 0 ? bruto / unit : 0; }
+      else if (d.categoria === 'empreita') { tipo = 'Empreita'; unidade = '%'; qtd = unit > 0 ? (bruto / unit) * 100 : 0; }
+      else { tipo = 'Metro'; unidade = 'm'; qtd = unit > 0 ? bruto / unit : 0; }
+      var chave = d.equipe_id != null ? ('e:' + d.equipe_id) : ('t:' + (c ? c.id : (d.fornecedor || '?')));
+      if (!grupos[chave]) {
+        grupos[chave] = {
+          nome: c ? c.nome : (d.fornecedor || '-'),
+          pix: c ? (c.chave_pix || 'Nao informado') : 'Nao informado',
+          tipo: tipo, unidade: unidade, unit: unit, qtd: 0, bruto: 0, vales: 0, total: 0
+        };
+        ordem.push(chave);
+      }
+      var g = grupos[chave];
+      g.qtd += qtd;
+      g.bruto += bruto;
+      g.vales += vales;
+      g.total += Number(d.custo || 0);
+      if (unit > 0) g.unit = unit;
     });
-    var body = P ? P.table(
-      [{ label: 'Funcionario / PIX' }, { label: 'Tipo', align: 'center' }, { label: 'Referencia' }, { label: 'Valor', align: 'right' }],
-      linhas
-    ) + '<div style="display:flex;justify-content:space-between;border:1px solid #000;border-top:none;padding:10px;background:#fef2f2;font-weight:bold;font-size:14px;">'
-      + '<span>TOTAL</span><span>' + money(soma) + '</span></div>' : '';
+    ordem.sort(function (a, b) { return grupos[a].nome.localeCompare(grupos[b].nome); });
+
+    var P = window.obraPrint || {};
+    var comp = P.company ? P.company() : ((typeof getCompany === 'function') ? getCompany() : {});
+    var logo = comp.logoUrl || comp.logo || 'logo.png';
+    var nomeEmp = comp.nome || comp.name || 'NEVOA';
+    var per = (ini || fim) ? (dataBR(ini) + ' a ' + dataBR(fim)) : 'Todos os periodos';
+    var statusTxt = status === 'PENDENTE' ? 'PENDENTES (NAO BAIXADOS)' : (status === 'PAGO' ? 'PAGOS' : 'TODOS');
+    var somaBruto = 0, somaVales = 0, somaGeral = 0;
+    var linhas = ordem.map(function (k) {
+      var g = grupos[k];
+      somaBruto += g.bruto; somaVales += g.vales; somaGeral += g.total;
+      return '<tr>'
+        + '<td style="padding:10px;border:1px solid #cbd5e1;">'
+        +   '<div style="font-weight:800;">' + esc(g.nome.toUpperCase()) + '</div>'
+        +   '<div style="font-size:11px;color:#1d4ed8;margin-top:4px;"><span style="color:#64748b;">PIX:</span> ' + esc(g.pix) + '</div></td>'
+        + '<td style="padding:10px;border:1px solid #cbd5e1;text-align:center;">' + esc(g.tipo) + '</td>'
+        + '<td style="padding:10px;border:1px solid #cbd5e1;text-align:center;font-weight:bold;">' + g.qtd.toFixed(2) + ' ' + esc(g.unidade) + '</td>'
+        + '<td style="padding:10px;border:1px solid #cbd5e1;text-align:center;">' + money(g.unit) + '</td>'
+        + '<td style="padding:10px;border:1px solid #cbd5e1;text-align:right;">' + money(g.bruto) + '</td>'
+        + '<td style="padding:10px;border:1px solid #cbd5e1;text-align:right;color:#be123c;">' + (g.vales > 0 ? '- ' + money(g.vales) : money(0)) + '</td>'
+        + '<td style="padding:10px;border:1px solid #cbd5e1;text-align:right;font-weight:900;color:#1d4ed8;">' + money(g.total) + '</td>'
+        + '</tr>';
+    }).join('');
+
+    var html = '<div style="font-family:\'Segoe UI\',Arial,sans-serif;color:#1e293b;padding:30px;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #1d4ed8;padding-bottom:15px;margin-bottom:25px;">'
+      +   '<img src="' + esc(logo) + '" style="height:70px;" onerror="this.style.display=\'none\';" />'
+      +   '<div style="text-align:right;">'
+      +     '<h1 style="margin:0;font-size:24px;font-weight:900;">FOLHA DE PAGAMENTOS</h1>'
+      +     '<p style="margin:5px 0 0 0;font-size:14px;color:#1d4ed8;font-weight:bold;">Status: ' + esc(statusTxt) + '</p>'
+      +     '<p style="margin:2px 0 0 0;font-size:12px;">Periodo: ' + esc(per) + '</p>'
+      +   '</div>'
+      + '</div>'
+      + '<table width="100%" style="border-collapse:collapse;margin-bottom:30px;font-size:12px;">'
+      +   '<thead><tr style="background-color:#f1f5f9;">'
+      +     '<th style="padding:12px;border:1px solid #cbd5e1;text-align:left;">Funcionario / PIX</th>'
+      +     '<th style="padding:12px;border:1px solid #cbd5e1;text-align:center;">Tipo</th>'
+      +     '<th style="padding:12px;border:1px solid #cbd5e1;text-align:center;">Quantidade</th>'
+      +     '<th style="padding:12px;border:1px solid #cbd5e1;text-align:center;">Valor Unit.</th>'
+      +     '<th style="padding:12px;border:1px solid #cbd5e1;text-align:right;">Bruto</th>'
+      +     '<th style="padding:12px;border:1px solid #cbd5e1;text-align:right;">Vales</th>'
+      +     '<th style="padding:12px;border:1px solid #cbd5e1;text-align:right;">Valor Total</th>'
+      +   '</tr></thead><tbody>' + linhas + '</tbody></table>'
+      + '<div style="display:flex;justify-content:flex-end;margin-bottom:40px;">'
+      +   '<div style="width:340px;background-color:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:20px;">'
+      +     '<div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-weight:bold;">TOTAL BRUTO:</span><span style="font-weight:900;color:#334155;">' + money(somaBruto) + '</span></div>'
+      +     '<div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-weight:bold;">TOTAL VALES:</span><span style="font-weight:900;color:#be123c;">- ' + money(somaVales) + '</span></div>'
+      +     '<div style="display:flex;justify-content:space-between;border-top:1px solid #e2e8f0;padding-top:6px;"><span style="font-weight:bold;">TOTAL LIQUIDO:</span><span style="font-weight:900;color:#b91c1c;font-size:18px;">' + money(somaGeral) + '</span></div>'
+      +   '</div>'
+      + '</div>'
+      + '<div style="text-align:center;font-size:10px;color:#94a3b8;margin-top:40px;border-top:1px dashed #e2e8f0;padding-top:15px;">Emitido em ' + dataBR(hojeISO()) + ' - ' + esc(nomeEmp) + '</div>'
+      + '</div>';
     fecharModal();
-    printDoc({ title: 'Folha de Pagamentos', meta: dataBR(hojeISO()), subtitle: 'Periodo: <b>' + esc(per) + '</b> &middot; Situacao: <b>' + esc(status) + '</b>', body: body });
+    if (P.print) P.print(html);
+    else { var pa = el('print-area'); if (pa) { pa.innerHTML = html; setTimeout(function () { window.print(); }, 300); } }
   }
 
   // ---------- Contrato terceirizado ----------
@@ -1388,6 +1816,16 @@
   window.eqObraSaldoEstornar = eqObraSaldoEstornar;
   window.eqObraExcluirLancamento = eqObraExcluirLancamento;
   window.eqObraSaldoRecibo = eqObraSaldoRecibo;
+  window.eqObraValeAbrir = eqObraValeAbrir;
+  window.eqObraValeSalvar = eqObraValeSalvar;
+  window.eqObraValeFechar = eqObraValeFechar;
+  window.eqObraValeOnChange = eqObraValeOnChange;
+  window.eqObraValeEditar = eqObraValeEditar;
+  window.eqObraValeEstornar = eqObraValeEstornar;
+  window.eqObraValeRecibo = eqObraValeRecibo;
+  window.eqObraValeResumo = eqObraValeResumo;
+  window.eqObraSaldoVale = eqObraSaldoVale;
+  window.eqObraSaldoMetrosVale = eqObraSaldoMetrosVale;
   window.eqObraSaldoMetros = eqObraSaldoMetros;
   window.eqObraSaldoMetrosRender = eqObraSaldoMetrosRender;
   window.eqObraSaldoMetrosLancar = eqObraSaldoMetrosLancar;

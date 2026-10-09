@@ -32,6 +32,7 @@
       +     '<button onclick="mobObraBater(\'SAIDA\')" class="bg-slate-700 text-white py-3 rounded-xl font-black">Saida</button>'
       +   '</div>'
       +   '<button onclick="mobObraAjuste()" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold">Ajuste 0,5 / 1,0</button>'
+      +   '<button onclick="mobObraValeDoPonto()" class="w-full bg-rose-700 text-white py-3 rounded-xl font-bold">Lancar vale / adiantamento</button>'
       +   '<div id="mob-ponto-resumo" class="text-sm text-slate-600 bg-white p-3 rounded-xl border"></div>'
       +   '<div id="mob-ponto-lista" class="flex flex-col gap-2 pb-8"></div>'
       + '</div>';
@@ -54,8 +55,11 @@
     var diarias = (typeof rvCalcularTotalDiarias === 'function') ? rvCalcularTotalDiarias(regs) : 0;
     var func = (await sb.from('equipe').select('valor_diaria,nome').eq('id', funcId).single()).data || {};
     var valor = diarias * Number(func.valor_diaria || 0);
+    var vales = await A().valesAbertos('equipe', funcId);
+    var valesSum = (A().somaVales ? A().somaVales(vales) : 0);
     var resumo = document.getElementById('mob-ponto-resumo');
-    if (resumo) resumo.innerHTML = 'Mes: <b>' + diarias.toFixed(2) + '</b> diarias · <b>' + A().money(valor) + '</b>';
+    if (resumo) resumo.innerHTML = 'Mes: <b>' + diarias.toFixed(2) + '</b> diarias · <b>' + A().money(valor) + '</b>'
+      + (valesSum > 0 ? ' · Vales abertos: <b class="text-rose-600">' + A().money(valesSum) + '</b>' : '');
     var lista = document.getElementById('mob-ponto-lista');
     if (!lista) return;
     lista.innerHTML = regs.length ? regs.slice(0, 40).map(function (r) {
@@ -270,6 +274,7 @@
       +     '<button class="w-full bg-emerald-600 text-white py-3 rounded-xl font-black">Lancar metros</button>'
       +   '</form>'
       +   '<div id="mob-metros-resumo" class="text-sm bg-white p-3 rounded-xl border"></div>'
+      +   '<button onclick="mobObraValeDosMetros()" class="w-full bg-rose-700 text-white py-3 rounded-xl font-bold">Lancar vale / adiantamento</button>'
       +   '<button id="mob-metros-pagar" onclick="mobObraFecharMetros()" class="hidden w-full bg-blue-700 text-white py-3 rounded-xl font-black">Fechar pendente</button>'
       +   '<div id="mob-metros-lista" class="flex flex-col gap-2 pb-8"></div>'
       + '</div>';
@@ -288,12 +293,16 @@
     var pendentes = rows.filter(function (p) { return p.status !== 'PAGO' && p.status !== 'ESTORNADO'; });
     var metrosPend = pendentes.reduce(function (s, p) { return s + Number(p.metros || 0); }, 0);
     var valorPend = metrosPend * Number(t.valor_metro || 0);
+    var vales = await A().valesAbertos('terceirizado', tercId);
+    var valesSum = (A().somaVales ? A().somaVales(vales) : 0);
+    var liquido = Math.max(0, valorPend - valesSum);
     var resumo = document.getElementById('mob-metros-resumo');
-    if (resumo) resumo.innerHTML = 'Valor/m <b>' + A().money(t.valor_metro) + '</b> · Pendente <b>' + metrosPend.toFixed(2) + ' m</b> = <b>' + A().money(valorPend) + '</b>';
+    if (resumo) resumo.innerHTML = 'Valor/m <b>' + A().money(t.valor_metro) + '</b> · Pendente <b>' + metrosPend.toFixed(2) + ' m</b> = <b>' + A().money(valorPend) + '</b>'
+      + (valesSum > 0 ? ' · Vales <b class="text-rose-600">' + A().money(valesSum) + '</b> · Liquido <b>' + A().money(liquido) + '</b>' : '');
     var btn = document.getElementById('mob-metros-pagar');
     if (btn) {
       btn.classList.toggle('hidden', valorPend <= 0);
-      btn.textContent = 'Fechar pendente (' + A().money(valorPend) + ')';
+      btn.textContent = 'Fechar pendente (' + A().money(liquido) + ')';
     }
     var lista = document.getElementById('mob-metros-lista');
     if (!lista) return;
@@ -342,15 +351,18 @@
     var prod = await sb.from('producao_terc').select('*').eq('terceirizado_id', tercId).eq('status', 'PENDENTE');
     var rows = prod.data || [];
     var metros = rows.reduce(function (s, p) { return s + Number(p.metros || 0); }, 0);
-    var valor = metros * Number(t.valor_metro || 0);
-    if (valor <= 0) return toast('Nada pendente.', true);
+    var bruto = metros * Number(t.valor_metro || 0);
+    if (bruto <= 0) return toast('Nada pendente.', true);
+    var sim = A().simularAbatimentos(await A().valesAbertos('terceirizado', tercId), bruto);
     var obraId = (A().obraMaisFrequente && A().obraMaisFrequente(rows)) || t.obra_atual_id || null;
     try {
+      var obs = 'Producao ' + metros.toFixed(2) + ' m - ' + t.nome;
+      if (sim.total > 0) obs += ' | Bruto ' + A().money(bruto) + ' - vales ' + A().money(sim.total) + ' = ' + A().money(sim.liquido);
       var chain = await A().insertDespesaComLog({
         item: 'TERCEIRIZADO',
         fornecedor: t.nome,
-        custo: valor,
-        observacao: 'Producao ' + metros.toFixed(2) + ' m - ' + t.nome,
+        custo: sim.liquido,
+        observacao: obs,
         status: 'PENDENTE',
         obra_id: obraId,
         categoria: 'terceirizado'
@@ -364,6 +376,10 @@
       if (upd.error) {
         await A().estornarDespesaPorUid(chain.despesa.uid);
         return toast('Pagamento desfeito: falha ao vincular producao. ' + upd.error.message, true);
+      }
+      if (sim.itens.length) {
+        try { await A().registrarAbatimentosVale(chain.despesa.uid, sim.itens); }
+        catch (ve) { toast('Fechado, mas falhou ao abater os vales: ' + (ve.message || ve), true); }
       }
       toast('Producao paga. Despesa e log gerados.');
       mobObraCarregarMetros();
@@ -394,11 +410,109 @@
         despesa_uid: null
       }).eq('fechamento_uid', uid).eq('status', 'PAGO');
       if (upd.error) throw upd.error;
+      await A().reverterAbatimentosVale(uid);
       toast('Pagamento estornado. Metros reabertos.');
       mobObraCarregarMetros();
     } catch (e) {
       toast(e.message || e, true);
     }
+  }
+
+  // ---------- Vales / adiantamentos ----------
+  function mobObraValeFechar() {
+    var m = document.getElementById('mob-vale-modal');
+    if (m) m.remove();
+  }
+
+  async function mobObraValeAbrir(pessoaTipo, id, nome) {
+    if (!id) return toast('Selecione o colaborador.', true);
+    mobObraValeFechar();
+    var abertos = [];
+    try { abertos = await A().valesAbertos(pessoaTipo, id); } catch (e) { abertos = []; }
+    var totalAberto = A().somaVales ? A().somaVales(abertos) : 0;
+    var listaHtml = abertos.length ? abertos.map(function (v) {
+      return '<div class="flex justify-between items-center border-b py-1.5">'
+        + '<div><p class="text-xs font-bold text-slate-700">' + A().dataBR(v.data) + '</p>'
+        + '<p class="text-[10px] text-slate-400">' + A().esc(v.observacao || 'Vale / Adiantamento') + '</p></div>'
+        + '<div class="text-right"><p class="text-sm font-black text-rose-700">' + A().money(v.valor_aberto != null ? v.valor_aberto : v.valor) + '</p>'
+        + '<button onclick="mobObraValeEstornar(\'' + v.id + '\')" class="text-red-600 text-[10px] font-bold">Estornar</button></div>'
+        + '</div>';
+    }).join('') : '<p class="text-center text-slate-400 text-xs py-3">Nenhum vale em aberto.</p>';
+    var m = document.createElement('div');
+    m.id = 'mob-vale-modal';
+    m.className = 'fixed inset-0 bg-black/60 z-[70] flex items-end sm:items-center justify-center p-3 no-print';
+    m.innerHTML = ''
+      + '<div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">'
+      +   '<div class="bg-rose-700 p-4 text-white flex justify-between items-center shrink-0">'
+      +     '<h3 class="font-black">Vale / Adiantamento</h3>'
+      +     '<button onclick="mobObraValeFechar()" class="text-white text-2xl leading-none">&times;</button></div>'
+      +   '<div class="p-4 space-y-3 overflow-y-auto">'
+      +     '<div class="text-xs text-slate-500">' + A().esc(nome || '') + ' · Em aberto: <b class="text-rose-700">' + A().money(totalAberto) + '</b></div>'
+      +     '<input id="mob-vale-valor" type="number" step="0.01" min="0.01" placeholder="Valor (R$)" class="w-full p-3 border rounded-xl">'
+      +     '<input id="mob-vale-data" type="date" value="' + A().hojeISO() + '" class="w-full p-3 border rounded-xl">'
+      +     '<input id="mob-vale-obs" type="text" placeholder="Observacao" class="w-full p-3 border rounded-xl">'
+      +     '<p class="text-[11px] text-slate-500">Vira despesa PENDENTE e sera abatido no fechamento.</p>'
+      +     '<button onclick="mobObraValeSalvar(\'' + pessoaTipo + '\',\'' + A().esc(String(id)) + '\')" class="w-full bg-rose-700 text-white py-3 rounded-xl font-black">Lancar vale</button>'
+      +     '<div class="pt-1"><p class="text-[10px] font-bold text-slate-500 uppercase mb-1">Vales em aberto</p>' + listaHtml + '</div>'
+      +   '</div>'
+      + '</div>';
+    document.body.appendChild(m);
+    A().icons();
+  }
+
+  async function mobObraValeEstornar(id) {
+    var ok = await confirmar('Estornar este vale? A despesa sera cancelada no financeiro.');
+    if (!ok) return;
+    try {
+      await A().estornarVale(id);
+      toast('Vale estornado.');
+      mobObraValeFechar();
+      if (document.getElementById('mob-ponto-func')) mobObraCarregarPonto();
+      if (document.getElementById('mob-metros-terc')) mobObraCarregarMetros();
+    } catch (e) { toast(e.message || e, true); }
+  }
+
+  async function mobObraValeSalvar(pessoaTipo, id) {
+    var valor = Number((document.getElementById('mob-vale-valor') || {}).value) || 0;
+    var data = (document.getElementById('mob-vale-data') || {}).value || A().hojeISO();
+    var obs = (document.getElementById('mob-vale-obs') || {}).value || '';
+    if (!(valor > 0)) return toast('Informe o valor do vale.', true);
+    var nome = '', obraId = null;
+    if (pessoaTipo === 'terceirizado') {
+      var t = (await sb.from('terceirizados').select('nome,obra_atual_id').eq('id', id).single()).data || {};
+      nome = t.nome || ''; obraId = t.obra_atual_id || null;
+    } else {
+      var f = (await sb.from('equipe').select('nome,obra_atual_id').eq('id', id).single()).data || {};
+      nome = f.nome || ''; obraId = f.obra_atual_id || null;
+    }
+    var ok = await confirmar('Lancar vale de ' + A().money(valor) + ' para ' + nome + '?');
+    if (!ok) return;
+    try {
+      await A().criarVale({
+        pessoa_tipo: pessoaTipo,
+        equipe_id: pessoaTipo === 'equipe' ? id : null,
+        terceirizado_id: pessoaTipo === 'terceirizado' ? id : null,
+        nome: nome, valor: valor, data: data, observacao: obs, obra_id: obraId
+      });
+      toast('Vale lancado.');
+      mobObraValeFechar();
+      if (pessoaTipo === 'terceirizado') mobObraCarregarMetros();
+      else mobObraCarregarPonto();
+    } catch (e) { toast(e.message || e, true); }
+  }
+
+  function mobObraValeDoPonto() {
+    var sel = document.getElementById('mob-ponto-func');
+    if (!sel) return;
+    var nome = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '';
+    mobObraValeAbrir('equipe', sel.value, nome);
+  }
+
+  function mobObraValeDosMetros() {
+    var sel = document.getElementById('mob-metros-terc');
+    if (!sel) return;
+    var nome = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '';
+    mobObraValeAbrir('terceirizado', sel.value, nome);
   }
 
   window.mobObraPonto = mobObraPonto;
@@ -417,4 +531,9 @@
   window.mobObraFecharMetros = mobObraFecharMetros;
   window.mobObraEstornarMetros = mobObraEstornarMetros;
   window.mobObraEstornarPagamentoMetros = mobObraEstornarPagamentoMetros;
+  window.mobObraValeFechar = mobObraValeFechar;
+  window.mobObraValeSalvar = mobObraValeSalvar;
+  window.mobObraValeEstornar = mobObraValeEstornar;
+  window.mobObraValeDoPonto = mobObraValeDoPonto;
+  window.mobObraValeDosMetros = mobObraValeDosMetros;
 })();

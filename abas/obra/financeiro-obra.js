@@ -9,7 +9,7 @@
   var A = function () { return window.obraApi || {}; };
 
   var METODOS_PGTO = ['Dinheiro', 'PIX', 'Carteira', 'Cartão Débito', 'Cartão Crédito', 'Boleto 21 dias', 'Boleto 30 dias', 'Boleto Programado', 'Cheque'];
-  var CATEGORIAS = ['FORNECEDOR', 'SALÁRIO', 'ENERGIA', 'ESCRITORIO', 'ÁGUA', 'INTERNET', 'IMPOSTO', 'SISTEMA', 'CONTABILIDADE', 'COMBUSTÍVEL', 'MAN. MAQUINAS', 'JUROS/TAXAS', 'VEÍCULOS', 'EPI', 'INSTALAÇÃO', 'PROLABORE', 'OUTROS'];
+  var CATEGORIAS = ['FORNECEDOR', 'SALÁRIO', 'ENERGIA', 'ESCRITORIO', 'ÁGUA', 'INTERNET', 'IMPOSTO', 'SISTEMA', 'CONTABILIDADE', 'COMBUSTÍVEL', 'MAN. MAQUINAS', 'JUROS/TAXAS', 'VEÍCULOS', 'EPI', 'INSTALAÇÃO', 'PROLABORE', 'VALE', 'OUTROS'];
   var TIPOS_ENTRADA = ['Recebimento de Serviço prestado', 'Medição', 'Entrada Eventual', 'Capital de Giro'];
 
   var OFIN = {
