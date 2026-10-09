@@ -187,7 +187,8 @@
       + '</div>'
       + '<div class="overflow-y-auto flex-1 p-0"><table class="w-full text-sm text-left"><thead class="text-slate-500 bg-slate-50 sticky top-0 border-b z-10"><tr>'
       +   '<th class="p-3 font-semibold">Venc/Pagto</th><th class="p-3 font-semibold">Cliente/Ref</th><th class="p-3 font-semibold">Fase</th><th class="p-3 font-semibold">Valor</th><th class="p-3 font-semibold text-right w-40">Ação</th>'
-      + '</tr></thead><tbody id="ofin-receivables-list" class="divide-y"></tbody></table></div>';
+      + '</tr></thead><tbody id="ofin-receivables-list" class="divide-y"></tbody></table></div>'
+      + '<div id="ofin-receber-totais" class="border-t bg-slate-50 px-4 py-2.5 text-sm font-black text-slate-700"></div>';
   }
 
   function pagarSection() {
@@ -217,7 +218,8 @@
       + '</div>'
       + '<div class="overflow-y-auto flex-1 p-0"><table class="w-full text-sm text-left"><thead class="text-slate-500 bg-slate-50 sticky top-0 border-b z-10"><tr>'
       +   '<th class="p-3 font-semibold">Data</th><th class="p-3 font-semibold text-center w-12">ID</th><th class="p-3 font-semibold">Fornecedor</th><th class="p-3 font-semibold">Fase</th><th class="p-3 font-semibold">Valor</th><th class="p-3 font-semibold text-right w-44">Ação</th>'
-      + '</tr></thead><tbody id="ofin-expenses-list" class="divide-y"></tbody></table></div>';
+      + '</tr></thead><tbody id="ofin-expenses-list" class="divide-y"></tbody></table></div>'
+      + '<div id="ofin-expenses-totais" class="border-t bg-slate-50 px-4 py-2.5 text-sm font-black text-slate-700"></div>';
   }
 
   // ---------- dados ----------
@@ -262,6 +264,10 @@
   async function ofinCarregar() {
     var recvBody = el('ofin-receivables-list');
     var pagBody = el('ofin-expenses-list');
+    var recvFoot = el('ofin-receber-totais');
+    var pagFoot = el('ofin-expenses-totais');
+    if (recvFoot) recvFoot.innerHTML = '';
+    if (pagFoot) pagFoot.innerHTML = '';
     if (!OFIN.obraId) {
       if (recvBody) recvBody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400">Selecione uma obra.</td></tr>';
       if (pagBody) pagBody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Selecione uma obra.</td></tr>';
@@ -537,12 +543,17 @@
     });
     lista.sort(function (a, b) { return String(b.dueDate || '').localeCompare(String(a.dueDate || '')); });
 
-    if (!lista.length) {
-      body.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400">Nenhum registro encontrado.</td></tr>';
-      return;
-    }
     var totalVal = lista.reduce(function (a, r) { return a + (r.calc.total + r.calc.jur - r.calc.disc); }, 0);
     var totalPago = lista.reduce(function (a, r) { return a + Math.max(r.calc.pago, 0); }, 0);
+    var foot = el('ofin-receber-totais');
+    if (foot) foot.innerHTML = '<div class="flex items-center justify-between gap-3"><span class="uppercase text-xs">Totais</span>'
+      + '<span class="flex items-baseline gap-4"><span class="text-indigo-700">' + money(totalVal) + '</span>'
+      + '<span class="text-[10px] font-semibold text-slate-500">Recebido ' + money(totalPago) + ' · Falta ' + money(Math.max(totalVal - totalPago, 0)) + '</span></span></div>';
+    if (!lista.length) {
+      body.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400">Nenhum registro encontrado.</td></tr>';
+      icons();
+      return;
+    }
     var rows = lista.map(function (r) {
       var dv = (r.dueDate || '').split('T')[0];
       var vencido = dv && dv < hoje && r.calc.status !== 'PAGO';
@@ -580,8 +591,7 @@
         +   '<button onclick="ofinExcluirReceita(\'' + r.id + '\')" class="p-1.5 border border-red-200 text-red-500 rounded" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>'
         + '</div></td></tr>';
     }).join('');
-    body.innerHTML = rows
-      + '<tr class="bg-slate-100 font-black text-slate-700"><td class="p-3" colspan="3">Totais</td><td class="p-3">' + money(totalVal) + '</td><td class="p-3 text-right text-[10px] text-slate-500">Recebido ' + money(totalPago) + ' · Falta ' + money(Math.max(totalVal - totalPago, 0)) + '</td></tr>';
+    body.innerHTML = rows;
     icons();
   }
 
@@ -638,8 +648,15 @@
     var hoje = getHojeLocalStr();
     var lista = ofinPagarFiltradas();
 
+    var totalVal = lista.reduce(function (a, e) { return a + Number(e.custo || 0) + Number(e.acrescimo_total || 0) - Number(e.desconto_total || 0); }, 0);
+    var totalPago = lista.reduce(function (a, e) { return a + Math.max(Number(e.valor_pago || 0), 0); }, 0);
+    var foot = el('ofin-expenses-totais');
+    if (foot) foot.innerHTML = '<div class="flex items-center justify-between gap-3"><span class="uppercase text-xs">Totais</span>'
+      + '<span class="flex items-baseline gap-4"><span class="text-red-600">' + money(totalVal) + '</span>'
+      + '<span class="text-[10px] font-semibold text-slate-500">Pago ' + money(totalPago) + ' · Falta ' + money(Math.max(totalVal - totalPago, 0)) + '</span></span></div>';
     if (!lista.length) {
       body.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Nenhum registro encontrado.</td></tr>';
+      icons();
       return;
     }
     var rows = lista.map(function (e) {
@@ -668,10 +685,7 @@
         +   '<button onclick="ofinExcluirDespesa(\'' + e.uid + '\')" class="p-1.5 border border-red-200 text-red-500 rounded" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>'
         + '</div></td></tr>';
     }).join('');
-    var totalVal = lista.reduce(function (a, e) { return a + Number(e.custo || 0) + Number(e.acrescimo_total || 0) - Number(e.desconto_total || 0); }, 0);
-    var totalPago = lista.reduce(function (a, e) { return a + Math.max(Number(e.valor_pago || 0), 0); }, 0);
-    body.innerHTML = rows
-      + '<tr class="bg-slate-100 font-black text-slate-700"><td class="p-3" colspan="4">Totais</td><td class="p-3">' + money(totalVal) + '</td><td class="p-3 text-right text-[10px] text-slate-500">Pago ' + money(totalPago) + ' · Falta ' + money(Math.max(totalVal - totalPago, 0)) + '</td></tr>';
+    body.innerHTML = rows;
     icons();
   }
 
